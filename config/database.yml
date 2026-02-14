@@ -14,8 +14,8 @@ default: &default
   pragmas:
     journal_mode: wal
     synchronous: normal
-    mmap_size: 134217728  # 128MB
-    journal_size_limit: 67108864  # 64MB
+    mmap_size: 134217728 # 128MB
+    journal_size_limit: 67108864 # 64MB
     cache_size: 2000
     busy_timeout: 5000
 

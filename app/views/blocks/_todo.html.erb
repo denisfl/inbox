@@ -1,7 +1,7 @@
 <div class="todo-block">
-  <input type="checkbox" 
-         <%= block.content_hash["checked"] ? "checked" : "" %> 
+  <input type="checkbox"
+         <%= block.content_hash["checked"] ? "checked" : "" %>
          data-action="change->document-editor#saveBlock">
-  <span contenteditable="true" 
+  <span contenteditable="true"
         data-action="blur->document-editor#saveBlock"><%= block.content_hash["text"] %></span>
 </div>

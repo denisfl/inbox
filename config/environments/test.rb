@@ -10,7 +10,7 @@ Rails.application.configure do
   config.hosts << "www.example.com" if config.hosts
   config.hosts << "test.localhost" if config.hosts
   config.hosts << "127.0.0.1" if config.hosts
-  
+
   # While tests run files are not watched, reloading is not necessary.
   config.enable_reloading = false
 

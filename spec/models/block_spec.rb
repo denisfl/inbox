@@ -41,10 +41,10 @@ RSpec.describe Block, type: :model do
         it 'sets position to next available number' do
           create(:block, document: document, position: 0)
           create(:block, document: document, position: 1)
-          
+
           new_block = build(:block, document: document, position: nil)
           new_block.save
-          
+
           expect(new_block.position).to eq(2)
         end
       end

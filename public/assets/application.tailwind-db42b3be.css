@@ -23,18 +23,16 @@
 
 /* Drop zone indicators */
 .block-wrapper.drop-above {
-  border-top: 3px solid #4caf50;
+  border-top: 3px solid #4CAF50;
   margin-top: 8px;
 }
 
 .block-wrapper.drop-below {
-  border-bottom: 3px solid #4caf50;
+  border-bottom: 3px solid #4CAF50;
   margin-bottom: 8px;
 }
 
 /* Smooth transitions */
 .block-wrapper {
-  transition:
-    margin 150ms ease,
-    border-color 150ms ease;
+  transition: margin 150ms ease, border-color 150ms ease;
 }

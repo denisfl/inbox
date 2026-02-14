@@ -8,16 +8,16 @@ RSpec.describe "Api::Documents", type: :request do
       'Authorization' => "Token token=#{token}"
     }
   end
-  
+
   describe "GET /api/documents" do
     let!(:documents) { create_list(:document, 3) }
 
     it "returns paginated list of documents" do
       get "/api/documents", headers: headers
-      
+
       expect(response).to have_http_status(:success)
       json = JSON.parse(response.body)
-      
+
       expect(json['documents']).to be_an(Array)
       expect(json['documents'].size).to eq(3)
       expect(json['meta']).to include('current_page', 'total_pages', 'total_count', 'per_page')
@@ -25,18 +25,18 @@ RSpec.describe "Api::Documents", type: :request do
 
     it "returns documents with summary data" do
       get "/api/documents", headers: headers
-      
+
       json = JSON.parse(response.body)
       document = json['documents'].first
-      
+
       expect(document).to include('id', 'title', 'slug', 'source', 'blocks_count', 'tags', 'created_at', 'updated_at')
     end
 
     it "supports pagination parameters" do
       create_list(:document, 25)
-      
+
       get "/api/documents?page=2&per_page=10", headers: headers
-      
+
       json = JSON.parse(response.body)
       expect(json['meta']['current_page']).to eq(2)
       expect(json['meta']['per_page']).to eq(10)
@@ -51,10 +51,10 @@ RSpec.describe "Api::Documents", type: :request do
     context "when document exists" do
       it "returns document with full details" do
         get "/api/documents/#{document.id}", headers: headers
-        
+
         expect(response).to have_http_status(:success)
         json = JSON.parse(response.body)
-        
+
         expect(json['id']).to eq(document.id)
         expect(json['blocks']).to be_an(Array)
         expect(json['blocks'].size).to eq(3)
@@ -64,10 +64,10 @@ RSpec.describe "Api::Documents", type: :request do
 
       it "includes block details" do
         get "/api/documents/#{document.id}", headers: headers
-        
+
         json = JSON.parse(response.body)
         block = json['blocks'].first
-        
+
         expect(block).to include('id', 'block_type', 'position', 'content', 'created_at', 'updated_at')
       end
     end
@@ -75,7 +75,7 @@ RSpec.describe "Api::Documents", type: :request do
     context "when document does not exist" do
       it "returns not found" do
         get "/api/documents/999999", headers: headers
-        
+
         expect(response).to have_http_status(:not_found)
         json = JSON.parse(response.body)
         expect(json['error']).to eq('Record not found')
@@ -97,7 +97,7 @@ RSpec.describe "Api::Documents", type: :request do
         expect {
           post "/api/documents", params: valid_attributes.to_json, headers: headers
         }.to change(Document, :count).by(1)
-        
+
         expect(response).to have_http_status(:created)
         json = JSON.parse(response.body)
         expect(json['title']).to eq('New Document')
@@ -108,7 +108,7 @@ RSpec.describe "Api::Documents", type: :request do
     context "with invalid parameters" do
       it "returns validation errors" do
         post "/api/documents", params: invalid_attributes.to_json, headers: headers
-        
+
         expect(response).to have_http_status(:unprocessable_entity)
         json = JSON.parse(response.body)
         expect(json['errors']).to be_an(Array)
@@ -123,11 +123,11 @@ RSpec.describe "Api::Documents", type: :request do
     context "with valid parameters" do
       it "updates the document" do
         patch "/api/documents/#{document.id}", params: new_attributes.to_json, headers: headers
-        
+
         expect(response).to have_http_status(:success)
         json = JSON.parse(response.body)
         expect(json['title']).to eq('Updated Title')
-        
+
         document.reload
         expect(document.title).to eq('Updated Title')
       end
@@ -135,10 +135,10 @@ RSpec.describe "Api::Documents", type: :request do
 
     context "with invalid parameters" do
       it "returns validation errors" do
-        patch "/api/documents/#{document.id}", 
-              params: { document: { title: '' } }.to_json, 
+        patch "/api/documents/#{document.id}",
+              params: { document: { title: '' } }.to_json,
               headers: headers
-        
+
         expect(response).to have_http_status(:unprocessable_entity)
       end
     end
@@ -151,7 +151,7 @@ RSpec.describe "Api::Documents", type: :request do
       expect {
         delete "/api/documents/#{document.id}", headers: headers
       }.to change(Document, :count).by(-1)
-      
+
       expect(response).to have_http_status(:no_content)
     end
   end

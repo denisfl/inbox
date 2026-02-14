@@ -10,10 +10,10 @@
   <% else %>
     <span class="file-placeholder">No file attached</span>
   <% end %>
-  <input type="file" 
-         data-action="change->document-editor#uploadFile" 
+  <input type="file"
+         data-action="change->document-editor#uploadFile"
          style="display:none">
-  <button type="button" 
+  <button type="button"
           data-action="click->document-editor#triggerFileUpload">
     <%= block.file.attached? ? 'Change File' : 'Attach File' %>
   </button>

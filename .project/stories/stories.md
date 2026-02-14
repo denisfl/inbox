@@ -129,17 +129,31 @@ As a user, I want a block-based web editor so that I can create and edit notes i
 
 ## Story 6: Drag-and-drop block reordering
 
+**Status:** ✅ Done  
+**Completion Date:** 2026-02-14
+
 As a user, I want to reorder blocks by drag-and-drop so that I can organize my notes.
 
 **Acceptance Criteria**
 
-- Drag handle on each block
-- Visual feedback during drag (ghost element)
-- Drop zones between blocks
-- Call reorder API on drop
-- Optimistic UI update (instant feedback)
-- Rollback on API failure
-- Touch support for mobile
+- ✅ Drag handle on each block
+- ✅ Visual feedback during drag (ghost element)
+- ✅ Drop zones between blocks
+- ✅ Call reorder API on drop
+- ✅ Optimistic UI update (instant feedback)
+- ✅ Rollback on API failure
+- ⚠️ Touch support for mobile (HTML5 Drag API limitation)
+
+**Implementation:**
+
+- HTML5 Drag and Drop API (zero dependencies)
+- Event handlers: dragstart, dragover, drop, dragend, dragleave
+- CSS visual feedback: opacity 0.4 on drag, green borders for drop zones
+- API: POST /api/documents/:document_id/blocks/reorder with {block_ids: [...]}
+- Optimistic UI: Block moves in DOM before API call
+- Error handling: Alert + page reload on failure
+- File: app/javascript/controllers/document_editor_controller.js (+190 lines)
+- File: app/assets/stylesheets/application.tailwind.css (+33 lines)
 
 **Priority:** P1 (High)  
 **Complexity:** Medium  

@@ -19,7 +19,7 @@ As a user, I want voice messages transcribed automatically so that I can capture
 ### ✅ Whisper Service Setup
 
 - [ ] Whisper Docker service configured
-- [ ] Model: **base** (1.5GB, Russian language)
+- [ ] Model: **base** (1.5GB, Russian language, English language)
 - [ ] Python service exposing HTTP API
 - [ ] Environment variables:
   ```bash

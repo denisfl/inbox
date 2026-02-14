@@ -8,19 +8,24 @@ Rails.application.routes.draw do
   # API namespace
   namespace :api do
     resources :documents do
+      # Collection-level search
+      collection do
+        get :search
+      end
+
       # Nested routes for blocks
       resources :blocks, only: [:create, :update, :destroy] do
         collection do
           post :reorder
         end
-        
+
         # Upload routes for blocks
         member do
           post :upload_image, controller: 'uploads'
           post :upload_file, controller: 'uploads'
         end
       end
-      
+
       # Document-specific actions
       member do
         post :classify
@@ -28,10 +33,10 @@ Rails.application.routes.draw do
         get 'export/:format', to: 'documents#export', as: :export
       end
     end
-    
+
     # Search endpoint
     get 'documents/search', to: 'documents#search', as: :search_documents
-    
+
     # Telegram webhook
     post 'telegram/webhook', to: 'telegram#webhook'
   end
@@ -42,7 +47,7 @@ Rails.application.routes.draw do
 
   # Web UI routes
   resources :documents, only: [:index, :show, :edit]
-  
+
   # Root path
   root "documents#index"
 end
