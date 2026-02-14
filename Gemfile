@@ -86,5 +86,5 @@ group :test do
   gem "database_cleaner-active_record", "~> 2.2"
 
   # Matchers for RSpec tests
-  gem "shoulda-matchers", "~> 6.0"
+  gem "shoulda-matchers", "~> 7.0"
 end
