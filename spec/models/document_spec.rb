@@ -9,7 +9,7 @@ RSpec.describe Document, type: :model do
 
   describe 'validations' do
     it { is_expected.to validate_presence_of(:title) }
-    
+
     context 'slug uniqueness' do
       subject { build(:document, slug: 'test-slug') }
       it { is_expected.to validate_uniqueness_of(:slug) }

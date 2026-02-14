@@ -84,7 +84,7 @@ group :test do
   # Test coverage and cleanup
   gem "simplecov", require: false
   gem "database_cleaner-active_record", "~> 2.2"
-  
+
   # Matchers for RSpec tests
   gem "shoulda-matchers", "~> 6.0"
 end

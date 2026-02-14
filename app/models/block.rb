@@ -1,7 +1,7 @@
 class Block < ApplicationRecord
   # Associations
   belongs_to :document
-  
+
   # Active Storage attachments
   has_one_attached :image
   has_one_attached :file
@@ -9,7 +9,7 @@ class Block < ApplicationRecord
   # Validations
   validates :block_type, presence: true
   validates :position, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
-  
+
   # Block types enumeration
   BLOCK_TYPES = %w[
     text
@@ -46,7 +46,7 @@ class Block < ApplicationRecord
 
   def set_default_position
     return unless document_id
-    
+
     max_position = Block.where(document_id: document_id).maximum(:position)
     self.position = max_position ? max_position + 1 : 0
   end

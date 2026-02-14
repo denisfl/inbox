@@ -43,7 +43,7 @@ RSpec.describe 'Document Editor', type: :system do
       text_element = find('.text-block[contenteditable="true"]', text: 'Initial text')
       text_element.click
       text_element.set('Updated text content')
-      
+
       # Trigger blur to save
       find('body').click
 
@@ -76,7 +76,7 @@ RSpec.describe 'Document Editor', type: :system do
 
       # Block should disappear
       expect(page).not_to have_content('Initial text')
-      
+
       # Verify block was deleted
       expect(document.blocks.count).to eq(0)
     end
@@ -101,7 +101,7 @@ RSpec.describe 'Document Editor', type: :system do
 
     it 'creates and edits heading block' do
       create(:block, document: document, block_type: 'heading', content: { text: 'Heading Text', level: 2 }, position: 1)
-      
+
       visit edit_document_path(document)
 
       expect(page).to have_css('h2.heading-block', text: 'Heading Text')
@@ -109,7 +109,7 @@ RSpec.describe 'Document Editor', type: :system do
 
     it 'creates and toggles todo block' do
       create(:block, document: document, block_type: 'todo', content: { text: 'Todo item', checked: false }, position: 1)
-      
+
       visit edit_document_path(document)
 
       checkbox = find('.todo-block input[type="checkbox"]')
@@ -123,7 +123,7 @@ RSpec.describe 'Document Editor', type: :system do
 
     it 'creates code block' do
       create(:block, document: document, block_type: 'code', content: { code: 'puts "Hello"', language: 'ruby' }, position: 1)
-      
+
       visit edit_document_path(document)
 
       expect(page).to have_css('.code-block code', text: 'puts "Hello"')
@@ -131,7 +131,7 @@ RSpec.describe 'Document Editor', type: :system do
 
     it 'creates quote block' do
       create(:block, document: document, block_type: 'quote', content: { text: 'Famous quote' }, position: 1)
-      
+
       visit edit_document_path(document)
 
       expect(page).to have_css('.quote-block', text: 'Famous quote')
@@ -139,7 +139,7 @@ RSpec.describe 'Document Editor', type: :system do
 
     it 'creates link block' do
       create(:block, document: document, block_type: 'link', content: { url: 'https://example.com', title: 'Example' }, position: 1)
-      
+
       visit edit_document_path(document)
 
       expect(page).to have_css('.link-block input[value="https://example.com"]')
@@ -164,7 +164,7 @@ RSpec.describe 'Document Editor', type: :system do
       text_element = find('.text-block[contenteditable="true"]', text: 'Initial text')
       text_element.click
       text_element.set('New text')
-      
+
       find('body').click # Blur to trigger save
 
       # Should show "✓ Saved" indicator

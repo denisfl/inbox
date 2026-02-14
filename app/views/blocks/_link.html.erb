@@ -1,7 +1,7 @@
 <div class="link-block">
-  <input type="url" 
-         value="<%= block.content_hash["url"] || '' %>" 
-         placeholder="https://..." 
+  <input type="url"
+         value="<%= block.content_hash["url"] || '' %>"
+         placeholder="https://..."
          data-action="blur->document-editor#saveBlock">
   <div class="link-preview">
     <%= block.content_hash["title"] || block.content_hash["url"] || 'Enter URL' %>

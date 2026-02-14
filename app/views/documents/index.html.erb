@@ -6,6 +6,28 @@
     <p class="subtitle">Your block-based notes</p>
   </header>
 
+  <!-- Search Section -->
+  <div class="search-section"
+       data-controller="search"
+       data-search-url-value="/api/documents/search">
+    <div class="search-box">
+      <input type="search"
+             placeholder="Search documents and blocks..."
+             data-search-target="input"
+             data-action="input->search#search">
+      <span class="search-info">
+        <span data-search-target="count"></span>
+        <span data-search-target="time" class="text-muted"></span>
+      </span>
+    </div>
+
+    <div data-search-target="loading" class="loading hidden">
+      Searching...
+    </div>
+
+    <div data-search-target="results" class="search-results"></div>
+  </div>
+
   <main>
     <div class="documents-list">
       <% if @documents.any? %>
@@ -46,6 +68,130 @@
       max-width: 900px;
       margin: 0 auto;
       padding: 40px 20px;
+    }
+
+    /* Search Styles */
+    .search-section {
+      margin-bottom: 30px;
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .search-box input[type="search"] {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: border-color 0.2s;
+    }
+
+    .search-box input[type="search"]:focus {
+      outline: none;
+      border-color: #4CAF50;
+    }
+
+    .search-info {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .text-muted {
+      color: #999;
+      margin-left: 8px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+
+    .loading.hidden {
+      display: none;
+    }
+
+    .search-results {
+      margin-top: 20px;
+    }
+
+    .search-result {
+      padding: 16px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .search-result:last-child {
+      border-bottom: none;
+    }
+
+    .result-title a {
+      color: #1976D2;
+      text-decoration: none;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .result-title a:hover {
+      text-decoration: underline;
+    }
+
+    .result-title mark {
+      background: #FFEB3B;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+
+    .result-meta {
+      display: flex;
+      gap: 15px;
+      margin: 8px 0;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .result-source {
+      background: #E3F2FD;
+      padding: 2px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .result-snippet {
+      color: #333;
+      line-height: 1.6;
+      margin: 8px 0 0 0;
+    }
+
+    .result-snippet mark {
+      background: #FFEB3B;
+      padding: 2px 4px;
+      border-radius: 2px;
+      font-weight: 600;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    .error-state {
+      text-align: center;
+      padding: 20px;
+      color: #f44336;
+      background: #FFEBEE;
+      border-radius: 6px;
     }
 
     header {

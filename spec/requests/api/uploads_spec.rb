@@ -24,7 +24,7 @@ RSpec.describe 'Api::Uploads', type: :request do
         expect(json['block']).to include('id', 'url', 'filename', 'content_type', 'size')
         expect(json['block']['filename']).to eq('test_image.png')
         expect(json['block']['content_type']).to eq('image/png')
-        
+
         image_block.reload
         expect(image_block.image).to be_attached
       end
@@ -82,7 +82,7 @@ RSpec.describe 'Api::Uploads', type: :request do
         expect(json['block']).to include('id', 'url', 'filename', 'content_type', 'size')
         expect(json['block']['filename']).to eq('test_document.pdf')
         expect(json['block']['content_type']).to eq('application/pdf')
-        
+
         file_block.reload
         expect(file_block.file).to be_attached
       end

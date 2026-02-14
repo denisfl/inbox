@@ -7,10 +7,38 @@ class Api::DocumentsController < Api::BaseController
                          .recent
                          .page(params[:page])
                          .per(params[:per_page] || 20)
-    
+
     render json: {
       documents: @documents.map { |doc| document_summary(doc) },
       meta: pagination_meta(@documents)
+    }
+  end
+
+  # GET /api/documents/search?q=query
+  def search
+    query = params[:q]
+    page = params[:page]&.to_i || 1
+    per_page = params[:per_page]&.to_i || 20
+
+    if query.blank?
+      return render json: { error: 'Query parameter is required' }, status: :bad_request
+    end
+
+    start_time = Time.now
+    @results = Document.search(query, page: page, per_page: per_page)
+    total = Document.search_count(query)
+    search_time = ((Time.now - start_time) * 1000).round(2)
+
+    render json: {
+      results: @results.map { |doc| search_result(doc) },
+      meta: {
+        query: query,
+        total: total,
+        page: page,
+        per_page: per_page,
+        total_pages: (total.to_f / per_page).ceil,
+        search_time_ms: search_time
+      }
     }
   end
 
@@ -22,7 +50,7 @@ class Api::DocumentsController < Api::BaseController
   # POST /api/documents
   def create
     @document = Document.new(document_params)
-    
+
     if @document.save
       render json: document_detail(@document), status: :created
     else
@@ -99,6 +127,21 @@ class Api::DocumentsController < Api::BaseController
       total_pages: collection.total_pages,
       total_count: collection.total_count,
       per_page: collection.limit_value
+    }
+  end
+
+  def search_result(doc)
+    {
+      id: doc.id,
+      title: doc.title,
+      slug: doc.slug,
+      source: doc.source,
+      title_snippet: doc.respond_to?(:title_snippet) ? doc.title_snippet : doc.title,
+      content_snippet: doc.respond_to?(:content_snippet) ? doc.content_snippet : '',
+      rank: doc.respond_to?(:rank) ? doc.rank : 0,
+      blocks_count: doc.blocks.count,
+      created_at: doc.created_at,
+      updated_at: doc.updated_at
     }
   end
 end
