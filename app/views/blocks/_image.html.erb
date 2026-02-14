@@ -1,0 +1,19 @@
+<div class="image-block">
+  <% if block.image.attached? %>
+    <%= image_tag block.image, alt: block.content_hash["alt"] || 'Uploaded image' %>
+    <div class="image-meta"><%= block.image.filename %> (<%= number_to_human_size(block.image.byte_size) %>)</div>
+  <% elsif block.content_hash["url"].present? %>
+    <img src="<%= block.content_hash["url"] %>" 
+         alt="<%= block.content_hash["alt"] || '' %>">
+  <% else %>
+    <div class="image-placeholder">No image</div>
+  <% end %>
+  <input type="file" 
+         accept="image/*" 
+         data-action="change->document-editor#uploadImage" 
+         style="display:none">
+  <button type="button" 
+          data-action="click->document-editor#triggerImageUpload">
+    <%= block.image.attached? ? 'Change Image' : 'Upload Image' %>
+  </button>
+</div>

@@ -1,0 +1,20 @@
+<div class="file-block">
+  <% if block.file.attached? %>
+    <div class="file-info">
+      <span class="file-icon">📎</span>
+      <%= link_to block.file.filename, rails_blob_path(block.file, disposition: "attachment"), target: "_blank" %>
+      <span class="file-size"><%= number_to_human_size(block.file.byte_size) %></span>
+    </div>
+  <% elsif block.content_hash["filename"].present? %>
+    <span class="file-name">📎 <%= block.content_hash["filename"] %></span>
+  <% else %>
+    <span class="file-placeholder">No file attached</span>
+  <% end %>
+  <input type="file" 
+         data-action="change->document-editor#uploadFile" 
+         style="display:none">
+  <button type="button" 
+          data-action="click->document-editor#triggerFileUpload">
+    <%= block.file.attached? ? 'Change File' : 'Attach File' %>
+  </button>
+</div>

@@ -1,0 +1,5 @@
+#!/bin/sh
+# Script to run RSpec tests with proper environment configuration
+
+# Run tests in test environment with test database
+docker-compose exec -T -e RAILS_ENV=test -e DATABASE_URL=sqlite3:db/test.sqlite3 web bundle exec rspec "$@"

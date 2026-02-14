@@ -1,0 +1,30 @@
+---
+# Sidekiq configuration for development and production environments
+
+:concurrency: 5
+:timeout: 25
+
+# Redis connection (uses REDIS_URL environment variable)
+:queues:
+  - default
+  - mailers
+  - telegram
+  - classification
+
+# Development-specific settings
+development:
+  :concurrency: 2
+  :queues:
+    - default
+    - mailers
+    - telegram
+    - classification
+
+# Production-specific settings
+production:
+  :concurrency: 10
+  :queues:
+    - default
+    - mailers
+    - telegram
+    - classification
