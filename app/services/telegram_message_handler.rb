@@ -23,6 +23,8 @@ class TelegramMessageHandler
       handle_photo
     when :voice
       handle_voice
+    when :audio
+      handle_audio
     when :document
       handle_document
     else
@@ -40,6 +42,7 @@ class TelegramMessageHandler
     return :text if message.text.present?
     return :photo if message.photo.present?
     return :voice if message.voice.present?
+    return :audio if message.audio.present?
     return :document if message.document.present?
     :unknown
   end
@@ -118,24 +121,20 @@ class TelegramMessageHandler
     file_url = "https://api.telegram.org/file/bot#{ENV['TELEGRAM_BOT_TOKEN']}/#{file_path}"
     downloaded_file = download_file(file_url)
 
+    # Add timestamp to ensure unique slug
+    title = "🎤 Voice #{Time.current.to_i}"
+    
     doc = Document.create!(
-      title: "🎤 Transcribing...",
+      title: title,
       source: 'telegram',
       telegram_chat_id: message.chat.id,
       telegram_message_id: message.message_id
     )
 
-    # Create placeholder text block
-    doc.blocks.create!(
-      block_type: 'text',
-      position: 0,
-      content: { text: "🎤 Transcription in progress..." }.to_json
-    )
-
     # Create file block with voice attachment
     file_block = doc.blocks.create!(
       block_type: 'file',
-      position: 1,
+      position: 0,
       content: { filename: "voice_#{message.voice.file_id}.ogg" }.to_json
     )
 
@@ -145,11 +144,47 @@ class TelegramMessageHandler
       content_type: 'audio/ogg'
     )
 
-    # TODO: Queue transcription job (Story 11)
-    # TranscribeAudioJob.perform_later(doc.id, file_block.file.blob.key)
+    # Queue transcription job
+    TranscribeAudioJob.perform_later(doc.id, file_block.file.blob.key)
 
-    send_reply("🎤 Voice note saved. Transcription coming in Story 11!")
-    Rails.logger.info("Created voice document: #{doc.id}")
+    send_reply("🎤 Transcribing your voice note...")
+    Rails.logger.info("Created voice document: #{doc.id}, queued transcription")
+  end
+
+  def handle_audio
+    file_info = bot.api.get_file(file_id: message.audio.file_id)
+    file_path = file_info.file_path
+
+    # Download audio file
+    file_url = "https://api.telegram.org/file/bot#{ENV['TELEGRAM_BOT_TOKEN']}/#{file_path}"
+    downloaded_file = download_file(file_url)
+
+    filename = message.audio.file_name || "audio_#{message.audio.file_id}"
+    # Add timestamp to ensure unique slug
+    title = "🎵 #{filename} #{Time.current.to_i}"
+
+    doc = Document.create!(
+      title: title.truncate(50),
+      source: 'telegram',
+      telegram_chat_id: message.chat.id,
+      telegram_message_id: message.message_id
+    )
+
+    # Create file block with audio attachment
+    file_block = doc.blocks.create!(
+      block_type: 'file',
+      position: 0,
+      content: { filename: filename }.to_json
+    )
+
+    file_block.file.attach(
+      io: downloaded_file,
+      filename: filename,
+      content_type: message.audio.mime_type || 'audio/mpeg'
+    )
+
+    send_reply("🎵 Audio file saved")
+    Rails.logger.info("Created audio document: #{doc.id}")
   end
 
   def handle_document
