@@ -35,7 +35,190 @@ As an administrator, I want to deploy the application to Raspberry Pi 5 with rel
 
 ### ✅ Network Access Solutions (Choose One)
 
-#### **Option A: Tailscale VPN + Funnel (RECOMMENDED)**
+#### **Option A: Existing WireGuard VPN on Digital Ocean (RECOMMENDED FOR YOU)**
+
+**Setup:**
+You already have WireGuard running on Digital Ocean (deployed via dokku). Use it as a secure tunnel:
+
+**Pros:**
+- ✅ Already deployed and working
+- ✅ Full control over VPN server
+- ✅ No third-party dependencies
+- ✅ Can serve Inbox through VPS reverse proxy
+- ✅ Stable connections (no timeout)
+- ✅ Your existing infrastructure
+
+**Cons:**
+- ❌ Requires nginx/caddy setup on VPS for public access
+- ❌ Need to configure reverse proxy
+
+**Implementation:**
+
+1. **Connect Raspberry Pi to WireGuard:**
+   ```bash
+   # On Raspberry Pi
+   sudo apt install wireguard
+   
+   # Get config from your DO server (ask you for the config)
+   sudo nano /etc/wireguard/wg0.conf
+   
+   # Paste config:
+   [Interface]
+   PrivateKey = <RPi_PRIVATE_KEY>
+   Address = 10.0.0.5/24  # Or whatever your VPN subnet uses
+   DNS = 8.8.8.8
+   
+   [Peer]
+   PublicKey = <DO_SERVER_PUBLIC_KEY>
+   Endpoint = <YOUR_DO_IP>:51820
+   AllowedIPs = 10.0.0.0/24
+   PersistentKeepalive = 25
+   
+   # Start WireGuard
+   sudo wg-quick up wg0
+   sudo systemctl enable wg-quick@wg0
+   
+   # Verify connection
+   ping 10.0.0.1  # Your DO server VPN IP
+   ```
+
+2. **On Digital Ocean VPS (nginx reverse proxy with Basic Auth):**
+   ```bash
+   # Create password file for Basic Auth
+   sudo apt install apache2-utils
+   sudo htpasswd -c /etc/nginx/.htpasswd denis  # Your username
+   # Enter password when prompted
+   
+   # Create nginx site config
+   sudo nano /etc/nginx/sites-available/inbox
+   
+   # Add:
+   server {
+       listen 80;
+       server_name inbox.fedosov.me;
+       
+       # Redirect HTTP to HTTPS
+       return 301 https://$server_name$request_uri;
+   }
+   
+   server {
+       listen 443 ssl http2;
+       server_name inbox.fedosov.me;
+       
+       # SSL certificates (Let's Encrypt)
+       ssl_certificate /etc/letsencrypt/live/inbox.fedosov.me/fullchain.pem;
+       ssl_certificate_key /etc/letsencrypt/live/inbox.fedosov.me/privkey.pem;
+       ssl_protocols TLSv1.2 TLSv1.3;
+       ssl_ciphers HIGH:!aNULL:!MD5;
+       
+       # Security headers
+       add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload";
+       add_header X-Content-Type-Options "nosniff";
+       add_header X-Frame-Options "DENY";
+       add_header Referrer-Policy "no-referrer-when-downgrade";
+       
+       # Telegram webhook - NO AUTH (Telegram bot needs access)
+       location /api/telegram/ {
+           proxy_pass http://10.0.0.5:3000;  # RPi WireGuard IP
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
+           
+           # Rate limiting for Telegram
+           limit_req zone=telegram burst=10 nodelay;
+       }
+       
+       # All other routes - REQUIRE AUTH (private access)
+       location / {
+           auth_basic "Private Access";
+           auth_basic_user_file /etc/nginx/.htpasswd;
+           
+           proxy_pass http://10.0.0.5:3000;  # RPi WireGuard IP
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
+           
+           # WebSocket support (for future real-time features)
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection "upgrade";
+       }
+   }
+   
+   # Rate limiting zone (before server block, in http context)
+   # Add to /etc/nginx/nginx.conf in http {} section:
+   # limit_req_zone $binary_remote_addr zone=telegram:10m rate=30r/m;
+   
+   # Enable site
+   sudo ln -s /etc/nginx/sites-available/inbox /etc/nginx/sites-enabled/
+   
+   # Get SSL certificate (if not already exists)
+   sudo certbot --nginx -d inbox.fedosov.me
+   
+   # Test nginx config
+   sudo nginx -t
+   
+   # Reload nginx
+   sudo systemctl reload nginx
+   ```
+
+3. **Add rate limiting to nginx.conf:**
+   ```bash
+   sudo nano /etc/nginx/nginx.conf
+   
+   # Add inside http {} block (before server blocks):
+   http {
+       # ... existing config ...
+       
+       # Rate limiting for Telegram webhook
+       limit_req_zone $binary_remote_addr zone=telegram:10m rate=30r/m;
+       
+       # ... rest of config ...
+   }
+   
+   # Reload nginx
+   sudo systemctl reload nginx
+   ```
+
+4. **Update DNS:**
+   - Add A record: `inbox.fedosov.me` → Your DO server IP
+   - SSL certificate will be auto-provisioned by certbot
+
+5. **Update Telegram webhook:**
+   ```bash
+   curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
+     -H "Content-Type: application/json" \
+     -d '{"url": "https://inbox.fedosov.me/api/telegram/webhook"}'
+   ```
+
+6. **Test access:**
+   ```bash
+   # From your browser (will prompt for username/password):
+   https://inbox.fedosov.me/
+   
+   # Telegram webhook (no auth required):
+   # Telegram bot can POST to https://inbox.fedosov.me/api/telegram/webhook
+   ```
+
+**Result:** 
+- Raspberry Pi accessible via `https://inbox.fedosov.me`
+- **Private access:** Web UI requires username/password (HTTP Basic Auth)
+- **Telegram webhook:** No auth (public endpoint at `/api/telegram/webhook`)
+- Traffic encrypted end-to-end (HTTPS + WireGuard)
+- No ngrok timeout issues
+- Rate limiting: 30 requests/minute per IP for webhook
+
+**Security Notes:**
+- Only YOU can access the web interface (Basic Auth)
+- Telegram bot API can POST to webhook (no auth needed)
+- All traffic between DO ↔ RPi encrypted via WireGuard
+- SSL certificate auto-renewed by certbot
+
+---
+
+#### **Option B: Tailscale VPN + Funnel (Alternative)**
 
 **Pros:**
 - ✅ Secure peer-to-peer VPN (WireGuard-based)
@@ -47,7 +230,7 @@ As an administrator, I want to deploy the application to Raspberry Pi 5 with rel
 - ✅ Works behind CGNAT/strict firewalls
 
 **Cons:**
-- ❌ Requires Tailscale account
+- ❌ Requires Tailscale account (additional service)
 - ❌ Funnel endpoints are public (rate limiting needed)
 
 **Implementation:**
@@ -76,13 +259,13 @@ services:
 
 ---
 
-#### **Option B: Cloudflare Tunnel (Zero Trust)**
+#### **Option C: Cloudflare Tunnel (Zero Trust)**
 
 **Pros:**
 - ✅ Free tier available
 - ✅ HTTPS automatic (Cloudflare SSL)
 - ✅ DDoS protection
-- ✅ Custom domain support (`inbox.yourdomin.com`)
+- ✅ Custom domain support (`inbox.yourdomain.com`)
 - ✅ No port forwarding
 - ✅ Rate limiting via Cloudflare WAF
 
@@ -109,26 +292,35 @@ cloudflared tunnel --url http://localhost:3000 run inbox-pi
 
 ---
 
-#### **Option C: Self-Hosted Reverse Proxy (Advanced)**
+#### **❌ Option D: Dynamic DNS + Port Forwarding (NOT RECOMMENDED)**
 
-**Requirements:**
-- VPS with static IP (e.g., DigitalOcean $6/mo, Oracle Cloud free tier)
-- WireGuard tunnel: RPi ↔ VPS
-- Nginx/Caddy on VPS as reverse proxy
+**Why avoid:**
+- ❌ Exposes home IP address
+- ❌ ISP may block port 80/443
+- ❌ No HTTPS by default
+- ❌ Security risks (direct public access)
+- ❌ Dynamic IP changes break webhook
 
-**Pros:**
-- ✅ Full control
-- ✅ Custom domain
-- ✅ No third-party dependencies
-
-**Cons:**
-- ❌ Requires VPS ($6-15/mo or Oracle Cloud free tier)
+**Only use if:** You have static IP + comfortable with network security
 - ❌ Complex setup (WireGuard + Nginx config)
 - ❌ Need to manage VPS security/updates
 
 ---
 
-#### **Option D: Dynamic DNS + Port Forwarding (NOT RECOMMENDED)**
+#### **Comparison Table**
+
+| Solution | Cost | Setup Time | Your Situation | Recommended |
+|----------|------|------------|----------------|-------------|
+| **WireGuard (DO) + Caddy** | $0 (existing) | 30 min | ✅ Already have VPN | ⭐⭐⭐⭐⭐ |
+| Tailscale + Funnel | $0 | 10 min | New service | ⭐⭐⭐⭐ |
+| Cloudflare Tunnel | $10/yr domain | 15 min | Cloudflare account | ⭐⭐⭐ |
+| Dynamic DNS | $0 | 30 min | Security risks | ❌ |
+
+**YOUR BEST OPTION:** Use existing WireGuard on Digital Ocean + Caddy reverse proxy (Option A)
+
+---
+
+#### **❌ Option D: Dynamic DNS + Port Forwarding (NOT RECOMMENDED)**
 
 **Why Avoid:**
 - ❌ Requires router access (port 80/443 forwarding)
