@@ -32,6 +32,9 @@ gem "redis", "~> 5.0"
 # Telegram bot integration
 gem "telegram-bot-ruby"
 
+# HTTP client for API calls
+gem "http", "~> 5.0"
+
 # Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
 gem "solid_cache"
 gem "solid_queue"
