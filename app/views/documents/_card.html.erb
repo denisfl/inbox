@@ -1,0 +1,210 @@
+<%
+  # Determine document type and icons
+  has_voice = document.blocks.any? { |b| b.block_type == 'file' && b.content.to_s.include?('voice') }
+  has_photo = document.blocks.any? { |b| b.block_type == 'file' && (b.content.to_s.include?('image') || b.content.to_s.include?('photo')) }
+  has_document_file = document.blocks.any? { |b| b.block_type == 'file' && !b.content.to_s.include?('voice') && !b.content.to_s.include?('image') }
+  
+  # Get first text block for preview
+  preview_text = document.title
+  text_block = document.blocks.find { |b| b.block_type == 'text' }
+  if text_block && text_block.content.present?
+    begin
+      content_data = text_block.content.is_a?(String) ? JSON.parse(text_block.content) : text_block.content
+      preview_text = content_data['text'] || content_data[:text] || document.title
+    rescue JSON::ParserError => e
+      # Invalid JSON in database, fallback to title
+      preview_text = document.title
+    end
+  end
+%>
+
+<article class="document-card">
+  <div class="card-header">
+    <div class="card-badges">
+      <% if document.source == 'telegram' %>
+        <span class="badge badge-secondary" title="From Telegram">
+          <%= heroicon(:device_phone_mobile, style: 'width: 1rem; height: 1rem; display: inline-block; vertical-align: text-bottom;') %>
+          Telegram
+        </span>
+      <% end %>
+      
+      <% if has_voice %>
+        <span class="badge badge-secondary" title="Voice note">
+          <%= heroicon(:microphone, style: 'width: 1rem; height: 1rem; display: inline-block; vertical-align: text-bottom;') %>
+          Voice
+        </span>
+      <% elsif has_photo %>
+        <span class="badge badge-secondary" title="Photo">
+          <%= heroicon(:camera, style: 'width: 1rem; height: 1rem; display: inline-block; vertical-align: text-bottom;') %>
+          Photo
+        </span>
+      <% elsif has_document_file %>
+        <span class="badge badge-secondary" title="Document">
+          <%= heroicon(:document, style: 'width: 1rem; height: 1rem; display: inline-block; vertical-align: text-bottom;') %>
+          File
+        </span>
+      <% end %>
+    </div>
+    
+    <time class="card-time" datetime="<%= document.updated_at.iso8601 %>" title="<%= document.updated_at.strftime('%B %d, %Y at %H:%M') %>">
+      <%= time_ago_in_words(document.updated_at) %> ago
+    </time>
+  </div>
+
+  <%= link_to edit_document_path(document), class: "card-link" do %>
+    <h3 class="card-title">
+      <%= document.title.truncate(80) %>
+    </h3>
+  <% end %>
+
+  <% if preview_text && preview_text != document.title %>
+    <div class="card-preview">
+      <%= preview_text.truncate(150) %>
+    </div>
+  <% end %>
+
+  <div class="card-meta">
+    <span class="meta-item">
+      <%= heroicon(:clipboard, class: 'meta-icon', style: 'width: 1rem; height: 1rem;') %>
+      <%= pluralize(document.blocks.size, 'block') %>
+    </span>
+    
+    <% if document.tags.any? %>
+      <div class="card-tags">
+        <% document.tags.limit(3).each do |tag| %>
+          <%= link_to root_path(tag: tag.name), class: "tag", style: "border-color: #{tag.color || 'var(--color-border)'}" do %>
+            <%= heroicon(:tag, style: "width: 0.875rem; height: 0.875rem; color: #{tag.color || 'var(--color-text-secondary)'}") %>
+            <%= tag.name %>
+          <% end %>
+        <% end %>
+        <% if document.tags.count > 3 %>
+          <span class="tag">+<%= document.tags.count - 3 %></span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</article>
+
+<style>
+.document-card {
+  background-color: var(--color-bg-primary);
+  border: 2px solid var(--color-border);  /* Thicker Basecamp border */
+  border-radius: var(--radius-md);  /* Less rounded */
+  padding: var(--spacing-md);
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.document-card:hover {
+  /* No lift effect - keep grounded, Basecamp-style */
+  box-shadow: var(--shadow-base);
+  border-color: var(--color-border-hover);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.card-badges {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.card-time {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.card-link {
+  text-decoration: none;
+  color: inherit;
+  transition: color var(--transition-fast);
+  /* 44px min touch target for mobile */
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.card-link:hover .card-title {
+  color: var(--color-primary);
+}
+
+.card-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.4;
+  transition: color var(--transition-fast);
+}
+
+.card-preview {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-top: var(--spacing-xs);
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xs);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.meta-icon {
+  font-size: var(--text-base);
+}
+
+.card-tags {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+/* Mobile adaptation */
+@media (max-width: 768px) {
+  .document-card {
+    padding: var(--spacing-md);
+  }
+  
+  .card-title {
+    font-size: var(--text-base);
+  }
+  
+  .card-preview {
+    font-size: var(--text-sm);
+  }
+  
+  .card-badges .badge {
+    font-size: var(--text-xs);
+    padding: 2px var(--spacing-xs);
+  }
+  
+  .card-meta {
+    gap: var(--spacing-sm);
+  }
+}
+</style>

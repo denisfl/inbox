@@ -10,5 +10,8 @@ application.register("document-editor", DocumentEditorController);
 import SearchController from "./search_controller";
 application.register("search", SearchController);
 
+import SidebarController from "./sidebar_controller";
+application.register("sidebar", SidebarController);
+
 import HelloController from "./hello_controller";
 application.register("hello", HelloController);

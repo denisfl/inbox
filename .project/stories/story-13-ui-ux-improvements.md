@@ -4,7 +4,47 @@
 **Complexity:** High  
 **Estimated Effort:** 3-4 days  
 **Dependencies:** Story 11 (Whisper Transcription)  
-**Status:** Not Started
+**Status:** Phase 1 In Progress (80% complete)
+
+---
+
+## Design Philosophy: Basecamp-Inspired
+
+### Core Principles
+1. **Warm & Approachable** - Use warm color palette (tans, greens, yellows)
+2. **Functional Over Fancy** - Clarity and usability first, decorations second
+3. **Boxy & Grounded** - Less rounded corners, thicker borders, minimal shadows
+4. **Content-Focused** - UI chrome supports content, doesn't compete with it
+5. **❌ No Emojis** - Use Heroicons (SVG) for all icons
+
+### Color Palette (Basecamp-style)
+```css
+/* Light Mode */
+--color-primary: #D4A574;      /* Warm tan/beige */
+--color-secondary: #70B77E;    /* Basecamp green */
+--color-accent: #E5CC7B;       /* Warm yellow */
+--color-danger: #D74E4E;       /* Muted red */
+
+--color-bg-primary: #ffffff;
+--color-bg-secondary: #FAF9F7;  /* Slightly warm white */
+--color-text-primary: #292524;  /* Stone-800 */
+
+/* Dark Mode */
+--color-primary: #E5CC7B;      /* Bright yellow */
+--color-bg-primary: #1C1917;   /* Stone-900 */
+--color-bg-secondary: #292524; /* Stone-800 */
+```
+
+### Typography
+- **Font:** Helvetica Neue, Helvetica, Arial (Basecamp uses Helvetica)
+- **Line Height:** 1.6 (more generous spacing)
+
+### Component Style
+- **Borders:** 2-3px thick (visible separation)
+- **Border Radius:** 4-8px max (less rounded, more boxy)
+- **Shadows:** Minimal (0-0.08 opacity max)
+- **Hover Effects:** No lift/transform, just shadow/border changes
+- **Active States:** Solid color backgrounds (not subtle gray)
 
 ---
 
@@ -16,52 +56,65 @@ As a user, I want a modern, intuitive, and mobile-friendly interface so that I c
 
 ## Current State Analysis
 
-### ✅ Existing Features
-- Basic document list view
-- Search functionality (text-based)
-- Simple card layout
-- Responsive design (mobile-friendly basics)
-- Tags display
-- "Updated X ago" timestamps
+### ✅ Completed (Phase 1)
+- ✅ Design system with CSS variables
+- ✅ Dark mode with localStorage persistence
+- ✅ Sidebar navigation with filters (Views: All, Telegram, Voice, Photos)
+- ✅ Tags section in sidebar
+- ✅ Header with search bar
+- ✅ Enhanced document cards with previews
+- ✅ Type badges (Telegram, Voice, Photo, File)
+- ✅ Filtering system (source, type, tag)
+- ✅ Sorting system (5 options: updated, created, title)
+- ✅ Responsive layout (mobile/desktop)
+- ✅ All emojis replaced with Heroicons
+- ✅ Basecamp-inspired warm color palette
+- ✅ Thicker borders, less rounded corners
 
-### ❌ Pain Points
+### ❌ Remaining Work
 
-**1. Visual Design:**
-- Generic styling (no brand identity)
-- Limited visual hierarchy
-- No dark mode
-- Basic typography
-- Plain empty state
+**Phase 1 Final:**
+- [ ] Manual testing in browser
+- [ ] Accessibility audit (keyboard navigation, aria-labels)
+- [ ] Check color contrast (AAA compliance)
 
-**2. Navigation:**
-- No sidebar/navigation menu
-- No filters (by tag, source, date)
-- No sorting options
-- No pagination (will be slow with many documents)
+**Phase 2:**
+- [ ] Pagination (kaminari gem, 20 per page)
+- [ ] Infinite scroll option
+- [ ] PWA manifest
+- [ ] Service Worker (offline support)
+- [ ] Mobile bottom navigation
+- [ ] Lazy loading for images
 
-**3. Content Display:**
-- Document preview missing (only title visible)
-- No block type indicators
-- Audio/voice transcriptions not prominently displayed
-- Images not previewed in list
-- No file type icons
+---
 
-**4. Mobile Experience:**
-- Search box too small on mobile
-- Card touch targets could be larger
-- No swipe gestures
-- No pull-to-refresh
+## Design Guidelines
 
-**5. Progressive Web App:**
-- PWA manifest disabled
-- No offline support
-- No install prompt
-- No app icons optimized
+### ❌ Don't Use Emojis
+**Rule:** Never use emoji characters (📱, 🎤, 📷, etc.) in the UI
 
-**6. Performance:**
-- No lazy loading for images
-- All documents loaded at once (no infinite scroll)
-- No caching strategy
+**Reason:**
+- Inconsistent rendering across platforms
+- Not themeable (can't change color with CSS)
+- Accessibility issues (screen readers pronounce incorrectly)
+- Not professional in production apps
+
+**Solution:** Use Heroicons
+```erb
+<%# Bad %>
+<span>📱 Telegram</span>
+
+<%# Good %>
+<%= heroicon(:device_phone_mobile, class: 'icon-sm') %> Telegram
+```
+
+**Available Icons:** document, clipboard, device_phone_mobile, microphone, camera, inbox, tag, moon, sun, magnifying_glass, bars_3
+
+**Adding New Icons:**
+1. Find icon at https://heroicons.com/
+2. Copy SVG path data
+3. Add to `HEROICONS` hash in `app/helpers/heroicons_helper.rb`
+4. Use: `<%= heroicon(:new_icon_name) %>`
 
 ---
 

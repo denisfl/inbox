@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 
 // Connects to data-controller="search"
 export default class extends Controller {
-  static targets = ["input", "results", "loading", "count", "time"];
+  static targets = ["input", "results", "loading", "count", "time", "popup"];
   static values = {
     url: String,
   };
@@ -10,10 +10,48 @@ export default class extends Controller {
   connect() {
     console.log("Search controller connected");
     this.searchTimeout = null;
+    this.isPopupOpen = false;
+    
+    // Close popup when clicking outside
+    document.addEventListener('click', this.handleClickOutside.bind(this));
   }
 
   disconnect() {
     this.clearSearchTimeout();
+    document.removeEventListener('click', this.handleClickOutside.bind(this));
+  }
+
+  toggleSearch(event) {
+    event.stopPropagation();
+    this.isPopupOpen = !this.isPopupOpen;
+    
+    if (this.hasPopupTarget) {
+      this.popupTarget.style.display = this.isPopupOpen ? 'block' : 'none';
+      
+      if (this.isPopupOpen && this.hasInputTarget) {
+        setTimeout(() => this.inputTarget.focus(), 100);
+      }
+    }
+  }
+
+  handleClickOutside(event) {
+    if (this.hasPopupTarget && this.isPopupOpen && !this.element.contains(event.target)) {
+      this.isPopupOpen = false;
+      this.popupTarget.style.display = 'none';
+    }
+  }
+
+  handleKeyup(event) {
+    if (event.key === 'Enter') {
+      const query = this.inputTarget.value.trim();
+      if (query.length > 0) {
+        // Redirect to documents index with query parameter
+        window.location.href = `/?q=${encodeURIComponent(query)}`;
+      }
+    } else if (event.key === 'Escape') {
+      this.isPopupOpen = false;
+      this.popupTarget.style.display = 'none';
+    }
   }
 
   search(event) {
