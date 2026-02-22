@@ -1,8 +1,8 @@
 // Service Worker for Inbox PWA
-// Version: 1.0.0
+// Version: 2.0.0 - Network-first for dynamic content
 
-const CACHE_VERSION = 'inbox-v1';
-const OFFLINE_CACHE = 'inbox-offline-v1';
+const CACHE_VERSION = 'inbox-v2';
+const OFFLINE_CACHE = 'inbox-offline-v2';
 
 // Core app shell resources to cache on install
 const APP_SHELL = [
@@ -62,7 +62,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - network-first for dynamic content, cache-first for static assets
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -77,6 +77,48 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Determine caching strategy based on URL
+  const isApiRequest = url.pathname.startsWith('/api/');
+  const isDocumentPage = url.pathname.startsWith('/documents/');
+  const isStaticAsset = url.pathname.startsWith('/assets/') || 
+                        url.pathname.startsWith('/packs/') ||
+                        url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2)$/);
+
+  // Network-first strategy for API requests and document pages
+  if (isApiRequest || isDocumentPage) {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          // Cache successful responses
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(OFFLINE_CACHE).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch((error) => {
+          console.log('[Service Worker] Network failed, trying cache:', url.pathname);
+          // Fallback to cache if network fails
+          return caches.match(request).then((cachedResponse) => {
+            if (cachedResponse) {
+              console.log('[Service Worker] Serving stale data from cache:', url.pathname);
+              return cachedResponse;
+            }
+            // Return offline response
+            return new Response('Offline - No cached data available', {
+              status: 503,
+              statusText: 'Service Unavailable',
+              headers: new Headers({ 'Content-Type': 'text/plain' })
+            });
+          });
+        })
+    );
+    return;
+  }
+
+  // Cache-first strategy for static assets
   event.respondWith(
     caches.match(request)
       .then((cachedResponse) => {

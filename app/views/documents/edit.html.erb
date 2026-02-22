@@ -35,16 +35,80 @@
     <% end %>
   </main>
 
-  <!-- Add Block Button -->
-  <div class="add-block-section">
-    <button type="button" 
-            class="add-block-btn"
-            data-action="click->document-editor#addNewBlock">
-      + Add Block
-    </button>
+  <!-- Add Block Toolbar -->
+  <div class="add-block-toolbar">
+    <div class="toolbar-label">Add block:</div>
+    <div class="toolbar-buttons">
+      <button type="button" 
+              class="toolbar-btn" 
+              data-type="text"
+              data-action="click->document-editor#createBlockOfType"
+              title="Text (Cmd+Shift+1)">
+        <%= heroicon(:document_text, style: 'width: 20px; height: 20px;') %>
+        <span class="toolbar-label-mobile">Text</span>
+      </button>
+      <button type="button" 
+              class="toolbar-btn" 
+              data-type="heading"
+              data-action="click->document-editor#createBlockOfType"
+              title="Heading (Cmd+Shift+2)">
+        <%= heroicon(:hashtag, style: 'width: 20px; height: 20px;') %>
+        <span class="toolbar-label-mobile">Heading</span>
+      </button>
+      <button type="button" 
+              class="toolbar-btn" 
+              data-type="todo"
+              data-action="click->document-editor#createBlockOfType"
+              title="To-do (Cmd+Shift+3)">
+        <%= heroicon(:check_circle, style: 'width: 20px; height: 20px;') %>
+        <span class="toolbar-label-mobile">To-do</span>
+      </button>
+      <button type="button" 
+              class="toolbar-btn" 
+              data-type="code"
+              data-action="click->document-editor#createBlockOfType"
+              title="Code (Cmd+Shift+4)">
+        <%= heroicon(:code_bracket, style: 'width: 20px; height: 20px;') %>
+        <span class="toolbar-label-mobile">Code</span>
+      </button>
+      <button type="button" 
+              class="toolbar-btn" 
+              data-type="quote"
+              data-action="click->document-editor#createBlockOfType"
+              title="Quote (Cmd+Shift+5)">
+        <%= heroicon(:chat_bubble_left_right, style: 'width: 20px; height: 20px;') %>
+        <span class="toolbar-label-mobile">Quote</span>
+      </button>
+      <button type="button" 
+              class="toolbar-btn" 
+              data-type="link"
+              data-action="click->document-editor#createBlockOfType"
+              title="Link (Cmd+Shift+6)">
+        <%= heroicon(:link, style: 'width: 20px; height: 20px;') %>
+        <span class="toolbar-label-mobile">Link</span>
+      </button>
+      <button type="button" 
+              class="toolbar-btn" 
+              data-type="file"
+              data-action="click->document-editor#createBlockOfType"
+              title="File (Cmd+Shift+7)">
+        <%= heroicon(:paper_clip, style: 'width: 20px; height: 20px;') %>
+        <span class="toolbar-label-mobile">File</span>
+      </button>
+      <button type="button" 
+              class="toolbar-btn" 
+              data-type="image"
+              data-action="click->document-editor#createBlockOfType"
+              title="Image (Cmd+Shift+8)">
+        <%= heroicon(:photo, style: 'width: 20px; height: 20px;') %>
+        <span class="toolbar-label-mobile">Image</span>
+      </button>
+    </div>
     <p class="keyboard-hint">
-      <kbd>⌘</kbd> + <kbd>Enter</kbd> to add block · 
-      <kbd>⌘</kbd> + <kbd>Backspace</kbd> to delete
+      Type <kbd>/</kbd> for commands · 
+      <kbd>⌘</kbd> + <kbd>Backspace</kbd> to delete · 
+      <kbd>- [ ]</kbd> for todo · 
+      <kbd>```</kbd> for code
     </p>
   </div>
 </div>
@@ -113,12 +177,12 @@
 
     .block-wrapper {
       position: relative;
-      margin-bottom: 16px;
-      padding-left: 40px;
+      margin-bottom: 8px;  /* Reduced from 16px */
+      padding-left: 40px;  /* Space for controls */
     }
 
     .block-wrapper:hover .block-controls {
-      opacity: 1;
+      opacity: 0.3;  /* Subtle, not full opacity */
     }
 
     .block-controls {
@@ -126,22 +190,41 @@
       left: 0;
       top: 0;
       display: flex;
-      gap: 4px;
+      gap: 2px;  /* Reduced from 4px */
       opacity: 0;
-      transition: opacity 0.2s;
+      transition: opacity 0.2s ease-in-out;
+      width: 35px;  /* Fixed width to prevent overflow */
+      align-items: flex-start;
     }
 
     .block-controls button {
       border: none;
       background: transparent;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 14px;  /* Smaller icons */
       padding: 4px;
+      color: #999;  /* Gray instead of black */
     }
 
     .block-controls button:hover {
       background: #f0f0f0;
       border-radius: 4px;
+      color: #666;  /* Darker on hover */
+    }
+
+    /* Delete button - visible but subtle */
+    .block-delete {
+      opacity: 0.3;
+      transition: opacity 0.2s;
+    }
+
+    .block-wrapper:hover .block-delete {
+      opacity: 0.5;
+    }
+
+    .block-delete:hover {
+      opacity: 1 !important;
+      color: #dc2626 !important;
     }
 
     .block-content {
@@ -154,12 +237,44 @@
       min-height: 40px;
       line-height: 1.6;
       outline: none;
-      border: 2px solid transparent;
+      border: 1px solid transparent;  /* Thinner border */
       border-radius: 4px;
     }
 
     .text-block:focus {
-      border-color: #4CAF50;
+      border-color: rgba(37, 99, 235, 0.2);  /* Very subtle blue */
+      background: rgba(37, 99, 235, 0.02);   /* Barely visible highlight */
+    }
+
+    /* Typography - Headings */
+    h1.text-block, h2.text-block, h3.text-block {
+      font-weight: 600;
+      line-height: 1.2;
+      margin: 0;
+    }
+
+    h1.text-block {
+      font-size: 2em;    /* 32px if base is 16px */
+      margin-top: 0.5em;
+      margin-bottom: 0.25em;
+    }
+
+    h2.text-block {
+      font-size: 1.5em;  /* 24px */
+      margin-top: 0.5em;
+      margin-bottom: 0.25em;
+    }
+
+    h3.text-block {
+      font-size: 1.25em; /* 20px */
+      margin-top: 0.5em;
+      margin-bottom: 0.25em;
+    }
+
+    /* Regular text blocks */
+    span.text-block {
+      font-size: 1em;    /* 16px */
+      line-height: 1.6;
     }
 
     .heading-block {
@@ -263,6 +378,111 @@
       font-size: 12px;
     }
 
+    /* Block Type Toolbar */
+    .add-block-toolbar {
+      padding: 32px 40px;
+      border-top: 3px solid #e5e7eb;
+      background: #f9fafb;
+    }
+
+    .toolbar-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 12px;
+    }
+
+    .toolbar-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 16px;
+      background: white;
+      border: 2px solid #d1d5db;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: #374151;
+      font-size: 12px;
+      min-width: 80px;
+    }
+
+    .toolbar-btn:hover {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .toolbar-btn:active {
+      transform: translateY(0);
+    }
+
+    .toolbar-btn .heroicon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .toolbar-label-mobile {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+
+    /* Slash Command Menu */
+    .slash-command-menu {
+      display: none;
+      background: white;
+      border: 2px solid #d1d5db;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      min-width: 280px;
+      max-height: 400px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+
+    .slash-menu-header {
+      padding: 12px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6b7280;
+      border-bottom: 1px solid #e5e7eb;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .slash-menu-item {
+      display: block;
+      width: 100%;
+      padding: 10px 16px;
+      text-align: left;
+      background: white;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: #374151;
+      transition: background 0.15s ease;
+    }
+
+    .slash-menu-item:hover {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    .slash-menu-item:active {
+      background: #dbeafe;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .editor-header {
@@ -281,8 +501,21 @@
         padding-left: 30px;
       }
 
-      .add-block-section {
+      .add-block-toolbar {
         padding: 20px;
+      }
+
+      .toolbar-buttons {
+        justify-content: space-between;
+      }
+
+      .toolbar-btn {
+        min-width: 70px;
+        padding: 10px 12px;
+      }
+
+      .toolbar-label-mobile {
+        font-size: 10px;
       }
     }
   </style>
