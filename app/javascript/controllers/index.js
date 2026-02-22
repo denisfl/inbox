@@ -10,9 +10,6 @@ application.register("document-editor", DocumentEditorController);
 import SearchController from "./search_controller";
 application.register("search", SearchController);
 
-import SidebarController from "./sidebar_controller";
-application.register("sidebar", SidebarController);
-
 import PwaController from "./pwa_controller";
 application.register("pwa", PwaController);
 
