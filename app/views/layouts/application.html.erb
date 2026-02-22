@@ -1,11 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title><%= content_for(:title) || "App" %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title><%= content_for(:title) || "Inbox - Block Notes" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="App">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="application-name" content="Inbox">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description" content="Capture and organize your thoughts from Telegram">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
@@ -23,7 +25,19 @@
     <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
   </head>
 
-  <body>
-    <%= yield %>
+    <body class="antialiased">
+    <div class="app-container" data-controller="sidebar">
+      <div class="mobile-overlay" data-action="click->sidebar#closeOnOverlay"></div>
+      
+      <%= render "layouts/sidebar" %>
+      
+      <main class="main-content">
+        <%= render "layouts/header" %>
+        
+        <div class="content-wrapper">
+          <%= yield %>
+        </div>
+      </main>
+    </div>
   </body>
 </html>

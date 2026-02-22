@@ -1,0 +1,197 @@
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h1 class="sidebar-logo">
+      <a href="<%= root_path %>" class="sidebar-logo-link">
+        <%= heroicon(:inbox, style: 'width: 1.5rem; height: 1.5rem;') %>
+        <span>Inbox</span>
+      </a>
+    </h1>
+  </div>
+
+  <nav class="sidebar-nav">
+    <section class="nav-section">
+      <h3 class="nav-section-title">Views</h3>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <%= link_to root_path, class: "nav-link #{'active' unless params[:source] || params[:type]}" do %>
+            <%= heroicon(:document, class: 'nav-icon', style: 'width: 1.25rem; height: 1.25rem;') %>
+            <span>All Notes</span>
+            <span class="nav-count"><%= Document.count %></span>
+          <% end %>
+        </li>
+        <li class="nav-item">
+          <%= link_to root_path(source: 'telegram'), class: "nav-link #{'active' if params[:source] == 'telegram'}" do %>
+            <%= heroicon(:device_phone_mobile, class: 'nav-icon', style: 'width: 1.25rem; height: 1.25rem;') %>
+            <span>From Telegram</span>
+            <span class="nav-count"><%= Document.where(source: 'telegram').count %></span>
+          <% end %>
+        </li>
+        <li class="nav-item">
+          <%= link_to root_path(type: 'voice'), class: "nav-link #{'active' if params[:type] == 'voice'}" do %>
+            <%= heroicon(:microphone, class: 'nav-icon', style: 'width: 1.25rem; height: 1.25rem;') %>
+            <span>Voice Notes</span>
+            <span class="nav-count"><%= Document.joins(:blocks).where(blocks: {block_type: 'file'}).where("blocks.content LIKE ?", "%voice%").distinct.count %></span>
+          <% end %>
+        </li>
+        <li class="nav-item">
+          <%= link_to root_path(type: 'photo'), class: "nav-link #{'active' if params[:type] == 'photo'}" do %>
+            <%= heroicon(:camera, class: 'nav-icon', style: 'width: 1.25rem; height: 1.25rem;') %>
+            <span>Photos</span>
+            <span class="nav-count"><%= Document.joins(:blocks).where(blocks: {block_type: 'file'}).where("blocks.content LIKE ?", "%image%").distinct.count %></span>
+          <% end %>
+        </li>
+      </ul>
+    </section>
+
+    <section class="nav-section">
+      <h3 class="nav-section-title">Tags</h3>
+      <ul class="nav-list">
+        <% Tag.includes(:documents).limit(10).each do |tag| %>
+          <li class="nav-item">
+            <%= link_to root_path(tag: tag.name), class: "nav-link #{'active' if params[:tag] == tag.name}" do %>
+              <%= heroicon(:tag, class: 'nav-icon', style: "width: 1.25rem; height: 1.25rem; color: #{tag.color || 'var(--color-text-secondary)'}") %>
+              <span><%= tag.name %></span>
+              <span class="nav-count"><%= tag.documents.count %></span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  </nav>
+</aside>
+
+<style>
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 240px;
+  background-color: var(--color-bg-primary);
+  border-right: 3px solid var(--color-border);  /* Thicker border, Basecamp-style */
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-fixed);
+  transition: transform var(--transition-base);
+}
+
+/* Mobile: hide sidebar by default, slide in when open */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+}
+
+.sidebar-header {
+  padding: var(--spacing-lg) var(--spacing-md);
+  border-bottom: 2px solid var(--color-border);  /* Thicker separator */
+}
+
+.sidebar-logo {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+}
+
+.sidebar-logo-link {
+  color: var(--color-text-primary);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-md) 0;
+}
+
+.nav-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.nav-section-title {
+  padding: 0 var(--spacing-md);
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-item {
+  margin: 0;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-sm);  /* Subtle rounding */
+  margin: 2px var(--spacing-xs);  /* Small margin for breathing room */
+}
+
+.nav-link:hover {
+  background-color: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.nav-link.active {
+  background-color: var(--color-primary);  /* Blue solid color active state */
+  color: white;  /* White text on blue background */
+  font-weight: var(--font-semibold);
+}
+
+.nav-icon {
+  font-size: var(--text-base);
+  width: 1.25rem;
+  text-align: center;
+}
+
+.nav-count {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  background-color: var(--color-bg-tertiary);
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-base);  /* Less pill-shaped */
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+/* Main Content Layout */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 240px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+  }
+}
+</style>

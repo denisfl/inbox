@@ -1,292 +1,144 @@
 <% content_for :title, "Inbox - Documents" %>
+<% content_for :page_title, @page_title || "All Notes" %>
 
-<div class="container">
-  <header>
-    <h1>📥 Inbox</h1>
-    <p class="subtitle">Your block-based notes</p>
-  </header>
-
-  <!-- Search Section -->
-  <div class="search-section"
-       data-controller="search"
-       data-search-url-value="/api/documents/search">
-    <div class="search-box">
-      <input type="search"
-             placeholder="Search documents and blocks..."
-             data-search-target="input"
-             data-action="input->search#search">
-      <span class="search-info">
-        <span data-search-target="count"></span>
-        <span data-search-target="time" class="text-muted"></span>
+<div class="documents-container">
+  <%# Filters and sorting bar %>
+  <div class="filters-bar">
+    <div class="filters-left">
+      <span class="results-count">
+        <%= pluralize(@pagy.count, 'document') %>
       </span>
     </div>
-
-    <div data-search-target="loading" class="loading hidden">
-      Searching...
-    </div>
-
-    <div data-search-target="results" class="search-results"></div>
-  </div>
-
-  <main>
-    <div class="documents-list">
-      <% if @documents.any? %>
-          <% @documents.each do |document| %>
-            <div class="document-card">
-              <h2><%= link_to document.title, edit_document_path(document) %></h2>
-              <div class="document-meta">
-                <span class="block-count"><%= pluralize(document.blocks.size, "block") %></span>
-                <span class="tags">
-                  <% document.tags.each do |tag| %>
-                    <span class="tag"><%= tag.name %></span>
-                  <% end %>
-                </span>
-                <span class="updated">Updated <%= time_ago_in_words(document.updated_at) %> ago</span>
-              </div>
-            </div>
-          <% end %>
-        <% else %>
-          <div class="empty-state">
-            <p>No documents yet.</p>
-            <p class="hint">Create one via Telegram bot or API</p>
-          </div>
-        <% end %>
+    
+    <div class="filters-right">
+      <div class="sort-dropdown">
+        <label for="sort-select" class="sr-only">Sort by</label>
+        <select id="sort-select" class="input input-sm" onchange="window.location.href='<%= request.path %>?<%= request.query_parameters.except(:sort).to_query %>&sort=' + this.value">
+          <option value="updated_desc" <%= 'selected' if params[:sort] == 'updated_desc' || params[:sort].blank? %>>Recently updated</option>
+          <option value="created_desc" <%= 'selected' if params[:sort] == 'created_desc' %>>Newest first</option>
+          <option value="created_asc" <%= 'selected' if params[:sort] == 'created_asc' %>>Oldest first</option>
+          <option value="title_asc" <%= 'selected' if params[:sort] == 'title_asc' %>>Title (A-Z)</option>
+          <option value="title_desc" <%= 'selected' if params[:sort] == 'title_desc' %>>Title (Z-A)</option>
+        </select>
       </div>
-    </main>
+    </div>
   </div>
 
-  <style>
-    * { box-sizing: border-box; }
+  <%# Documents grid %>
+  <% if @documents.any? %>
+    <div class="documents-grid">
+      <% @documents.each do |document| %>
+        <%= render 'documents/card', document: document %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="empty-state">
+      <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+      </svg>
+      <h2 class="empty-state-title">No documents yet</h2>
+      <p class="empty-state-description">
+        Start capturing your thoughts by sending messages to your Telegram bot
+      </p>
+      <div class="empty-state-actions">
+        <a href="https://t.me/inbox_fl_bot" target="_blank" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+          </svg>
+          Open Telegram Bot
+        </a>
+      </div>
+    </div>
+    
+    <%# Pagy pagination %>
+    <% if @pagy.pages > 1 %>
+      <div class="pagination-wrapper">
+        <%== pagy_nav(@pagy) %>
+      </div>
+    <% end %>
+  <% end %>
+</div>
 
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f5f5f5;
-    }
+<style>
+.documents-container {
+  width: 100%;
+}
 
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 40px 20px;
-    }
+.filters-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
 
-    /* Search Styles */
-    .search-section {
-      margin-bottom: 30px;
-      background: white;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
+.filters-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
 
-    .search-box {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      margin-bottom: 15px;
-    }
+.results-count {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-medium);
+}
 
-    .search-box input[type="search"] {
-      flex: 1;
-      padding: 12px 16px;
-      border: 2px solid #e0e0e0;
-      border-radius: 6px;
-      font-size: 16px;
-      transition: border-color 0.2s;
-    }
+.filters-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
 
-    .search-box input[type="search"]:focus {
-      outline: none;
-      border-color: #4CAF50;
-    }
+.sort-dropdown {
+  position: relative;
+}
 
-    .search-info {
-      font-size: 14px;
-      color: #666;
-    }
+.input-sm {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--text-sm);
+}
 
-    .text-muted {
-      color: #999;
-      margin-left: 8px;
-    }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
 
-    .loading {
-      text-align: center;
-      padding: 20px;
-      color: #666;
-    }
+.documents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--spacing-lg);
+}
 
-    .loading.hidden {
-      display: none;
-    }
-
-    .search-results {
-      margin-top: 20px;
-    }
-
-    .search-result {
-      padding: 16px;
-      border-bottom: 1px solid #e0e0e0;
-    }
-
-    .search-result:last-child {
-      border-bottom: none;
-    }
-
-    .result-title a {
-      color: #1976D2;
-      text-decoration: none;
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .result-title a:hover {
-      text-decoration: underline;
-    }
-
-    .result-title mark {
-      background: #FFEB3B;
-      padding: 2px 4px;
-      border-radius: 2px;
-    }
-
-    .result-meta {
-      display: flex;
-      gap: 15px;
-      margin: 8px 0;
-      font-size: 13px;
-      color: #666;
-    }
-
-    .result-source {
-      background: #E3F2FD;
-      padding: 2px 8px;
-      border-radius: 12px;
-      text-transform: uppercase;
-      font-size: 11px;
-      font-weight: 600;
-    }
-
-    .result-snippet {
-      color: #333;
-      line-height: 1.6;
-      margin: 8px 0 0 0;
-    }
-
-    .result-snippet mark {
-      background: #FFEB3B;
-      padding: 2px 4px;
-      border-radius: 2px;
-      font-weight: 600;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 40px;
-      color: #666;
-    }
-
-    .error-state {
-      text-align: center;
-      padding: 20px;
-      color: #f44336;
-      background: #FFEBEE;
-      border-radius: 6px;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-
-    header h1 {
-      font-size: 48px;
-      margin: 0;
-      color: #333;
-    }
-
-    .subtitle {
-      color: #666;
-      margin: 8px 0 0;
-      font-size: 18px;
-    }
-
-    .documents-list {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .document-card {
-      background: white;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .document-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-    }
-
-    .document-card h2 {
-      margin: 0 0 12px;
-      font-size: 20px;
-    }
-
-    .document-card h2 a {
-      color: #333;
-      text-decoration: none;
-    }
-
-    .document-card h2 a:hover {
-      color: #4CAF50;
-    }
-
-    .document-meta {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      font-size: 14px;
-      color: #666;
-    }
-
-    .tag {
-      background: #e8f5e9;
-      color: #2e7d32;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      display: inline-block;
-      margin-right: 4px;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 80px 20px;
-      color: #999;
-    }
-
-    .empty-state p {
-      margin: 8px 0;
-    }
-
-    .hint {
-      font-size: 14px;
-    }
-
-    @media (max-width: 768px) {
-      .container {
-        padding: 20px;
-      }
-
-      header h1 {
-        font-size: 36px;
-      }
-
-      .document-card {
-        padding: 20px;
-      }
-    }
-  </style>
+@media (max-width: 768px) {
+  .documents-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+  
+  .filters-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filters-right {
+    width: 100%;
+  }
+  
+  .sort-dropdown {
+    width: 100%;
+  }
+  
+  .sort-dropdown select {
+    width: 100%;
+  }
+}
+</style>
