@@ -66,6 +66,25 @@ class DocumentsController < ApplicationController
     @blocks = @document.blocks.ordered
   end
 
+  def new
+    # Create a new document with initial empty text block
+    @document = Document.create!(
+      title: "Untitled",
+      source: "web"
+    )
+    
+    # Create initial text block
+    block = @document.blocks.new(
+      block_type: "text",
+      position: 0
+    )
+    block.content_hash = { text: "" }
+    block.save!
+    
+    # Redirect to edit page with 303 status (prevents Turbo caching)
+    redirect_to edit_document_path(@document), status: :see_other
+  end
+
   private
 
   def set_document

@@ -1,12 +1,12 @@
 // Service Worker for Inbox PWA
-// Version: 2.0.0 - Network-first for dynamic content
+// Version: 2.1.0 - Network-first for root path
 
-const CACHE_VERSION = 'inbox-v2';
-const OFFLINE_CACHE = 'inbox-offline-v2';
+const CACHE_VERSION = 'inbox-v2.1';
+const OFFLINE_CACHE = 'inbox-offline-v2.1';
 
 // Core app shell resources to cache on install
+// Note: Root path (/) is excluded to always fetch fresh document list
 const APP_SHELL = [
-  '/',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
@@ -79,13 +79,14 @@ self.addEventListener('fetch', (event) => {
 
   // Determine caching strategy based on URL
   const isApiRequest = url.pathname.startsWith('/api/');
-  const isDocumentPage = url.pathname.startsWith('/documents/');
+  const isDocumentPage = url.pathname.startsWith('/documents');
+  const isRootPath = url.pathname === '/';
   const isStaticAsset = url.pathname.startsWith('/assets/') || 
                         url.pathname.startsWith('/packs/') ||
                         url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2)$/);
 
-  // Network-first strategy for API requests and document pages
-  if (isApiRequest || isDocumentPage) {
+  // Network-first strategy for API requests, document pages, and root (document list)
+  if (isApiRequest || isDocumentPage || isRootPath) {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
