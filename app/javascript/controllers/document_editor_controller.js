@@ -200,7 +200,6 @@ export default class extends Controller {
           id: null,
           block_type: type,
           content: content,
-          position: this.blocksContainerTarget.children.length,
         };
         
         this.addBlockToDOM(newBlock);
@@ -386,7 +385,6 @@ export default class extends Controller {
       id: null,
       block_type: blockType,
       content: this.formatBlockContent(blockType, content, additionalText),
-      position: afterPosition + 1
     };
     
     console.log('Creating new block:', newBlock);
@@ -550,12 +548,11 @@ export default class extends Controller {
     }
     
     // Create a new todo block below
-    const position = parseInt(blockWrapper.dataset.position) + 1;
+    // Don't send position - let server auto-assign via set_default_position to avoid race conditions
     const newBlock = {
       id: null,
       block_type: "todo",
       content: { text: "", checked: false },
-      position: position,
     };
     
     // Insert new block after current one in DOM
@@ -621,7 +618,6 @@ export default class extends Controller {
       this.createBlockOnServer({
         block_type: blockType,
         content,
-        position: blockWrapper.dataset.position,
       });
     } else {
       // Update existing block
@@ -1294,7 +1290,6 @@ export default class extends Controller {
       id: null,
       block_type: type,
       content: content,
-      position: this.blocksContainerTarget.children.length,
     };
 
     console.log("Creating block of type:", type, content);

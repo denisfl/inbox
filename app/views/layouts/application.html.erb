@@ -27,7 +27,7 @@
     <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
   </head>
 
-    <body class="antialiased" data-controller="pwa">
+    <body class="antialiased" data-controller="pwa keyboard">
     <div class="app-container">
       <main class="main-content">
         <%= render "layouts/header" %>
@@ -36,21 +36,6 @@
           <%= yield %>
         </div>
       </main>
-      
-      <%# PWA Install Button (shown on mobile when installable) %>
-      <div class="pwa-install-prompt hidden" data-pwa-target="installButton">
-        <div class="pwa-install-card">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 5v14m0 0l7-7m-7 7l-7-7"/>
-          </svg>
-          <div class="pwa-install-content">
-            <h3>Install Inbox</h3>
-            <p>Install this app on your device for quick access and offline use</p>
-          </div>
-          <button class="btn btn-primary" data-action="click->pwa#install">Install</button>
-          <button class="btn btn-text" data-action="click->pwa#hideInstallButton">Not now</button>
-        </div>
-      </div>
       
       <%# PWA Update Button (shown when new version available) %>
       <div class="pwa-update-banner hidden" data-pwa-target="updateButton">
