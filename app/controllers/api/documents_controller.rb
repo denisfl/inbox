@@ -80,7 +80,7 @@ class Api::DocumentsController < Api::BaseController
   end
 
   def document_params
-    params.require(:document).permit(:title, :slug, :source, :body, tag_ids: [])
+    params.require(:document).permit(:title, :slug, :source, tag_ids: [])
   end
 
   def document_summary(doc)
@@ -102,7 +102,6 @@ class Api::DocumentsController < Api::BaseController
       title: doc.title,
       slug: doc.slug,
       source: doc.source,
-      body: doc.body,
       blocks: doc.blocks.ordered.map { |block| serialize_block(block) },
       tags: doc.tags.map { |tag| { id: tag.id, name: tag.name } },
       created_at: doc.created_at,

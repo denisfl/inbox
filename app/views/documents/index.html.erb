@@ -8,6 +8,13 @@
       <span class="results-count">
         <%= pluralize(@pagy.count, 'document') %>
       </span>
+      
+      <%= link_to new_note_path, class: "btn btn-primary btn-new-note", data: { turbo: false } do %>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        New Note
+      <% end %>
     </div>
     
     <div class="filters-right">
@@ -38,10 +45,16 @@
       </svg>
       <h2 class="empty-state-title">No documents yet</h2>
       <p class="empty-state-description">
-        Start capturing your thoughts by sending messages to your Telegram bot
+        Start capturing your thoughts by creating a new note or sending messages to your Telegram bot
       </p>
       <div class="empty-state-actions">
-        <a href="https://t.me/inbox_fl_bot" target="_blank" class="btn btn-primary">
+        <%= link_to new_note_path, class: "btn btn-primary", data: { turbo: false } do %>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          New Note
+        <% end %>
+        <a href="https://t.me/inbox_fl_bot" target="_blank" class="btn btn-secondary">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
           </svg>
@@ -140,5 +153,26 @@
   .sort-dropdown select {
     width: 100%;
   }
+}
+
+.btn-new-note {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  background-color: #4CAF50;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.btn-new-note:hover {
+  background-color: #45a049;
+}
+
+.btn-new-note svg {
+  flex-shrink: 0;
 }
 </style>

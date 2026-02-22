@@ -678,6 +678,46 @@ export default class extends Controller {
     }
   }
 
+  // Save document title
+  saveTitle(event) {
+    const titleElement = event.target;
+    const newTitle = titleElement.innerText.trim();
+    const documentId = titleElement.dataset.documentId;
+    
+    console.log('Saving title:', { documentId, newTitle });
+    
+    this.debouncedSave(() => {
+      console.log('Debounced title save executing');
+      this.updateDocumentTitle(documentId, newTitle);
+    });
+  }
+
+  async updateDocumentTitle(documentId, title) {
+    try {
+      const response = await fetch(
+        `/api/documents/${documentId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Token token=${this.getAuthToken()}`,
+          },
+          body: JSON.stringify({ document: { title } }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to update title');
+      }
+
+      this.showSaveIndicator('saved');
+      console.log('✅ Title saved');
+    } catch (error) {
+      console.error('Title update error:', error);
+      this.showSaveIndicator('error');
+    }
+  }
+
   // Debounced save
   debouncedSave(callback) {
     this.clearSaveTimeout();

@@ -46,7 +46,10 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Web UI routes
-  resources :documents, only: [:index, :show, :edit]
+  resources :documents, only: [:index, :show, :edit, :new]
+  
+  # Shortcut for creating new document
+  get '/new', to: 'documents#new', as: :new_note
 
   # Root path
   root "documents#index"
