@@ -12,7 +12,7 @@
   <header class="editor-header">
     <div class="header-left">
       <%= link_to documents_path, class: "back-link" do %>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
         Back
@@ -146,9 +146,17 @@
     }
 
     .back-link {
+      display: flex;
+      align-items: center;
+      gap: 4px;
       text-decoration: none;
       color: #666;
       font-size: 14px;
+      transition: color var(--transition-fast);
+    }
+
+    .back-link:hover {
+      color: var(--color-primary);
     }
 
     .document-title {

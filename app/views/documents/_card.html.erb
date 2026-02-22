@@ -91,17 +91,18 @@
   border: 2px solid var(--color-border);  /* Thicker Basecamp border */
   border-radius: var(--radius-md);  /* Less rounded */
   padding: var(--spacing-md);
-  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+  transition: all var(--transition-base);  /* Smooth all properties */
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
   box-shadow: var(--shadow-sm);
+  cursor: pointer;
 }
 
 .document-card:hover {
-  /* No lift effect - keep grounded, Basecamp-style */
-  box-shadow: var(--shadow-base);
-  border-color: var(--color-border-hover);
+  transform: translateY(-2px);  /* Subtle lift */
+  box-shadow: var(--shadow-md);  /* Stronger shadow */
+  border-color: var(--color-primary);  /* Highlight border */
 }
 
 .card-header {

@@ -16,7 +16,7 @@ RSpec.describe "Api::Blocks", type: :request do
       {
         block: {
           block_type: 'text',
-          content: { text: 'Hello world' }.to_json
+          content: { text: 'Hello world' }  # Should be Hash, not JSON string
         }
       }
     end
@@ -89,7 +89,7 @@ RSpec.describe "Api::Blocks", type: :request do
     context "with valid parameters" do
       it "updates the block content" do
         patch "/api/documents/#{document.id}/blocks/#{block.id}",
-              params: { block: { content: { text: 'Updated text' }.to_json } }.to_json,
+              params: { block: { content: { text: 'Updated text' } } }.to_json,
               headers: headers
 
         expect(response).to have_http_status(:success)
