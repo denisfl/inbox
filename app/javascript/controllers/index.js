@@ -13,5 +13,8 @@ application.register("search", SearchController);
 import SidebarController from "./sidebar_controller";
 application.register("sidebar", SidebarController);
 
+import PwaController from "./pwa_controller";
+application.register("pwa", PwaController);
+
 import HelloController from "./hello_controller";
 application.register("hello", HelloController);
