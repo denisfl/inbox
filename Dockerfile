@@ -143,11 +143,6 @@ COPY --from=builder --chown=rails:rails /app/node_modules ./node_modules
 COPY --from=builder --chown=rails:rails /app/public/assets ./public/assets
 COPY --chown=rails:rails . .
 
-# Ensure bundle config persists for runtime
-RUN bundle config set deployment true && \
-    bundle config set without "development test" && \
-    bundle config set frozen true
-
 # Create dirs
 RUN mkdir -p /app/log /app/tmp /app/db && \
     chown -R rails:rails /app
