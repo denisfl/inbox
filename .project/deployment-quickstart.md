@@ -2,7 +2,8 @@
 
 **Goal:** Deploy Inbox to Raspberry Pi 5 with secure access via existing WireGuard VPN + nginx reverse proxy on Digital Ocean.
 
-**Result:** 
+**Result:**
+
 - Private web UI: `https://inbox.fedosov.me` (requires password)
 - Telegram webhook: `https://inbox.fedosov.me/api/telegram/webhook` (public, rate-limited)
 
@@ -25,18 +26,25 @@
 # Install WireGuard
 sudo apt update && sudo apt install wireguard
 
-# Create config (you'll need to get this from your DO server)
+# Generate a key pair for the RPi
+wg genkey | sudo tee /etc/wireguard/rpi_private.key | wg pubkey | sudo tee /etc/wireguard/rpi_public.key
+sudo chmod 600 /etc/wireguard/rpi_private.key
+
+# Show the RPi public key — you'll need it when adding the peer on the DO server
+sudo cat /etc/wireguard/rpi_public.key
+
+# Create WireGuard config (replace RPI_PRIVATE_KEY with the generated key above)
 sudo nano /etc/wireguard/wg0.conf
 
-# Paste config:
+# Paste this config:
 [Interface]
-PrivateKey = <ASK_DENIS_FOR_PRIVATE_KEY>
-Address = 10.0.0.5/24  # Or your VPN subnet
+PrivateKey = <RPI_PRIVATE_KEY>   # output of: sudo cat /etc/wireguard/rpi_private.key
+Address = 10.8.0.5/24
 
 [Peer]
-PublicKey = <DO_SERVER_PUBLIC_KEY>
-Endpoint = <DO_SERVER_IP>:51820
-AllowedIPs = 10.0.0.0/24
+PublicKey = ug2/hhHssk55S4H2BkMaWjHLtPKmXUaCbQhvoXPpdg8=
+Endpoint = 178.128.198.105:51820
+AllowedIPs = 10.8.0.0/24
 PersistentKeepalive = 25
 
 # Start WireGuard
@@ -44,26 +52,29 @@ sudo wg-quick up wg0
 sudo systemctl enable wg-quick@wg0
 
 # Verify connection
-ping 10.0.0.1  # Should reach DO server
+ping 10.8.0.1  # Should reach DO server
 ```
 
 ### On Digital Ocean VPS:
 
 ```bash
-# Add RPi peer to WireGuard config
+# Add RPi peer to the WireGuard server config
 sudo nano /etc/wireguard/wg0.conf
 
-# Add new [Peer] section:
+# Add this [Peer] block (use the RPi public key from the step above):
 [Peer]
-PublicKey = <RPI_PUBLIC_KEY>
-AllowedIPs = 10.0.0.5/32
+# Description = Raspberry Pi 5
+PublicKey = <RPI_PUBLIC_KEY>   # sudo cat /etc/wireguard/rpi_public.key
+AllowedIPs = 10.8.0.5/32
 
-# Restart WireGuard
-sudo wg-quick down wg0
-sudo wg-quick up wg0
+# Reload WireGuard without dropping existing connections (preferred)
+sudo wg syncconf wg0 <(sudo wg-quick strip wg0)
+
+# Or full restart if syncconf is unavailable:
+# sudo wg-quick down wg0 && sudo wg-quick up wg0
 
 # Test from DO server
-ping 10.0.0.5  # Should reach RPi after Docker starts
+ping 10.8.0.5  # Should reach RPi after Docker starts
 ```
 
 ---
@@ -133,7 +144,7 @@ Paste this config:
 server {
     listen 80;
     server_name inbox.fedosov.me;
-    
+
     # Redirect HTTP to HTTPS
     return 301 https://$server_name$request_uri;
 }
@@ -141,42 +152,42 @@ server {
 server {
     listen 443 ssl http2;
     server_name inbox.fedosov.me;
-    
+
     # SSL certificates (will be created by certbot)
     ssl_certificate /etc/letsencrypt/live/inbox.fedosov.me/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/inbox.fedosov.me/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
-    
+
     # Security headers
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload";
     add_header X-Content-Type-Options "nosniff";
     add_header X-Frame-Options "DENY";
     add_header Referrer-Policy "no-referrer-when-downgrade";
-    
+
     # Telegram webhook - NO AUTH (bot needs access)
     location /api/telegram/ {
-        proxy_pass http://10.0.0.5:3000;  # RPi WireGuard IP
+        proxy_pass http://10.8.0.5:3000;  # RPi WireGuard IP
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         # Rate limiting
         limit_req zone=telegram burst=10 nodelay;
     }
-    
+
     # All other routes - REQUIRE AUTH (private)
     location / {
         auth_basic "Private Access";
         auth_basic_user_file /etc/nginx/.htpasswd;
-        
-        proxy_pass http://10.0.0.5:3000;
+
+        proxy_pass http://10.8.0.5:3000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         # WebSocket support
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -193,10 +204,10 @@ sudo nano /etc/nginx/nginx.conf
 # Find the http {} block and add:
 http {
     # ... existing config ...
-    
+
     # Rate limiting for Telegram webhook
     limit_req_zone $binary_remote_addr zone=telegram:10m rate=30r/m;
-    
+
     # ... rest of config ...
 }
 ```
@@ -223,16 +234,37 @@ sudo systemctl reload nginx
 ## Step 4: Register Telegram Webhook (2 min)
 
 ```bash
-# From any machine
-curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://inbox.fedosov.me/api/telegram/webhook"}'
+# From the repo root on the Raspberry Pi (~/inbox after cloning):
+# Create a `secrets/` directory (this is referenced by `docker-compose.yml`)
+mkdir -p ./secrets
+
+# Put your Telegram bot token (from BotFather) into a file
+printf "%s" "<YOUR_BOT_TOKEN>" > ./secrets/telegram_bot_token
+chmod 600 ./secrets/telegram_bot_token
+
+# Generate a strong webhook secret token (example: 32 bytes hex)
+SECRET_TOKEN=$(openssl rand -hex 32)
+printf "%s" "$SECRET_TOKEN" > ./secrets/telegram_webhook_secret_token
+chmod 600 ./secrets/telegram_webhook_secret_token
+
+# Start containers (they will load secrets into ENV via entrypoint)
+docker compose build --pull
+docker compose up -d
+
+# Register webhook with Telegram including the `secret_token` so Telegram
+# sends `X-Telegram-Bot-Api-Secret-Token` header with each request.
+BOT_TOKEN=$(cat ./secrets/telegram_bot_token)
+SECRET_TOKEN=$(cat ./secrets/telegram_webhook_secret_token)
+
+curl -X POST "https://api.telegram.org/bot${BOT_TOKEN}/setWebhook" \
+    -H "Content-Type: application/json" \
+    -d "{\"url\": \"https://inbox.fedosov.me/api/telegram/webhook\", \"secret_token\": \"${SECRET_TOKEN}\"}"
 
 # Expected response:
 # {"ok":true,"result":true,"description":"Webhook was set"}
 
 # Verify:
-curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getWebhookInfo"
+curl "https://api.telegram.org/bot${BOT_TOKEN}/getWebhookInfo"
 ```
 
 ---
@@ -240,6 +272,7 @@ curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getWebhookInfo"
 ## Step 5: Test Everything (5 min)
 
 ### Test 1: Web UI (requires password)
+
 ```bash
 # Open in browser:
 https://inbox.fedosov.me/
@@ -249,6 +282,7 @@ https://inbox.fedosov.me/
 ```
 
 ### Test 2: Telegram Bot
+
 ```bash
 # Open Telegram: @inbox_fl_bot
 # Send test message: "Hello from production!"
@@ -258,6 +292,7 @@ https://inbox.fedosov.me/
 ```
 
 ### Test 3: Voice Transcription
+
 ```bash
 # In Telegram:
 # - Record voice message
@@ -301,6 +336,7 @@ df -h  # Disk space
 ## Backup Strategy
 
 ### Daily Database Backup (cron):
+
 ```bash
 # On Raspberry Pi
 crontab -e
@@ -313,6 +349,7 @@ mkdir -p ~/inbox/storage/backups
 ```
 
 ### Weekly Full Backup:
+
 ```bash
 # If using external SSD
 0 3 * * 0 tar -czf /mnt/ssd/backups/inbox-$(date +\%Y\%m\%d).tar.gz ~/inbox/storage
@@ -323,20 +360,22 @@ mkdir -p ~/inbox/storage/backups
 ## Troubleshooting
 
 ### Issue: RPi can't reach DO server via WireGuard
+
 ```bash
 # On RPi
 sudo wg show  # Check WireGuard status
-ping 10.0.0.1  # Test connectivity
+ping 10.8.0.1  # Test connectivity to DO server
 
 # On DO
-sudo wg show  # Should see RPi peer
+sudo wg show  # Should see RPi peer (10.8.0.5)
 ```
 
 ### Issue: nginx 502 Bad Gateway
+
 ```bash
 # Check if RPi is reachable from DO
 ssh do-server
-ping 10.0.0.5  # Should work
+ping 10.8.0.5  # Should work
 
 # Check if Inbox web container is running
 ssh rpi
@@ -345,6 +384,7 @@ curl http://localhost:3000/up  # Should return "ok"
 ```
 
 ### Issue: Telegram webhook not working
+
 ```bash
 # Check webhook status
 curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
@@ -357,6 +397,7 @@ docker compose logs web --tail=100 | grep telegram
 ```
 
 ### Issue: Transcription not working
+
 ```bash
 # Check Whisper service
 docker compose exec whisper curl http://localhost:5000/health
@@ -376,25 +417,28 @@ docker compose exec web bin/rails console
 
 - ✅ Web UI protected by HTTP Basic Auth
 - ✅ Telegram webhook rate-limited (30 req/min)
+- ✅ Telegram webhook validated via `X-Telegram-Bot-Api-Secret-Token` header
 - ✅ All traffic encrypted (HTTPS + WireGuard)
 - ✅ Only authorized Telegram user ID (check in controller)
 - ✅ SSL certificate auto-renewed by certbot
 - ✅ UFW firewall on DO (ports 22, 80, 443, 51820)
 - ✅ SSH keys only (no password login)
 - ✅ fail2ban for SSH brute-force protection
+- ✅ Secrets stored in `./secrets/` (excluded from git via .gitignore)
+- ⚠️ Rotate WireGuard private keys if they have been shared outside the device
 
 ---
 
 ## Estimated Timeline
 
-| Step | Time | Notes |
-|------|------|-------|
-| WireGuard setup | 15 min | If config already exists |
-| Deploy Inbox on RPi | 20 min | First build takes longer |
-| nginx configuration | 15 min | Includes SSL setup |
-| Telegram webhook | 2 min | Just one curl command |
-| Testing | 5 min | End-to-end verification |
-| **Total** | **~1 hour** | Assuming no issues |
+| Step                | Time        | Notes                    |
+| ------------------- | ----------- | ------------------------ |
+| WireGuard setup     | 15 min      | If config already exists |
+| Deploy Inbox on RPi | 20 min      | First build takes longer |
+| nginx configuration | 15 min      | Includes SSL setup       |
+| Telegram webhook    | 2 min       | Just one curl command    |
+| Testing             | 5 min       | End-to-end verification  |
+| **Total**           | **~1 hour** | Assuming no issues       |
 
 ---
 
@@ -418,5 +462,5 @@ If you encounter issues or have questions during deployment:
 
 ---
 
-**Last updated:** 2026-02-21  
+**Last updated:** 2026-02-25  
 **Tested on:** Raspberry Pi 5 (8GB), Raspberry Pi OS 64-bit, Docker 26.0.0

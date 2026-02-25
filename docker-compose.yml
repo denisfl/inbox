@@ -84,6 +84,9 @@ services:
       retries: 3
       start_period: 40s
     restart: unless-stopped
+    secrets:
+      - telegram_bot_token
+      - telegram_webhook_secret_token
 
   # Sidekiq worker (background jobs)
   worker:
@@ -108,6 +111,9 @@ services:
       - redis
       - web
     restart: unless-stopped
+    secrets:
+      - telegram_bot_token
+      - telegram_webhook_secret_token
 
   # Whisper - Audio transcription service
   whisper:
@@ -137,3 +143,9 @@ volumes:
   log_data:
   whisper_models:
   # postgres_data:  # Uncomment if using PostgreSQL
+
+secrets:
+  telegram_bot_token:
+    file: ./secrets/telegram_bot_token
+  telegram_webhook_secret_token:
+    file: ./secrets/telegram_webhook_secret_token

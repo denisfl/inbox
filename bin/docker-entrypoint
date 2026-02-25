@@ -5,4 +5,13 @@ if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
 fi
 
+# Load Docker secrets (if present) into environment variables
+if [ -r /run/secrets/telegram_bot_token ]; then
+  export TELEGRAM_BOT_TOKEN=$(cat /run/secrets/telegram_bot_token)
+fi
+
+if [ -r /run/secrets/telegram_webhook_secret_token ]; then
+  export TELEGRAM_WEBHOOK_SECRET_TOKEN=$(cat /run/secrets/telegram_webhook_secret_token)
+fi
+
 exec "${@}"
