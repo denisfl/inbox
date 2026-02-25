@@ -1,0 +1,54 @@
+# Production overrides for docker-compose.yml
+# Usage: docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
+
+services:
+  web:
+    build:
+      target: production
+    command: bundle exec rails server -b 0.0.0.0
+    # Do NOT mount source code in production — image is self-contained
+    volumes:
+      - storage_data:/app/storage
+      - log_data:/app/log
+    environment:
+      - RAILS_ENV=production
+      - DATABASE_URL=sqlite3:/app/storage/production.sqlite3
+      - REDIS_URL=redis://redis:6379/0
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - RAILS_LOG_TO_STDOUT=true
+      # Secrets loaded from /run/secrets/* by bin/docker-entrypoint
+      # TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET_TOKEN are injected automatically
+      - TELEGRAM_BOT_NAME=${TELEGRAM_BOT_NAME}
+      - TELEGRAM_ALLOWED_USER_ID=${TELEGRAM_ALLOWED_USER_ID}
+      - TELEGRAM_WEBHOOK_URL=${TELEGRAM_WEBHOOK_URL}
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
+      - WHISPER_BASE_URL=http://whisper:5000
+    ports:
+      - "3000:3000"
+
+  worker:
+    build:
+      target: production
+    command: bundle exec sidekiq -C config/sidekiq.yml
+    volumes:
+      - storage_data:/app/storage
+      - log_data:/app/log
+    environment:
+      - RAILS_ENV=production
+      - DATABASE_URL=sqlite3:/app/storage/production.sqlite3
+      - REDIS_URL=redis://redis:6379/0
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - RAILS_LOG_TO_STDOUT=true
+      - TELEGRAM_ALLOWED_USER_ID=${TELEGRAM_ALLOWED_USER_ID}
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
+      - WHISPER_BASE_URL=http://whisper:5000
+
+  # Close internal ports in production
+  redis:
+    ports: []
+
+  ollama:
+    ports: []
+
+  whisper:
+    ports: []
