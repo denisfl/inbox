@@ -5,6 +5,7 @@ require 'telegram/bot'
 module Api
   class TelegramController < ApplicationController
     skip_before_action :verify_authenticity_token
+    before_action :validate_telegram_secret
     before_action :validate_user_authorization
 
     def webhook
@@ -25,13 +26,28 @@ module Api
 
     private
 
+    def validate_telegram_secret
+      configured = ENV['TELEGRAM_WEBHOOK_SECRET_TOKEN'].to_s
+      return true if configured.empty?
+
+      header = request.headers['X-Telegram-Bot-Api-Secret-Token'] || request.headers['HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN']
+
+      unless ActiveSupport::SecurityUtils.secure_compare(header.to_s, configured)
+        Rails.logger.warn("Invalid Telegram webhook secret token: #{header}")
+        head :forbidden
+        return false
+      end
+
+      true
+    end
+
     def validate_user_authorization
       # Extract user_id from the update
       user_id = extract_user_id
 
       unless user_id.to_s == ENV['TELEGRAM_ALLOWED_USER_ID']
         Rails.logger.warn("Unauthorized Telegram user: #{user_id}")
-        send_telegram_reply("❌ You are not authorized to use this bot.")
+        send_telegram_reply("You are not authorized to use this bot.")
         head :ok
         return false
       end

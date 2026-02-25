@@ -99,3 +99,11 @@ tmp/
 
 # Docker volumes (if mounted locally)
 /vendor/bundle
+
+# ========================================
+# SECRETS - SECURITY CRITICAL
+# ========================================
+# Docker secrets and private keys (bot token, webhook secret, WireGuard keys)
+# NEVER commit these files!
+/secrets/*
+!/secrets/.keep
