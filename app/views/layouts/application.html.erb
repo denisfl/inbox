@@ -12,6 +12,7 @@
     <meta name="theme-color" content="#2563eb">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <meta name="auth-token" content="<%= ENV.fetch('API_TOKEN', 'development_token') %>">
 
     <%= yield :head %>
 
