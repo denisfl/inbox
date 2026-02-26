@@ -30,7 +30,7 @@ services:
   worker:
     build:
       target: production
-    command: bundle exec sidekiq -C config/sidekiq.yml
+    command: bundle exec rails solid_queue:start
     volumes:
       - storage_data:/app/storage
       - log_data:/app/log
