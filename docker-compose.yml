@@ -2,8 +2,6 @@ services:
   # Redis - Cache and job queue
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -16,8 +14,6 @@ services:
   # Ollama - AI classification (mistral 4.1GB model)
   ollama:
     image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
     environment:
@@ -102,6 +98,12 @@ services:
     depends_on:
       - redis
       - web
+    healthcheck:
+      test: ["CMD-SHELL", "bundle exec sidekiqmon processes 2>/dev/null | grep -q . || pgrep -f sidekiq > /dev/null"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
     secrets:
       - telegram_bot_token
@@ -111,8 +113,6 @@ services:
   whisper:
     build:
       context: ./whisper_service
-    ports:
-      - "5001:5000"
     volumes:
       - ./tmp/audio:/tmp/audio
       - whisper_models:/root/.cache/huggingface
