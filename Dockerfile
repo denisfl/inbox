@@ -143,8 +143,8 @@ COPY --from=builder --chown=rails:rails /app/node_modules ./node_modules
 COPY --from=builder --chown=rails:rails /app/public/assets ./public/assets
 COPY --chown=rails:rails . .
 
-# Create dirs
-RUN mkdir -p /app/log /app/tmp /app/db && \
+# Create dirs with all Rails tmp subdirectories
+RUN mkdir -p /app/log /app/tmp/cache /app/tmp/pids /app/tmp/sockets /app/db && \
     chown -R rails:rails /app
 
 USER rails
