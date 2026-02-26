@@ -5,10 +5,20 @@ class ApplicationController < ActionController::Base
   # Include Pagy backend
   include Pagy::Backend
 
-  # Single-user password authentication for web UI
-  # Password is set via WEB_PASSWORD environment variable
-  if Rails.env.production?
-    raise "WEB_PASSWORD must be set in production" if ENV["WEB_PASSWORD"].blank?
-    http_basic_authenticate_with name: "_", password: ENV["WEB_PASSWORD"]
+  # Single-user password authentication for web UI.
+  # Named method so subcontrollers can skip it with: skip_before_action :authenticate_web_user!
+  before_action :authenticate_web_user!
+
+  private
+
+  def authenticate_web_user!
+    return unless Rails.env.production?
+
+    web_password = ENV["WEB_PASSWORD"].to_s
+    raise "WEB_PASSWORD environment variable must be set in production" if web_password.empty?
+
+    authenticate_or_request_with_http_basic("Inbox") do |_name, password|
+      ActiveSupport::SecurityUtils.secure_compare(password, web_password)
+    end
   end
 end
