@@ -5,7 +5,7 @@ require 'telegram/bot'
 module Api
   class TelegramController < ApplicationController
     skip_before_action :verify_authenticity_token
-    skip_before_action :http_basic_authenticate, raise: false
+    skip_before_action :authenticate_web_user!
     before_action :validate_telegram_secret
     before_action :validate_user_authorization
 
