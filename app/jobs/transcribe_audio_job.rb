@@ -106,10 +106,11 @@ class TranscribeAudioJob < ApplicationJob
       OUTPUT RULES (MANDATORY):
       - Output ONLY the corrected text, nothing else
       - No explanations, no options, no comments, no formatting, no prefixes
-      - Keep every word. Do not add or remove words.
       - Keep original punctuation and capitalization.
       - If a word looks wrong but you are not 100% sure, keep it as-is.
       - Fix only clear phonetic transcription errors (1-2 character typos).
+      - You MAY merge words that are obviously split incorrectly by the transcriber (e.g. "Зап. Ишем" → "Запишем", "за пишем" → "запишем").
+      - You MAY split one word into two if it is obviously two words joined (e.g. "купитьмолоко" → "купить молоко").
 
       EXAMPLES OF CORRECT BEHAVIOR:
       #{correction_examples(detected_language)}
@@ -118,7 +119,7 @@ class TranscribeAudioJob < ApplicationJob
       #{raw_text}
     PROMPT
 
-    timeout_seconds = ENV.fetch('OLLAMA_CORRECTION_TIMEOUT', '300').to_i
+    timeout_seconds = ENV.fetch('OLLAMA_CORRECTION_TIMEOUT', '3600').to_i
     response = HTTP.timeout(timeout_seconds).post(
       "#{ENV.fetch('OLLAMA_BASE_URL', 'http://ollama:11434')}/api/generate",
       json: { model: model, prompt: prompt, stream: false }
@@ -158,6 +159,10 @@ class TranscribeAudioJob < ApplicationJob
         Input:  "please send the reprot by tomorrow"
         Output: "please send the report by tomorrow"
         (explanation: "reprot" → "report" — clear typo)
+
+        Input:  "let me know if you can make it. Tues day."
+        Output: "let me know if you can make it. Tuesday."
+        (explanation: "Tues day" → "Tuesday" — clearly split word, merge it)
       EXAMPLES
     else
       <<~EXAMPLES
@@ -172,6 +177,10 @@ class TranscribeAudioJob < ApplicationJob
         Input:  "он сказал чо это невозможно"
         Output: "он сказал чо это невозможно"
         (explanation: "чо" might be intentional slang — keep as-is)
+
+        Input:  "Зап. Ишем это."
+        Output: "Запишем это."
+        (explanation: "Зап. Ишем" → "Запишем" — clearly split word, merge it)
       EXAMPLES
     end
   end
