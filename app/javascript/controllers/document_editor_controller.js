@@ -104,7 +104,20 @@ export default class extends Controller {
 
     switch (block.block_type) {
       case "text":
-        return `<div contenteditable="true" class="text-block" data-action="blur->document-editor#saveBlock">${this.escapeHtml(content.text || "")}</div>`;
+        // Uses the markdown-editor Stimulus controller; Stimulus auto-connects after innerHTML set
+        return `<div class="text-block"
+          data-controller="markdown-editor"
+          data-markdown-editor-block-id-value="${block.id || ''}"
+          data-markdown-editor-document-id-value="${this.documentIdValue}">
+          <div class="markdown-preview" data-markdown-editor-target="preview" data-action="dblclick->markdown-editor#startEditing" title="Double-click to edit">${this.escapeHtml(content.text || "")}</div>
+          <div class="hidden markdown-edit-area" data-markdown-editor-target="editArea">
+            <textarea class="markdown-textarea" rows="6" placeholder="Write Markdown here…" data-markdown-editor-target="textarea" data-action="blur->markdown-editor#saveBlock keydown->markdown-editor#handleKeydown">${this.escapeHtml(content.text || "")}</textarea>
+            <div class="markdown-edit-actions">
+              <span class="markdown-hint">⌘↵ save · Esc cancel</span>
+              <button type="button" class="btn btn-sm" data-action="click->markdown-editor#cancelEdit">Cancel</button>
+            </div>
+          </div>
+        </div>`;
 
       case "heading":
         const level = content.level || 1;
@@ -638,8 +651,11 @@ export default class extends Controller {
 
     switch (blockType) {
       case "text":
+        // markdown-editor controller owns saving; this fallback reads textarea if present
         return {
-          text: blockContent.querySelector(".text-block")?.innerText || "",
+          text: blockContent.querySelector("textarea[data-markdown-editor-target='textarea']")?.value
+               || blockContent.querySelector(".text-block")?.innerText
+               || "",
         };
 
       case "heading":

@@ -17,17 +17,17 @@
 - [x] 2.1 `OLLAMA_CORRECTION_MODEL` added to `docker-compose.production.yml` (commented out, default `gemma3:4b`)
 - [x] 2.2 `OLLAMA_BASE_URL=http://ollama:11434` already set in production
 
-## 3. Ollama Model
+## 3. Ollama Model ✅ DONE
 
-- [ ] 3.1 Pull `gemma3:4b` on RPi: `docker compose exec ollama ollama pull gemma3:4b`
-- [ ] 3.2 Verify: `docker compose exec ollama ollama list`
+- [x] 3.1 Pull `gemma3:4b` on RPi: `docker compose exec ollama ollama pull gemma3:4b`
+- [x] 3.2 Verify: `docker compose exec ollama ollama list`
 
-## 4. Verification
+## 4. Verification ✅ DONE
 
-- [ ] 4.1 Send a voice note via Telegram → check block content in Rails console:
+- [x] 4.1 Send a voice note via Telegram → check block content in Rails console:
   ```ruby
   Document.last.blocks.where(block_type: 'text').first.content_hash
   # expect: { "text" => "...", "raw_text" => "...", "language" => "ru" }
   ```
-- [ ] 4.2 Verify corrected ≠ raw only when there is an obvious error; otherwise identical
-- [ ] 4.3 Stop Ollama → send voice note → document still saved with raw text (warning logged)
+- [x] 4.2 Verify corrected ≠ raw only when there is an obvious error; otherwise identical
+- [x] 4.3 Stop Ollama → send voice note → document still saved with raw text (warning logged)
