@@ -52,7 +52,7 @@ services:
       # Omit WHISPER_LANGUAGE to use auto-detection; set to 'ru' or 'en' to force a language
       # - WHISPER_LANGUAGE=ru
       # Ollama model for transcription correction (default: gemma3:4b)
-      # - OLLAMA_CORRECTION_MODEL=gemma3:4b
+      - OLLAMA_CORRECTION_MODEL=gemma3:4b
 
   # Close internal ports in production
   redis:
