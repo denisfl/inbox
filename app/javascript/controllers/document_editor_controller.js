@@ -109,11 +109,15 @@ export default class extends Controller {
           data-controller="markdown-editor"
           data-markdown-editor-block-id-value="${block.id || ''}"
           data-markdown-editor-document-id-value="${this.documentIdValue}">
-          <div class="markdown-preview" data-markdown-editor-target="preview" data-action="dblclick->markdown-editor#startEditing" title="Double-click to edit">${this.escapeHtml(content.text || "")}</div>
+          <div class="markdown-preview-wrapper" data-markdown-editor-target="preview">
+            <div class="markdown-preview">${this.escapeHtml(content.text || "")}</div>
+            <button type="button" class="markdown-edit-btn" title="Edit (e)" data-action="click->markdown-editor#startEditing">✏️</button>
+          </div>
           <div class="hidden markdown-edit-area" data-markdown-editor-target="editArea">
-            <textarea class="markdown-textarea" rows="6" placeholder="Write Markdown here…" data-markdown-editor-target="textarea" data-action="blur->markdown-editor#saveBlock keydown->markdown-editor#handleKeydown">${this.escapeHtml(content.text || "")}</textarea>
+            <textarea class="markdown-textarea" rows="6" placeholder="Write Markdown here…" data-markdown-editor-target="textarea" data-action="keydown->markdown-editor#handleKeydown">${this.escapeHtml(content.text || "")}</textarea>
             <div class="markdown-edit-actions">
               <span class="markdown-hint">⌘↵ save · Esc cancel</span>
+              <button type="button" class="btn btn-sm btn-primary" data-action="click->markdown-editor#saveBlock">Save</button>
               <button type="button" class="btn btn-sm" data-action="click->markdown-editor#cancelEdit">Cancel</button>
             </div>
           </div>

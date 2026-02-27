@@ -1,9 +1,9 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Markdown editor controller for text blocks.
-// - View mode: rendered HTML (dblclick to edit)
-// - Edit mode: raw Markdown textarea (blur/save, Escape/cancel)
-// - Checkbox toggling: updates Markdown source and auto-saves
+// - View mode: rendered HTML + ✏️ edit button (or press 'e' when block is focused)
+// - Edit mode: raw Markdown textarea — ⌘↵/Save to save, Esc/Cancel to discard
+// - Checkbox toggling: click updates Markdown source and auto-saves
 export default class extends Controller {
   static targets = ["preview", "editArea", "textarea"]
   static values = { blockId: Number, documentId: Number }
@@ -34,7 +34,7 @@ export default class extends Controller {
     this.previewTarget.classList.remove("hidden")
   }
 
-  // Cmd+Enter / Ctrl+Enter inside textarea → save and close
+  // Keyboard shortcuts inside textarea: ⌘↵ save, Esc cancel
   handleKeydown(event) {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       event.preventDefault()
@@ -73,21 +73,14 @@ export default class extends Controller {
       }
 
       // Re-render via Turbo frame / full page reload to show updated Markdown
-      // Using Turbo stream if available, otherwise reload the block frame
-      this._reloadPreview()
+      const frame = this.element.closest("turbo-frame")
+      if (frame) {
+        frame.reload()
+      } else {
+        window.location.reload()
+      }
     } catch (err) {
       console.error("Save error:", err)
-    }
-  }
-
-  _reloadPreview() {
-    // Reload just the blocks section via Turbo frame if present,
-    // otherwise fall back to full page reload
-    const frame = this.element.closest("turbo-frame")
-    if (frame) {
-      frame.reload()
-    } else {
-      window.location.reload()
     }
   }
 
@@ -109,7 +102,7 @@ export default class extends Controller {
 
     const escaped = labelText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
-    // Toggle in raw Markdown
+    // Toggle in raw Markdown source
     let text = this.textareaTarget.value
     if (nowChecked) {
       text = text.replace(
