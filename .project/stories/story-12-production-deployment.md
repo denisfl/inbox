@@ -1,9 +1,9 @@
 # Story 12: Production Deployment on Raspberry Pi
 
-**Priority:** P0 (Critical)  
-**Complexity:** Very High  
-**Estimated Effort:** 3-4 days  
-**Dependencies:** Story 11 (Whisper Transcription)  
+**Priority:** P0 (Critical)
+**Complexity:** Very High
+**Estimated Effort:** 3-4 days
+**Dependencies:** Story 11 (Whisper Transcription)
 **Status:** Not Started
 
 ---
@@ -17,13 +17,15 @@ As an administrator, I want to deploy the application to Raspberry Pi 5 with rel
 ## Context & Constraints
 
 ### Hardware
+
 - **Device**: Raspberry Pi 5 (ARM64, 8GB RAM)
 - **Storage**: SD card or SSD via USB 3.0
 - **Network**: Home internet with dynamic IP (no static IP)
 - **Power**: 24/7 uptime required
 
 ### Current Issues
-- **ngrok limitations**: 
+
+- **ngrok limitations**:
   - Free tier has 2-hour session timeout
   - Requires constant restarts
   - No custom domain
@@ -41,6 +43,7 @@ As an administrator, I want to deploy the application to Raspberry Pi 5 with rel
 You already have WireGuard running on Digital Ocean (deployed via dokku). Use it as a secure tunnel:
 
 **Pros:**
+
 - ✅ Already deployed and working
 - ✅ Full control over VPN server
 - ✅ No third-party dependencies
@@ -49,74 +52,77 @@ You already have WireGuard running on Digital Ocean (deployed via dokku). Use it
 - ✅ Your existing infrastructure
 
 **Cons:**
+
 - ❌ Requires nginx/caddy setup on VPS for public access
 - ❌ Need to configure reverse proxy
 
 **Implementation:**
 
 1. **Connect Raspberry Pi to WireGuard:**
+
    ```bash
    # On Raspberry Pi
    sudo apt install wireguard
-   
+
    # Get config from your DO server (ask you for the config)
    sudo nano /etc/wireguard/wg0.conf
-   
+
    # Paste config:
    [Interface]
    PrivateKey = <RPi_PRIVATE_KEY>
    Address = 10.0.0.5/24  # Or whatever your VPN subnet uses
    DNS = 8.8.8.8
-   
+
    [Peer]
    PublicKey = <DO_SERVER_PUBLIC_KEY>
    Endpoint = <YOUR_DO_IP>:51820
    AllowedIPs = 10.0.0.0/24
    PersistentKeepalive = 25
-   
+
    # Start WireGuard
    sudo wg-quick up wg0
    sudo systemctl enable wg-quick@wg0
-   
+
    # Verify connection
    ping 10.0.0.1  # Your DO server VPN IP
    ```
 
 2. **On Digital Ocean VPS (nginx reverse proxy with Basic Auth):**
+
    ```bash
    # Create password file for Basic Auth
    sudo apt install apache2-utils
    sudo htpasswd -c /etc/nginx/.htpasswd denis  # Your username
    # Enter password when prompted
-   
+
    # Create nginx site config
    sudo nano /etc/nginx/sites-available/inbox
-   
+
    # Add:
    server {
        listen 80;
        server_name inbox.fedosov.me;
-       
+
        # Redirect HTTP to HTTPS
        return 301 https://$server_name$request_uri;
    }
-   
+
    server {
        listen 443 ssl http2;
        server_name inbox.fedosov.me;
-       
+
        # SSL certificates (Let's Encrypt)
        ssl_certificate /etc/letsencrypt/live/inbox.fedosov.me/fullchain.pem;
        ssl_certificate_key /etc/letsencrypt/live/inbox.fedosov.me/privkey.pem;
        ssl_protocols TLSv1.2 TLSv1.3;
        ssl_ciphers HIGH:!aNULL:!MD5;
-       
+
        # Security headers
        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload";
        add_header X-Content-Type-Options "nosniff";
        add_header X-Frame-Options "DENY";
        add_header Referrer-Policy "no-referrer-when-downgrade";
-       
+
        # Telegram webhook - NO AUTH (Telegram bot needs access)
        location /api/telegram/ {
            proxy_pass http://10.0.0.5:3000;  # RPi WireGuard IP
@@ -124,60 +130,61 @@ You already have WireGuard running on Digital Ocean (deployed via dokku). Use it
            proxy_set_header X-Real-IP $remote_addr;
            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
            proxy_set_header X-Forwarded-Proto $scheme;
-           
+
            # Rate limiting for Telegram
            limit_req zone=telegram burst=10 nodelay;
        }
-       
+
        # All other routes - REQUIRE AUTH (private access)
        location / {
            auth_basic "Private Access";
            auth_basic_user_file /etc/nginx/.htpasswd;
-           
+
            proxy_pass http://10.0.0.5:3000;  # RPi WireGuard IP
            proxy_set_header Host $host;
            proxy_set_header X-Real-IP $remote_addr;
            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
            proxy_set_header X-Forwarded-Proto $scheme;
-           
+
            # WebSocket support (for future real-time features)
            proxy_http_version 1.1;
            proxy_set_header Upgrade $http_upgrade;
            proxy_set_header Connection "upgrade";
        }
    }
-   
+
    # Rate limiting zone (before server block, in http context)
    # Add to /etc/nginx/nginx.conf in http {} section:
    # limit_req_zone $binary_remote_addr zone=telegram:10m rate=30r/m;
-   
+
    # Enable site
    sudo ln -s /etc/nginx/sites-available/inbox /etc/nginx/sites-enabled/
-   
+
    # Get SSL certificate (if not already exists)
    sudo certbot --nginx -d inbox.fedosov.me
-   
+
    # Test nginx config
    sudo nginx -t
-   
+
    # Reload nginx
    sudo systemctl reload nginx
    ```
 
 3. **Add rate limiting to nginx.conf:**
+
    ```bash
    sudo nano /etc/nginx/nginx.conf
-   
+
    # Add inside http {} block (before server blocks):
    http {
        # ... existing config ...
-       
+
        # Rate limiting for Telegram webhook
        limit_req_zone $binary_remote_addr zone=telegram:10m rate=30r/m;
-       
+
        # ... rest of config ...
    }
-   
+
    # Reload nginx
    sudo systemctl reload nginx
    ```
@@ -187,6 +194,7 @@ You already have WireGuard running on Digital Ocean (deployed via dokku). Use it
    - SSL certificate will be auto-provisioned by certbot
 
 5. **Update Telegram webhook:**
+
    ```bash
    curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
      -H "Content-Type: application/json" \
@@ -194,15 +202,17 @@ You already have WireGuard running on Digital Ocean (deployed via dokku). Use it
    ```
 
 6. **Test access:**
+
    ```bash
    # From your browser (will prompt for username/password):
    https://inbox.fedosov.me/
-   
+
    # Telegram webhook (no auth required):
    # Telegram bot can POST to https://inbox.fedosov.me/api/telegram/webhook
    ```
 
-**Result:** 
+**Result:**
+
 - Raspberry Pi accessible via `https://inbox.fedosov.me`
 - **Private access:** Web UI requires username/password (HTTP Basic Auth)
 - **Telegram webhook:** No auth (public endpoint at `/api/telegram/webhook`)
@@ -211,6 +221,7 @@ You already have WireGuard running on Digital Ocean (deployed via dokku). Use it
 - Rate limiting: 30 requests/minute per IP for webhook
 
 **Security Notes:**
+
 - Only YOU can access the web interface (Basic Auth)
 - Telegram bot API can POST to webhook (no auth needed)
 - All traffic between DO ↔ RPi encrypted via WireGuard
@@ -221,6 +232,7 @@ You already have WireGuard running on Digital Ocean (deployed via dokku). Use it
 #### **Option B: Tailscale VPN + Funnel (Alternative)**
 
 **Pros:**
+
 - ✅ Secure peer-to-peer VPN (WireGuard-based)
 - ✅ HTTPS public endpoints via Tailscale Funnel
 - ✅ No port forwarding needed
@@ -230,10 +242,12 @@ You already have WireGuard running on Digital Ocean (deployed via dokku). Use it
 - ✅ Works behind CGNAT/strict firewalls
 
 **Cons:**
+
 - ❌ Requires Tailscale account (additional service)
 - ❌ Funnel endpoints are public (rate limiting needed)
 
 **Implementation:**
+
 ```bash
 # Install Tailscale on RPi
 curl -fsSL https://tailscale.com/install.sh | sh
@@ -248,13 +262,14 @@ tailscale funnel status
 ```
 
 **docker-compose.yml:**
+
 ```yaml
 services:
   web:
     # ...
     environment:
       - TELEGRAM_WEBHOOK_URL=https://inbox-pi.tail-xxxxx.ts.net/api/telegram/webhook
-      - RAILS_FORCE_SSL=false  # Tailscale handles HTTPS
+      - RAILS_FORCE_SSL=false # Tailscale handles HTTPS
 ```
 
 ---
@@ -262,6 +277,7 @@ services:
 #### **Option C: Cloudflare Tunnel (Zero Trust)**
 
 **Pros:**
+
 - ✅ Free tier available
 - ✅ HTTPS automatic (Cloudflare SSL)
 - ✅ DDoS protection
@@ -270,11 +286,13 @@ services:
 - ✅ Rate limiting via Cloudflare WAF
 
 **Cons:**
+
 - ❌ Requires Cloudflare account + domain
 - ❌ More complex setup
 - ❌ Cloudflare can inspect traffic (privacy concern)
 
 **Implementation:**
+
 ```bash
 # Install cloudflared
 curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64 -o cloudflared
@@ -295,6 +313,7 @@ cloudflared tunnel --url http://localhost:3000 run inbox-pi
 #### **❌ Option D: Dynamic DNS + Port Forwarding (NOT RECOMMENDED)**
 
 **Why avoid:**
+
 - ❌ Exposes home IP address
 - ❌ ISP may block port 80/443
 - ❌ No HTTPS by default
@@ -302,6 +321,7 @@ cloudflared tunnel --url http://localhost:3000 run inbox-pi
 - ❌ Dynamic IP changes break webhook
 
 **Only use if:** You have static IP + comfortable with network security
+
 - ❌ Complex setup (WireGuard + Nginx config)
 - ❌ Need to manage VPS security/updates
 
@@ -309,12 +329,12 @@ cloudflared tunnel --url http://localhost:3000 run inbox-pi
 
 #### **Comparison Table**
 
-| Solution | Cost | Setup Time | Your Situation | Recommended |
-|----------|------|------------|----------------|-------------|
-| **WireGuard (DO) + Caddy** | $0 (existing) | 30 min | ✅ Already have VPN | ⭐⭐⭐⭐⭐ |
-| Tailscale + Funnel | $0 | 10 min | New service | ⭐⭐⭐⭐ |
-| Cloudflare Tunnel | $10/yr domain | 15 min | Cloudflare account | ⭐⭐⭐ |
-| Dynamic DNS | $0 | 30 min | Security risks | ❌ |
+| Solution                   | Cost          | Setup Time | Your Situation      | Recommended |
+| -------------------------- | ------------- | ---------- | ------------------- | ----------- |
+| **WireGuard (DO) + Caddy** | $0 (existing) | 30 min     | ✅ Already have VPN | ⭐⭐⭐⭐⭐  |
+| Tailscale + Funnel         | $0            | 10 min     | New service         | ⭐⭐⭐⭐    |
+| Cloudflare Tunnel          | $10/yr domain | 15 min     | Cloudflare account  | ⭐⭐⭐      |
+| Dynamic DNS                | $0            | 30 min     | Security risks      | ❌          |
 
 **YOUR BEST OPTION:** Use existing WireGuard on Digital Ocean + Caddy reverse proxy (Option A)
 
@@ -323,6 +343,7 @@ cloudflared tunnel --url http://localhost:3000 run inbox-pi
 #### **❌ Option D: Dynamic DNS + Port Forwarding (NOT RECOMMENDED)**
 
 **Why Avoid:**
+
 - ❌ Requires router access (port 80/443 forwarding)
 - ❌ Security risk (exposed to internet)
 - ❌ ISP may block ports 80/443
@@ -335,6 +356,7 @@ cloudflared tunnel --url http://localhost:3000 run inbox-pi
 ### ✅ Docker Production Configuration
 
 **docker-compose.production.yml:**
+
 ```yaml
 services:
   web:
@@ -361,9 +383,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G  # Prevent OOM on Pi
+          memory: 2G # Prevent OOM on Pi
     environment:
-      - WHISPER_MODEL_SIZE=base  # Or "tiny" for lower memory
+      - WHISPER_MODEL_SIZE=base # Or "tiny" for lower memory
     logging:
       driver: "json-file"
       options:
@@ -390,7 +412,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 4G  # Ollama can use significant RAM
+          memory: 4G # Ollama can use significant RAM
 ```
 
 ---
@@ -398,6 +420,7 @@ services:
 ### ✅ Environment Configuration
 
 **Production .env:**
+
 ```bash
 # Rails
 RAILS_ENV=production
@@ -427,6 +450,7 @@ OLLAMA_BASE_URL=http://ollama:11434
 ### ✅ System Configuration
 
 **Raspberry Pi Setup:**
+
 ```bash
 # Update system
 sudo apt update && sudo apt upgrade -y
@@ -454,6 +478,7 @@ sudo mount /dev/sda1 /mnt/ssd
 ```
 
 **systemd service** (auto-restart on reboot):
+
 ```ini
 # /etc/systemd/system/inbox.service
 [Unit]
@@ -474,6 +499,7 @@ WantedBy=multi-user.target
 ```
 
 Enable service:
+
 ```bash
 sudo systemctl enable inbox.service
 sudo systemctl start inbox.service
@@ -484,6 +510,7 @@ sudo systemctl start inbox.service
 ### ✅ Deployment Steps
 
 **1. Prepare Production Environment:**
+
 ```bash
 # Clone repo on RPi
 git clone https://github.com/yourusername/inbox.git
@@ -498,26 +525,31 @@ openssl rand -hex 64 >> .env.production
 ```
 
 **2. Build Images:**
+
 ```bash
 docker compose -f docker-compose.production.yml build --pull
 ```
 
 **3. Initialize Database:**
+
 ```bash
 docker compose -f docker-compose.production.yml run --rm web bin/rails db:create db:migrate
 ```
 
 **4. Precompile Assets:**
+
 ```bash
 docker compose -f docker-compose.production.yml run --rm web bin/rails assets:precompile
 ```
 
 **5. Start Services:**
+
 ```bash
 docker compose -f docker-compose.production.yml up -d
 ```
 
 **6. Register Telegram Webhook:**
+
 ```bash
 curl -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
   -H "Content-Type: application/json" \
@@ -525,6 +557,7 @@ curl -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
 ```
 
 **7. Verify Health:**
+
 ```bash
 docker compose -f docker-compose.production.yml ps
 curl https://inbox-pi.tail-xxxxx.ts.net/up
@@ -535,6 +568,7 @@ curl https://inbox-pi.tail-xxxxx.ts.net/up
 ### ✅ Monitoring & Maintenance
 
 **Health Checks:**
+
 ```bash
 # Service status
 docker compose -f docker-compose.production.yml ps
@@ -552,6 +586,7 @@ docker stats --no-stream
 ```
 
 **Backup Strategy:**
+
 ```bash
 # Backup database (daily cron)
 0 2 * * * docker compose -f /home/pi/inbox/docker-compose.production.yml exec -T web sqlite3 /app/storage/production.sqlite3 ".backup '/app/storage/backups/backup-$(date +\%Y\%m\%d).db'"
@@ -561,6 +596,7 @@ docker stats --no-stream
 ```
 
 **Updates:**
+
 ```bash
 # Pull latest code
 cd /home/pi/inbox
@@ -593,6 +629,7 @@ docker compose -f docker-compose.production.yml exec web bin/rails db:migrate
 ### ✅ Performance Tuning
 
 **For 8GB RAM Pi 5:**
+
 - Whisper: `base` model (~1.5GB memory)
 - Ollama: `mistral:7b` or smaller model (~4GB)
 - Redis: 256MB maxmemory with LRU eviction
@@ -600,6 +637,7 @@ docker compose -f docker-compose.production.yml exec web bin/rails db:migrate
 - SSD recommended for database (faster than SD card)
 
 **Low-Memory Mode** (for 4GB Pi or heavy load):
+
 - Whisper: `tiny` model (~400MB, faster but less accurate)
 - Ollama: `phi3:mini` (~2GB) or disable classification
 - Redis: 128MB maxmemory
@@ -636,6 +674,7 @@ docker compose -f docker-compose.production.yml exec web bin/rails db:migrate
 **Tailscale + Funnel** (Option A)
 
 **Reasoning:**
+
 1. ✅ Zero configuration (no port forwarding, no VPS, no DNS)
 2. ✅ Free for personal use
 3. ✅ Stable HTTPS endpoints (no ngrok timeouts)
@@ -644,8 +683,8 @@ docker compose -f docker-compose.production.yml exec web bin/rails db:migrate
 6. ✅ Secure by default (WireGuard encryption)
 7. ✅ MagicDNS for easy access
 
-**Setup Time:** ~10 minutes  
-**Cost:** $0  
+**Setup Time:** ~10 minutes
+**Cost:** $0
 **Reliability:** High (99.99% uptime)
 
 ---
@@ -672,9 +711,9 @@ If custom domain is required: **Cloudflare Tunnel** (Option B)
 
 ## Success Criteria
 
-✅ Application accessible from anywhere via stable HTTPS URL  
-✅ Telegram bot responds to messages 24/7  
-✅ No manual intervention needed for 30+ days  
-✅ Database backed up daily  
-✅ Service auto-restarts on failures  
+✅ Application accessible from anywhere via stable HTTPS URL
+✅ Telegram bot responds to messages 24/7
+✅ No manual intervention needed for 30+ days
+✅ Database backed up daily
+✅ Service auto-restarts on failures
 ✅ Monitoring alerts on issues

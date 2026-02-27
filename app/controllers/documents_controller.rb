@@ -3,7 +3,7 @@ class DocumentsController < ApplicationController
 
   def index
     documents_scope = Document.includes(:blocks, :tags)
-    
+
     # Search by query
     if params[:q].present?
       query = params[:q].strip
@@ -11,12 +11,12 @@ class DocumentsController < ApplicationController
         .where("documents.title LIKE ? OR blocks.content LIKE ?", "%#{query}%", "%#{query}%")
         .distinct
     end
-    
+
     # Filter by source (telegram, api)
     if params[:source].present?
       documents_scope = documents_scope.where(source: params[:source])
     end
-    
+
     # Filter by type (voice, photo)
     if params[:type].present?
       case params[:type]
@@ -32,12 +32,12 @@ class DocumentsController < ApplicationController
           .distinct
       end
     end
-    
+
     # Filter by tag
     if params[:tag].present?
       documents_scope = documents_scope.joins(:tags).where(tags: {name: params[:tag]})
     end
-    
+
     # Sort
     sort_by = params[:sort] || 'updated_desc'
     case sort_by
@@ -52,7 +52,7 @@ class DocumentsController < ApplicationController
     else # updated_desc (default)
       documents_scope = documents_scope.order(updated_at: :desc)
     end
-    
+
     # Pagy pagination (20 items per page)
     @pagy, @documents = pagy(documents_scope, limit: 20)
   end
@@ -72,7 +72,7 @@ class DocumentsController < ApplicationController
       title: "Untitled",
       source: "web"
     )
-    
+
     # Create initial text block
     block = @document.blocks.new(
       block_type: "text",
@@ -80,7 +80,7 @@ class DocumentsController < ApplicationController
     )
     block.content_hash = { text: "" }
     block.save!
-    
+
     # Redirect to edit page with 303 status (prevents Turbo caching)
     redirect_to edit_document_path(@document), status: :see_other
   end

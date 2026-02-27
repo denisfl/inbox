@@ -99,7 +99,11 @@ services:
       - redis
       - web
     healthcheck:
-      test: ["CMD-SHELL", "bundle exec sidekiqmon processes 2>/dev/null | grep -q . || pgrep -f sidekiq > /dev/null"]
+      test:
+        [
+          "CMD-SHELL",
+          "bundle exec sidekiqmon processes 2>/dev/null | grep -q . || pgrep -f sidekiq > /dev/null",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
