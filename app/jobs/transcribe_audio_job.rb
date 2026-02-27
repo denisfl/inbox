@@ -93,11 +93,33 @@ class TranscribeAudioJob < ApplicationJob
   def correct_transcription(raw_text)
     model = ENV.fetch('OLLAMA_CORRECTION_MODEL', 'llama3.2')
     prompt = <<~PROMPT
-      You are a Russian transcription corrector. Fix only obvious speech recognition errors
-      (wrong words, merged or split words, incorrect proper nouns). Do not rephrase or summarize.
-      Return only the corrected text, nothing else.
+      You are a Russian speech recognition post-processor. Your ONLY job is minimal error correction.
 
-      Original transcription: "#{raw_text}"
+      CORRECT only if ALL conditions are met:
+      - The word is phonetically impossible or completely nonsensical in context
+      - The correct form is unambiguous (only one possible fix)
+      - The fix requires changing 1-2 characters maximum
+
+      NEVER:
+      - Add, remove, or reorder words
+      - Change punctuation or capitalization
+      - Rephrase or improve style
+      - Add any prefix like "Corrected:" or "Here is:" before output
+      - Change words that could be valid in any context (names, slang, domain terms)
+
+      When in doubt — output the text unchanged.
+
+      Examples:
+      Input: "он сказал чо это невозможно"
+      Output: "он сказал чо это невозможно"
+
+      Input: "встреча в понедельник в десять чесов"
+      Output: "встреча в понедельник в десять часов"
+
+      Now process this text and output ONLY the result with no commentary:
+      ###
+      #{raw_text}
+      ###
     PROMPT
 
     response = HTTP.timeout(60).post(
