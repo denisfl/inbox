@@ -100,18 +100,45 @@
 
 /* ─── Markdown Editor ─────────────────────────────────────────── */
 
-/* Preview (rendered markdown) */
-.markdown-preview {
-  min-height: 1.5rem;
-  padding: 0.25rem 0;
-  cursor: pointer;
-  line-height: 1.7;
-  word-break: break-word;
+/* Preview wrapper (view mode) */
+.markdown-preview-wrapper {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
 }
 
-.markdown-preview:hover {
-  outline: 2px dashed var(--color-border, #e5e7eb);
+/* Edit button — visible on hover of the wrapper */
+.markdown-edit-btn {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 150ms ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 2px 4px;
   border-radius: 4px;
+  line-height: 1.5;
+  color: var(--color-text-muted, #9ca3af);
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.markdown-preview-wrapper:hover .markdown-edit-btn {
+  opacity: 1;
+}
+
+.markdown-edit-btn:hover {
+  background: var(--color-bg-secondary, #f3f4f6);
+}
+
+/* Preview (rendered markdown) */
+.markdown-preview {
+  flex: 1;
+  min-height: 1.5rem;
+  line-height: 1.7;
+  word-break: break-word;
 }
 
 /* Prose typography for rendered markdown output */
