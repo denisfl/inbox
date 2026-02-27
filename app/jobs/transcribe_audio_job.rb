@@ -43,8 +43,14 @@ class TranscribeAudioJob < ApplicationJob
       # LLM correction pass (best-effort — falls back to raw on any error)
       transcription = correct_transcription(raw_transcription, detected_language)
 
-      # Update document title and add transcription block
-      document.update!(title: transcription.truncate(50))
+      # Intent classification (best-effort — falls back to note on any error)
+      intent_result = classify_intent(transcription)
+
+      # Update document title, type, and add transcription block
+      document.update!(
+        title: transcription.truncate(50),
+        document_type: intent_result.intent
+      )
 
       # Build block content with raw text and detected language for reference
       block_content = { text: transcription, raw_text: raw_transcription }
@@ -60,12 +66,15 @@ class TranscribeAudioJob < ApplicationJob
       # Update audio block position
       audio_block.update!(position: 1)
 
-      # Notify user via Telegram (if chat_id available)
+      # Tag document based on intent
+      apply_intent_tags(document, intent_result)
+
+      # Notify user via Telegram with intent-aware message
       if document.telegram_chat_id.present?
-        notify_telegram_user(document, transcription)
+        notify_telegram_user(document, transcription, intent_result)
       end
 
-      Rails.logger.info("Transcribed document #{document.id}: #{transcription.truncate(100)}")
+      Rails.logger.info("Transcribed document #{document.id} as #{intent_result.intent}: #{transcription.truncate(100)}")
     ensure
       temp_file.close
       temp_file.unlink
@@ -185,13 +194,39 @@ class TranscribeAudioJob < ApplicationJob
     end
   end
 
-  def notify_telegram_user(document, transcription)
+  def classify_intent(text)
+    IntentClassifierService.classify(text)
+  rescue StandardError => e
+    Rails.logger.warn("Intent classification failed (using note): #{e.message}")
+    IntentClassifierService::Result.new(intent: 'note', confidence: 0.0, title: text.truncate(80), due_at: nil, body: text)
+  end
+
+  def apply_intent_tags(document, intent_result)
+    return unless %w[todo event].include?(intent_result.intent)
+
+    tag = Tag.find_or_create_by!(name: intent_result.intent)
+    document.tags << tag unless document.tags.include?(tag)
+  rescue StandardError => e
+    Rails.logger.warn("Failed to apply intent tag: #{e.message}")
+  end
+
+  def notify_telegram_user(document, transcription, intent_result = nil)
     bot = Telegram::Bot::Client.new(ENV['TELEGRAM_BOT_TOKEN'])
     preview = transcription.truncate(100)
 
+    message = case intent_result&.intent
+              when 'todo'
+                "✅ Задача добавлена: #{intent_result.title.truncate(80)}\n\n#{preview}"
+              when 'event'
+                time_str = intent_result.due_at ? intent_result.due_at.strftime('%d.%m %H:%M') : '??'
+                "📅 Событие сохранено: #{intent_result.title.truncate(60)} на #{time_str}\n\n#{preview}"
+              else
+                "📝 Заметка сохранена\n\n#{preview}"
+              end
+
     bot.api.send_message(
       chat_id: document.telegram_chat_id,
-      text: "Transcription complete:\n\n#{preview}"
+      text: message
     )
   rescue StandardError => e
     Rails.logger.error("Failed to notify Telegram user: #{e.message}")
