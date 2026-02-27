@@ -104,14 +104,16 @@ export default class extends Controller {
 
     switch (block.block_type) {
       case "text":
-        // Uses the markdown-editor Stimulus controller; Stimulus auto-connects after innerHTML set
+        // Uses the markdown-editor Stimulus controller
         return `<div class="text-block"
           data-controller="markdown-editor"
           data-markdown-editor-block-id-value="${block.id || ''}"
           data-markdown-editor-document-id-value="${this.documentIdValue}">
           <div class="markdown-preview-wrapper" data-markdown-editor-target="preview">
-            <div class="markdown-preview">${this.escapeHtml(content.text || "")}</div>
-            <button type="button" class="markdown-edit-btn" title="Edit (e)" data-action="click->markdown-editor#startEditing">✏️</button>
+            <div class="markdown-preview" data-markdown-editor-target="renderedContent">${this.escapeHtml(content.text || "")}</div>
+            <button type="button" class="markdown-edit-btn btn-icon" title="Edit" data-action="click->markdown-editor#startEditing">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/></svg>
+            </button>
           </div>
           <div class="hidden markdown-edit-area" data-markdown-editor-target="editArea">
             <textarea class="markdown-textarea" rows="6" placeholder="Write Markdown here…" data-markdown-editor-target="textarea" data-action="keydown->markdown-editor#handleKeydown">${this.escapeHtml(content.text || "")}</textarea>

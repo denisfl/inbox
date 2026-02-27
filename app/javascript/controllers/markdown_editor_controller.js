@@ -1,17 +1,19 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Markdown editor controller for text blocks.
-// - View mode: rendered HTML + ✏️ edit button (or press 'e' when block is focused)
-// - Edit mode: raw Markdown textarea — ⌘↵/Save to save, Esc/Cancel to discard
+// - View mode: rendered HTML + pencil edit button (appears on hover)
+// - Edit mode: raw Markdown textarea — ⌘↵/Save button to save, Esc/Cancel to discard
 // - Checkbox toggling: click updates Markdown source and auto-saves
 export default class extends Controller {
-  static targets = ["preview", "editArea", "textarea"]
+  static targets = ["preview", "editArea", "textarea", "renderedContent"]
   static values = { blockId: Number, documentId: Number }
 
   connect() {
     // If block content is empty, go straight to edit mode on mount
-    const isEmpty = !this.previewTarget.textContent.trim()
-    if (isEmpty) {
+    const content = this.hasRenderedContentTarget
+      ? this.renderedContentTarget.textContent.trim()
+      : this.textareaTarget.value.trim()
+    if (!content) {
       this.startEditing()
     }
   }
