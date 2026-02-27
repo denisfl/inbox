@@ -27,8 +27,8 @@ services:
       - WHISPER_BASE_URL=http://whisper:5000
       # Omit WHISPER_LANGUAGE to use auto-detection; set to 'ru' or 'en' to force a language
       # - WHISPER_LANGUAGE=ru
-      # Ollama model for transcription correction (default: llama3.2)
-      # - OLLAMA_CORRECTION_MODEL=llama3.2
+      # Ollama model for transcription correction (default: gemma3:4b)
+      # - OLLAMA_CORRECTION_MODEL=gemma3:4b
     ports:
       - "3000:3000"
 
@@ -51,8 +51,8 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       # Omit WHISPER_LANGUAGE to use auto-detection; set to 'ru' or 'en' to force a language
       # - WHISPER_LANGUAGE=ru
-      # Ollama model for transcription correction (default: llama3.2)
-      # - OLLAMA_CORRECTION_MODEL=llama3.2
+      # Ollama model for transcription correction (default: gemma3:4b)
+      # - OLLAMA_CORRECTION_MODEL=gemma3:4b
 
   # Close internal ports in production
   redis:

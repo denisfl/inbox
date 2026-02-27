@@ -1,66 +1,33 @@
-## 1. TranscribeAudioJob — LLM Correction Step
+## 1. TranscribeAudioJob — LLM Correction Step ✅ DONE
 
-- [ ] 1.1 After receiving `transcription = data['text']` from Whisper, call a new private method `correct_transcription(transcription)` that returns the LLM-corrected text (or the original on error)
-- [ ] 1.2 Implement `correct_transcription(raw_text)`:
-  ```ruby
-  def correct_transcription(raw_text)
-    model = ENV.fetch('OLLAMA_CORRECTION_MODEL', 'llama3.2')
-    prompt = <<~PROMPT
-      You are a Russian transcription corrector. Fix only obvious speech recognition errors
-      (wrong words, merged/split words, incorrect proper nouns). Do not rephrase or summarize.
-      Return only the corrected text, nothing else.
-
-      Original transcription: "#{raw_text}"
-    PROMPT
-
-    response = HTTP.timeout(60).post(
-      "#{ENV.fetch('OLLAMA_BASE_URL', 'http://ollama:11434')}/api/generate",
-      json: { model: model, prompt: prompt, stream: false }
-    )
-
-    unless response.status.success?
-      Rails.logger.warn("Ollama correction failed: #{response.status}")
-      return raw_text
-    end
-
-    data = JSON.parse(response.body)
-    data['response']&.strip.presence || raw_text
-  rescue StandardError => e
-    Rails.logger.warn("Transcription correction error (using raw): #{e.message}")
-    raw_text
-  end
-  ```
-- [ ] 1.3 Replace the existing `transcription` variable usage so the text block uses corrected text:
-  ```ruby
-  raw_transcription = data['text']
-  transcription = correct_transcription(raw_transcription)
-  ```
-- [ ] 1.4 Store both in the text block content:
-  ```ruby
-  document.blocks.create!(
-    block_type: 'text',
-    position: 0,
-    content: { text: transcription, raw_text: raw_transcription }.to_json
-  )
+- [x] 1.1 After Whisper response, call `correct_transcription(raw_transcription, detected_language)` — returns corrected text or raw on error
+- [x] 1.2 Implemented `correct_transcription(raw_text, detected_language = nil)` with:
+  - Model: `gemma3:4b` (configurable via `OLLAMA_CORRECTION_MODEL` ENV)
+  - Language-aware prompt: Russian by default/priority; English when `detected_language == 'en'`
+  - `correction_examples(detected_language)` provides language-specific few-shot examples
+  - Strict rules preventing over-correction; 60s timeout; graceful fallback to raw text
+- [x] 1.3 `raw_transcription = data['text']` → `correct_transcription(raw_transcription, detected_language)` → `transcription`
+- [x] 1.4 Block content stores all three fields:
+  ```json
+  { "text": "<corrected>", "raw_text": "<whisper original>", "language": "ru" }
   ```
 
-## 2. Environment Configuration
+## 2. Environment Configuration ✅ DONE
 
-- [ ] 2.1 Add `OLLAMA_CORRECTION_MODEL` to `docker-compose.production.yml` environment (optional, defaults to `llama3.2`)
-- [ ] 2.2 Ensure `OLLAMA_BASE_URL` is set in production (should already be `http://ollama:11434`)
+- [x] 2.1 `OLLAMA_CORRECTION_MODEL` added to `docker-compose.production.yml` (commented out, default `gemma3:4b`)
+- [x] 2.2 `OLLAMA_BASE_URL=http://ollama:11434` already set in production
 
 ## 3. Ollama Model
 
-- [ ] 3.1 Verify `llama3.2` is pulled in Ollama: `docker exec -it <ollama_container> ollama list`
-- [ ] 3.2 If not pulled: `docker exec -it <ollama_container> ollama pull llama3.2`
+- [ ] 3.1 Pull `gemma3:4b` on RPi: `docker compose exec ollama ollama pull gemma3:4b`
+- [ ] 3.2 Verify: `docker compose exec ollama ollama list`
 
 ## 4. Verification
 
-- [ ] 4.1 Send a voice note via Telegram with a word known to be misrecognized (e.g., say "жетон")
-- [ ] 4.2 Check document block content in the web UI or via Rails console:
+- [ ] 4.1 Send a voice note via Telegram → check block content in Rails console:
   ```ruby
-  Document.last.blocks.first.content_hash
-  # Should have: { "text" => "...", "raw_text" => "..." }
+  Document.last.blocks.where(block_type: 'text').first.content_hash
+  # expect: { "text" => "...", "raw_text" => "...", "language" => "ru" }
   ```
-- [ ] 4.3 Test Ollama unavailable: temporarily stop Ollama container → send voice note → verify document still saved with raw text
-- [ ] 4.4 Check Rails logs for `Transcription correction error` warning when Ollama is down
+- [ ] 4.2 Verify corrected ≠ raw only when there is an obvious error; otherwise identical
+- [ ] 4.3 Stop Ollama → send voice note → document still saved with raw text (warning logged)
