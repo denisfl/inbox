@@ -3,14 +3,26 @@
   <meta name="auth-token" content="<%= ENV['API_TOKEN'] || 'development_token' %>">
 <% end %>
 
-<div class="document-editor-container" 
-     data-controller="document-editor"
-     data-document-editor-document-id-value="<%= @document.id %>"
-     data-document-editor-save-url-value="/api/documents/<%= @document.id %>">
-  
-  <!-- Header -->
-  <header class="editor-header">
-    <div class="header-left">
+<%
+  audio_mime_prefix = "audio/"
+  audio_extensions  = %w[.ogg .mp3 .m4a .wav .opus .aac .flac .webm]
+
+  text_block   = @blocks.find { |b| b.block_type == "text" }
+  audio_blocks = @blocks.select do |b|
+    b.block_type == "file" && b.file.attached? &&
+      (b.file.content_type.to_s.start_with?(audio_mime_prefix) ||
+       audio_extensions.any? { |ext| b.file.filename.to_s.end_with?(ext) })
+  end
+%>
+
+<div class="simple-editor-container"
+     data-controller="simple-editor"
+     data-simple-editor-document-id-value="<%= @document.id %>"
+     data-simple-editor-block-id-value="<%= text_block&.id.to_i %>">
+
+  <%# ── Header ────────────────────────────────────────────────────── %>
+  <header class="simple-editor-header">
+    <div class="simple-editor-header-left">
       <%= link_to documents_path, class: "back-link" do %>
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -18,517 +30,229 @@
         Back
       <% end %>
     </div>
-    
-    <div class="header-center">
-      <h1 contenteditable="true" 
-          class="document-title" 
-          data-action="blur->document-editor#saveTitle"
-          data-document-id="<%= @document.id %>"><%= @document.title %></h1>
-    </div>
-    
-    <div class="header-right">
-      <span data-document-editor-target="saveIndicator" class="save-indicator"></span>
+
+    <div class="simple-editor-header-right">
+      <span class="save-indicator" data-simple-editor-target="saveIndicator"></span>
+
+      <%# Upload buttons %>
+      <label class="simple-editor-upload-btn" title="Attach image">
+        <%= heroicon :photo, width: 16, height: 16 %>
+        <input type="file" accept="image/*" class="hidden"
+               data-simple-editor-target="imageInput"
+               data-action="change->simple-editor#handleImageChange">
+      </label>
+
+      <label class="simple-editor-upload-btn" title="Attach file">
+        <%= heroicon :paper_clip, width: 16, height: 16 %>
+        <input type="file" class="hidden"
+               data-simple-editor-target="fileInput"
+               data-action="change->simple-editor#handleFileChange">
+      </label>
+
+      <%# Preview / Edit toggle %>
+      <button type="button"
+              class="btn btn-sm simple-editor-preview-btn"
+              data-simple-editor-target="previewToggleBtn"
+              data-action="click->simple-editor#togglePreview">
+        Preview
+      </button>
     </div>
   </header>
 
-  <!-- Blocks Container -->
-  <main class="blocks-container" data-document-editor-target="blocksContainer">
-    <% @blocks.each do |block| %>
-      <%= render partial: "blocks/block", locals: { block: block } %>
-    <% end %>
-  </main>
-
-  <!-- Add Block Toolbar -->
-  <div class="add-block-toolbar">
-    <div class="toolbar-label">Add block:</div>
-    <div class="toolbar-buttons">
-      <button type="button" 
-              class="toolbar-btn" 
-              data-type="text"
-              data-action="click->document-editor#createBlockOfType"
-              title="Text (Cmd+Shift+1)">
-        <%= heroicon(:document_text, style: 'width: 20px; height: 20px;') %>
-        <span class="toolbar-label-mobile">Text</span>
-      </button>
-      <button type="button" 
-              class="toolbar-btn" 
-              data-type="heading"
-              data-action="click->document-editor#createBlockOfType"
-              title="Heading (Cmd+Shift+2)">
-        <%= heroicon(:hashtag, style: 'width: 20px; height: 20px;') %>
-        <span class="toolbar-label-mobile">Heading</span>
-      </button>
-      <button type="button" 
-              class="toolbar-btn" 
-              data-type="todo"
-              data-action="click->document-editor#createBlockOfType"
-              title="To-do (Cmd+Shift+3)">
-        <%= heroicon(:check_circle, style: 'width: 20px; height: 20px;') %>
-        <span class="toolbar-label-mobile">To-do</span>
-      </button>
-      <button type="button" 
-              class="toolbar-btn" 
-              data-type="code"
-              data-action="click->document-editor#createBlockOfType"
-              title="Code (Cmd+Shift+4)">
-        <%= heroicon(:code_bracket, style: 'width: 20px; height: 20px;') %>
-        <span class="toolbar-label-mobile">Code</span>
-      </button>
-      <button type="button" 
-              class="toolbar-btn" 
-              data-type="quote"
-              data-action="click->document-editor#createBlockOfType"
-              title="Quote (Cmd+Shift+5)">
-        <%= heroicon(:chat_bubble_left_right, style: 'width: 20px; height: 20px;') %>
-        <span class="toolbar-label-mobile">Quote</span>
-      </button>
-      <button type="button" 
-              class="toolbar-btn" 
-              data-type="link"
-              data-action="click->document-editor#createBlockOfType"
-              title="Link (Cmd+Shift+6)">
-        <%= heroicon(:link, style: 'width: 20px; height: 20px;') %>
-        <span class="toolbar-label-mobile">Link</span>
-      </button>
-      <button type="button" 
-              class="toolbar-btn" 
-              data-type="file"
-              data-action="click->document-editor#createBlockOfType"
-              title="File (Cmd+Shift+7)">
-        <%= heroicon(:paper_clip, style: 'width: 20px; height: 20px;') %>
-        <span class="toolbar-label-mobile">File</span>
-      </button>
-      <button type="button" 
-              class="toolbar-btn" 
-              data-type="image"
-              data-action="click->document-editor#createBlockOfType"
-              title="Image (Cmd+Shift+8)">
-        <%= heroicon(:photo, style: 'width: 20px; height: 20px;') %>
-        <span class="toolbar-label-mobile">Image</span>
-      </button>
-    </div>
-    <p class="keyboard-hint">
-      Type <kbd>/</kbd> for commands · 
-      <kbd>⌘</kbd> + <kbd>Backspace</kbd> to delete · 
-      <kbd>- [ ]</kbd> for todo · 
-      <kbd>```</kbd> for code
-    </p>
+  <%# ── Title ─────────────────────────────────────────────────────── %>
+  <div class="simple-editor-title-wrapper">
+    <h1 class="simple-editor-title"
+        contenteditable="true"
+        data-simple-editor-target="title"
+        data-action="blur->simple-editor#saveTitle"
+        spellcheck="false"><%= @document.title %></h1>
   </div>
+
+  <%# ── Editor body ────────────────────────────────────────────────── %>
+  <main class="simple-editor-body">
+
+    <%# ── Audio players (voice / audio blocks) ─────────────────────── %>
+    <% if audio_blocks.any? %>
+      <div class="simple-editor-audio-section">
+        <% audio_blocks.each do |ab| %>
+          <div class="simple-editor-audio-player">
+            <audio controls preload="metadata"
+                   src="<%= url_for(ab.file) %>"
+                   style="width:100%">
+              Your browser does not support audio playback.
+            </audio>
+            <div class="simple-editor-audio-filename">
+              🎙 <%= ab.file.filename %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Edit mode (default): hidden when there is no text block and audio-only document %>
+    <textarea class="simple-editor-textarea<%= ' hidden' if text_block.nil? && audio_blocks.any? %>"
+              data-simple-editor-target="textarea"
+              data-action="input->simple-editor#scheduleAutoSave"
+              placeholder="Write in Markdown…"
+              spellcheck="true"
+              autocomplete="off"><%= text_block&.content_hash&.dig("text") %></textarea>
+
+    <%# Preview mode (hidden by default) %>
+    <div class="hidden markdown-preview simple-editor-preview"
+         data-simple-editor-target="preview"></div>
+  </main>
 </div>
 
 <style>
-    * { box-sizing: border-box; }
-    
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f5f5f5;
-    }
+  .back-link {
+    display: inline-flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+  }
+  .simple-editor-container {
+    max-width: 800px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg, #fff);
+  }
 
-    .document-editor-container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: white;
-      min-height: 100vh;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
-    }
+  /* Header */
+  .simple-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    position: sticky;
+    top: 0;
+    background: var(--color-bg, #fff);
+    z-index: 100;
+  }
 
-    .editor-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 40px;
-      border-bottom: 1px solid #e0e0e0;
-      position: sticky;
-      top: 0;
-      background: white;
-      z-index: 100;
-    }
+  .simple-editor-header-left,
+  .simple-editor-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
 
-    .back-link {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      text-decoration: none;
-      color: #666;
-      font-size: 14px;
-      transition: color var(--transition-fast);
-    }
+  /* Upload icon buttons */
+  .simple-editor-upload-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 5px 7px;
+    border-radius: 6px;
+    color: var(--color-text-muted, #6b7280);
+    border: 1px solid var(--color-border, #e5e7eb);
+    background: none;
+    transition: background 150ms, color 150ms;
+    line-height: 1;
+  }
 
-    .back-link:hover {
-      color: var(--color-primary);
-    }
+  .simple-editor-upload-btn:hover {
+    background: var(--color-bg-secondary, #f3f4f6);
+    color: var(--color-text, #111827);
+  }
 
-    .document-title {
-      font-size: 24px;
-      margin: 0;
-      padding: 8px;
-      border: 2px solid transparent;
-      outline: none;
-    }
+  /* Preview toggle button */
+  .simple-editor-preview-btn {
+    font-size: 0.8rem;
+    padding: 4px 12px;
+  }
 
-    .document-title:focus {
-      border-color: #4CAF50;
-      border-radius: 4px;
-    }
+  /* Title */
+  .simple-editor-title-wrapper {
+    padding: 24px 32px 0;
+  }
 
-    .save-indicator {
-      font-size: 14px;
-      padding: 4px 12px;
-      border-radius: 4px;
-    }
+  .simple-editor-title {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.25;
+    margin: 0;
+    padding: 4px 0;
+    outline: none;
+    border-bottom: 2px solid transparent;
+    word-break: break-word;
+    color: var(--color-text, #111827);
+  }
 
-    .save-indicator--saving { color: #ff9800; }
-    .save-indicator--saved { color: #4CAF50; }
-    .save-indicator--error { color: #f44336; }
+  .simple-editor-title:focus {
+    border-bottom-color: var(--color-primary, #3b82f6);
+  }
 
-    .blocks-container {
-      padding: 40px;
-    }
+  /* Body */
+  .simple-editor-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 32px 40px;
+  }
 
-    .block-wrapper {
-      position: relative;
-      margin-bottom: 8px;  /* Reduced from 16px */
-      padding-left: 40px;  /* Space for controls */
-    }
+  /* Textarea */
+  .simple-editor-textarea {
+    flex: 1;
+    width: 100%;
+    min-height: calc(100vh - 200px);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--color-text, #111827);
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    padding: 0;
+    box-sizing: border-box;
+  }
 
-    .block-wrapper:hover .block-controls {
-      opacity: 0.3;  /* Subtle, not full opacity */
-    }
+  .simple-editor-textarea::placeholder {
+    color: var(--color-text-muted, #9ca3af);
+  }
 
-    .block-controls {
-      position: absolute;
-      left: 0;
-      top: 0;
-      display: flex;
-      gap: 2px;  /* Reduced from 4px */
-      opacity: 0;
-      transition: opacity 0.2s ease-in-out;
-      width: 35px;  /* Fixed width to prevent overflow */
-      align-items: flex-start;
-    }
+  /* Preview pane */
+  .simple-editor-preview {
+    min-height: calc(100vh - 200px);
+    line-height: 1.7;
+    word-break: break-word;
+  }
 
-    .block-controls button {
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      font-size: 14px;  /* Smaller icons */
-      padding: 4px;
-      color: #999;  /* Gray instead of black */
-    }
+  /* Audio players */
+  .simple-editor-audio-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
 
-    .block-controls button:hover {
-      background: #f0f0f0;
-      border-radius: 4px;
-      color: #666;  /* Darker on hover */
-    }
+  .simple-editor-audio-player {
+    background: var(--color-bg-secondary, #f3f4f6);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
 
-    /* Delete button - visible but subtle */
-    .block-delete {
-      opacity: 0.3;
-      transition: opacity 0.2s;
-    }
+  .simple-editor-audio-filename {
+    font-size: 0.75rem;
+    color: var(--color-text-muted, #6b7280);
+    margin-top: 6px;
+  }
 
-    .block-wrapper:hover .block-delete {
-      opacity: 0.5;
-    }
+  /* Save indicator */
+  .save-indicator { font-size: 0.75rem; }
+  .save-indicator--saving { color: var(--color-warning, #f59e0b); }
+  .save-indicator--saved  { color: var(--color-success, #10b981); }
+  .save-indicator--error  { color: var(--color-danger,  #ef4444); }
 
-    .block-delete:hover {
-      opacity: 1 !important;
-      color: #dc2626 !important;
-    }
-
-    .block-content {
-      min-height: 24px;
-    }
-
-    /* Block types */
-    .text-block {
-      padding: 8px;
-      min-height: 40px;
-      line-height: 1.6;
-      outline: none;
-      border: 1px solid transparent;  /* Thinner border */
-      border-radius: 4px;
-      white-space: pre-wrap;  /* Preserve line breaks */
-      word-wrap: break-word;  /* Break long words */
-    }
-
-    .text-block:focus {
-      border-color: rgba(37, 99, 235, 0.2);  /* Very subtle blue */
-      background: rgba(37, 99, 235, 0.02);   /* Barely visible highlight */
-    }
-
-    /* Typography - Headings */
-    h1.text-block, h2.text-block, h3.text-block {
-      font-weight: 600;
-      line-height: 1.2;
-      margin: 0;
-    }
-
-    h1.text-block {
-      font-size: 2em;    /* 32px if base is 16px */
-      margin-top: 0.5em;
-      margin-bottom: 0.25em;
-    }
-
-    h2.text-block {
-      font-size: 1.5em;  /* 24px */
-      margin-top: 0.5em;
-      margin-bottom: 0.25em;
-    }
-
-    h3.text-block {
-      font-size: 1.25em; /* 20px */
-      margin-top: 0.5em;
-      margin-bottom: 0.25em;
-    }
-
-    /* Regular text blocks */
-    span.text-block {
-      font-size: 1em;    /* 16px */
-      line-height: 1.6;
-    }
-
-    .heading-block {
-      margin: 16px 0;
-      outline: none;
-    }
-
-    .todo-block {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 8px;
-    }
-
-    .todo-block input[type="checkbox"] {
-      width: 20px;
-      height: 20px;
-    }
-
-    .todo-block span {
-      flex: 1;
-      outline: none;
-    }
-
-    .code-block {
-      background: #f5f5f5;
-      padding: 16px;
-      border-radius: 8px;
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
-      overflow-x: auto;
-      outline: none;
-    }
-
-    .quote-block {
-      border-left: 4px solid #4CAF50;
-      padding: 12px 20px;
-      margin: 16px 0;
-      background: #f9f9f9;
-      font-style: italic;
-      outline: none;
-    }
-
-    .image-block, .file-block, .link-block {
-      padding: 16px;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-    }
-
-    .image-block img {
-      max-width: 100%;
-      border-radius: 4px;
-    }
-
-    .link-block input {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #e0e0e0;
-      border-radius: 4px;
-      margin-bottom: 8px;
-    }
-
-    .link-preview {
-      padding: 12px;
-      background: #f5f5f5;
-      border-radius: 4px;
-      color: #666;
-    }
-
-    .add-block-section {
-      padding: 40px;
-      text-align: center;
-    }
-
-    .add-block-btn {
-      background: #4CAF50;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    .add-block-btn:hover {
-      background: #45a049;
-    }
-
-    .keyboard-hint {
-      margin-top: 16px;
-      color: #999;
-      font-size: 14px;
-    }
-
-    kbd {
-      background: #f0f0f0;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 2px 6px;
-      font-family: monospace;
-      font-size: 12px;
-    }
-
-    /* Block Type Toolbar */
-    .add-block-toolbar {
-      padding: 32px 40px;
-      border-top: 3px solid #e5e7eb;
-      background: #f9fafb;
-    }
-
-    .toolbar-label {
-      font-size: 14px;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 12px;
-    }
-
-    .toolbar-buttons {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .toolbar-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 12px 16px;
-      background: white;
-      border: 2px solid #d1d5db;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      color: #374151;
-      font-size: 12px;
-      min-width: 80px;
-    }
-
-    .toolbar-btn:hover {
-      background: #2563eb;
-      border-color: #2563eb;
-      color: white;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-    }
-
-    .toolbar-btn:active {
-      transform: translateY(0);
-    }
-
-    .toolbar-btn .heroicon {
-      width: 20px;
-      height: 20px;
-    }
-
-    .toolbar-label-mobile {
-      font-size: 11px;
-      font-weight: 500;
-      text-transform: capitalize;
-    }
-
-    /* Slash Command Menu */
-    .slash-command-menu {
-      display: none;
-      background: white;
-      border: 2px solid #d1d5db;
-      border-radius: 8px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      min-width: 280px;
-      max-height: 400px;
-      overflow-y: auto;
-      z-index: 1000;
-    }
-
-    .slash-menu-header {
-      padding: 12px 16px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #6b7280;
-      border-bottom: 1px solid #e5e7eb;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .slash-menu-item {
-      display: block;
-      width: 100%;
-      padding: 10px 16px;
-      text-align: left;
-      background: white;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
-      color: #374151;
-      transition: background 0.15s ease;
-    }
-
-    .slash-menu-item:hover {
-      background: #eff6ff;
-      color: #2563eb;
-    }
-
-    .slash-menu-item:active {
-      background: #dbeafe;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .editor-header {
-        padding: 16px 20px;
-      }
-
-      .document-title {
-        font-size: 20px;
-      }
-
-      .blocks-container {
-        padding: 20px;
-      }
-
-      .block-wrapper {
-        padding-left: 30px;
-      }
-
-      .add-block-toolbar {
-        padding: 20px;
-      }
-
-      .toolbar-buttons {
-        justify-content: space-between;
-      }
-
-      .toolbar-btn {
-        min-width: 70px;
-        padding: 10px 12px;
-      }
-
-      .toolbar-label-mobile {
-        font-size: 10px;
-      }
-    }
-  </style>
+  /* Responsive */
+  @media (max-width: 640px) {
+    .simple-editor-header { padding: 10px 16px; }
+    .simple-editor-title-wrapper { padding: 16px 16px 0; }
+    .simple-editor-body { padding: 12px 16px 32px; }
+    .simple-editor-title { font-size: 1.5rem; }
+  }
+</style>

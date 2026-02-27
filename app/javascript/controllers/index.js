@@ -18,3 +18,6 @@ application.register("hello", HelloController);
 
 import MarkdownEditorController from "./markdown_editor_controller";
 application.register("markdown-editor", MarkdownEditorController);
+
+import SimpleEditorController from "./simple_editor_controller";
+application.register("simple-editor", SimpleEditorController);

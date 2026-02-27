@@ -7,6 +7,10 @@ class Document < ApplicationRecord
   has_many :document_tags, dependent: :destroy
   has_many :tags, through: :document_tags
 
+  # Active Storage attachments
+  has_many_attached :images
+  has_many_attached :files
+
   # Validations
   validates :title, presence: true
   validates :slug, uniqueness: true, allow_blank: true
