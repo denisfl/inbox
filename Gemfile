@@ -38,6 +38,9 @@ gem "http", "~> 5.0"
 # Pagination
 gem "pagy", "~> 9.0"
 
+# Markdown rendering
+gem "redcarpet"
+
 # Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
 gem "solid_cache"
 gem "solid_queue"
