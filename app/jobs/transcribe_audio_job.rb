@@ -41,7 +41,7 @@ class TranscribeAudioJob < ApplicationJob
       detected_language = data['language'].presence
 
       # LLM correction pass (best-effort — falls back to raw on any error)
-      transcription = correct_transcription(raw_transcription)
+      transcription = correct_transcription(raw_transcription, detected_language)
 
       # Update document title and add transcription block
       document.update!(title: transcription.truncate(50))
@@ -90,10 +90,18 @@ class TranscribeAudioJob < ApplicationJob
 
   private
 
-  def correct_transcription(raw_text)
-    model = ENV.fetch('OLLAMA_CORRECTION_MODEL', 'llama3.2')
+  def correct_transcription(raw_text, detected_language = nil)
+    model = ENV.fetch('OLLAMA_CORRECTION_MODEL', 'gemma3:4b')
+
+    # Determine language context for the prompt.
+    # Default/priority is Russian; fall back to Russian when language is unknown.
+    lang_label = case detected_language
+                 when 'en' then 'English'
+                 else 'Russian'
+                 end
+
     prompt = <<~PROMPT
-      You are a Russian speech recognition post-processor. Your ONLY job is minimal error correction.
+      You are a #{lang_label} speech recognition post-processor. Your ONLY job is minimal error correction.
 
       CORRECT only if ALL conditions are met:
       - The word is phonetically impossible or completely nonsensical in context
@@ -109,12 +117,8 @@ class TranscribeAudioJob < ApplicationJob
 
       When in doubt — output the text unchanged.
 
-      Examples:
-      Input: "он сказал чо это невозможно"
-      Output: "он сказал чо это невозможно"
-
-      Input: "встреча в понедельник в десять чесов"
-      Output: "встреча в понедельник в десять часов"
+      Examples (#{lang_label}):
+      #{correction_examples(detected_language)}
 
       Now process this text and output ONLY the result with no commentary:
       ###
@@ -138,6 +142,32 @@ class TranscribeAudioJob < ApplicationJob
   rescue StandardError => e
     Rails.logger.warn("Transcription correction error (using raw): #{e.message}")
     raw_text
+  end
+
+  def correction_examples(detected_language)
+    if detected_language == 'en'
+      <<~EXAMPLES
+        Input: "i went to the stor to buy bred"
+        Output: "i went to the stor to buy bred"
+
+        Input: "the meting is schedled for monday"
+        Output: "the meeting is schedled for monday"
+
+        Input: "please send the reprot by tomorrow"
+        Output: "please send the report by tomorrow"
+      EXAMPLES
+    else
+      <<~EXAMPLES
+        Input: "он сказал чо это невозможно"
+        Output: "он сказал чо это невозможно"
+
+        Input: "встреча в понедельник в десять чесов"
+        Output: "встреча в понедельник в десять часов"
+
+        Input: "нужно купить хлеп и малако"
+        Output: "нужно купить хлеп и малако"
+      EXAMPLES
+    end
   end
 
   def notify_telegram_user(document, transcription)
