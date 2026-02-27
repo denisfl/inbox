@@ -95,7 +95,7 @@
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 /* ─── Markdown Editor ─────────────────────────────────────────── */
@@ -108,29 +108,25 @@
   gap: 0.5rem;
 }
 
-/* Edit button — visible on hover of the wrapper */
+/* Edit button — always visible, subtle */
 .markdown-edit-btn {
   flex-shrink: 0;
-  opacity: 0;
-  transition: opacity 150ms ease;
   background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 0.85rem;
-  padding: 2px 4px;
+  border: 1px solid var(--color-border, #e5e7eb);
   border-radius: 4px;
-  line-height: 1.5;
+  cursor: pointer;
+  padding: 3px 5px;
   color: var(--color-text-muted, #9ca3af);
+  line-height: 1;
   align-self: flex-start;
   margin-top: 2px;
-}
-
-.markdown-preview-wrapper:hover .markdown-edit-btn {
-  opacity: 1;
+  transition: background 150ms ease, color 150ms ease;
 }
 
 .markdown-edit-btn:hover {
   background: var(--color-bg-secondary, #f3f4f6);
+  color: var(--color-text, #374151);
+  border-color: var(--color-text-muted, #9ca3af);
 }
 
 /* Preview (rendered markdown) */

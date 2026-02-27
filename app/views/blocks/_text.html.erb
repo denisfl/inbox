@@ -9,7 +9,7 @@
       <%= render_markdown(block.content_hash["text"]) %>
     </div>
     <button type="button"
-            class="markdown-edit-btn btn-icon"
+            class="markdown-edit-btn"
             title="Edit"
             data-action="click->markdown-editor#startEditing">
       <%= heroicon :pencil, width: 14, height: 14 %>
@@ -29,7 +29,7 @@
               class="btn btn-sm btn-primary"
               data-action="click->markdown-editor#saveBlock">Save</button>
       <button type="button"
-              class="btn btn-sm"
+              class="btn btn-sm btn-secondary"
               data-action="click->markdown-editor#cancelEdit">Cancel</button>
     </div>
   </div>
