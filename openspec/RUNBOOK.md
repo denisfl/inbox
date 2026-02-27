@@ -30,8 +30,8 @@ docker compose ps
 ```bash
 cd ~/inbox
 git pull origin main
-docker compose -f docker-compose.yml -f docker-compose.production.yml build web worker
-docker compose -f docker-compose.yml -f docker-compose.production.yml up -d web worker
+docker compose -f docker-compose.yml -f docker-compose.production.yml --env-file .env.production build web worker
+docker compose -f docker-compose.yml -f docker-compose.production.yml --env-file .env.production up -d web worker
 ```
 
 Проверить, что поднялось:
@@ -164,9 +164,9 @@ docker compose up -d web worker   # пересоздаёт контейнеры 
 ```bash
 cd ~/inbox
 git pull origin main
-docker compose -f docker-compose.yml -f docker-compose.production.yml build --no-cache web worker
-docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
-docker compose exec web rails db:migrate
+docker compose -f docker-compose.yml -f docker-compose.production.yml --env-file .env.production build --no-cache web worker
+docker compose -f docker-compose.yml -f docker-compose.production.yml --env-file .env.production up -d
+docker compose -f docker-compose.yml -f docker-compose.production.yml --env-file .env.production exec web bin/rails db:migrate
 ```
 
 ---
@@ -237,8 +237,21 @@ docker compose up -d whisper
 docker compose down
 
 # Старт всего
-docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.production.yml --env-file .env.production up -d
 
 # Старт с логами (foreground)
-docker compose -f docker-compose.yml -f docker-compose.production.yml up
+docker compose -f docker-compose.yml -f docker-compose.production.yml --env-file .env.production up
 ```
+
+---
+
+## 13. Важно: всегда использовать `--env-file`
+
+Docker Compose **по умолчанию читает `.env`**, но не `.env.production`.
+
+**Всегда** используй полную команду:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.production.yml --env-file .env.production <команда>
+```
+
+Без `--env-file .env.production` → `SECRET_KEY_BASE` не передаётся → Rails падает при старте.

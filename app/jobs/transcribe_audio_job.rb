@@ -101,32 +101,25 @@ class TranscribeAudioJob < ApplicationJob
                  end
 
     prompt = <<~PROMPT
-      You are a #{lang_label} speech recognition post-processor. Your ONLY job is minimal error correction.
+      TASK: Fix obvious speech recognition errors in the #{lang_label} text below.
 
-      CORRECT only if ALL conditions are met:
-      - The word is phonetically impossible or completely nonsensical in context
-      - The correct form is unambiguous (only one possible fix)
-      - The fix requires changing 1-2 characters maximum
+      OUTPUT RULES (MANDATORY):
+      - Output ONLY the corrected text, nothing else
+      - No explanations, no options, no comments, no formatting, no prefixes
+      - Keep every word. Do not add or remove words.
+      - Keep original punctuation and capitalization.
+      - If a word looks wrong but you are not 100% sure, keep it as-is.
+      - Fix only clear phonetic transcription errors (1-2 character typos).
 
-      NEVER:
-      - Add, remove, or reorder words
-      - Change punctuation or capitalization
-      - Rephrase or improve style
-      - Add any prefix like "Corrected:" or "Here is:" before output
-      - Change words that could be valid in any context (names, slang, domain terms)
-
-      When in doubt — output the text unchanged.
-
-      Examples (#{lang_label}):
+      EXAMPLES OF CORRECT BEHAVIOR:
       #{correction_examples(detected_language)}
 
-      Now process this text and output ONLY the result with no commentary:
-      ###
+      TEXT TO FIX:
       #{raw_text}
-      ###
     PROMPT
 
-    response = HTTP.timeout(60).post(
+    timeout_seconds = ENV.fetch('OLLAMA_CORRECTION_TIMEOUT', '300').to_i
+    response = HTTP.timeout(timeout_seconds).post(
       "#{ENV.fetch('OLLAMA_BASE_URL', 'http://ollama:11434')}/api/generate",
       json: { model: model, prompt: prompt, stream: false }
     )
@@ -138,6 +131,13 @@ class TranscribeAudioJob < ApplicationJob
 
     data = JSON.parse(response.body)
     corrected = data['response']&.strip.presence
+
+    # Safety check: if response is suspiciously long vs input, it's likely chatty — discard
+    if corrected && corrected.length > raw_text.length * 1.5
+      Rails.logger.warn("Ollama correction response too long (#{corrected.length} vs #{raw_text.length}) — using raw")
+      return raw_text
+    end
+
     corrected || raw_text
   rescue StandardError => e
     Rails.logger.warn("Transcription correction error (using raw): #{e.message}")
@@ -147,25 +147,31 @@ class TranscribeAudioJob < ApplicationJob
   def correction_examples(detected_language)
     if detected_language == 'en'
       <<~EXAMPLES
-        Input: "i went to the stor to buy bred"
-        Output: "i went to the stor to buy bred"
+        Input:  "i went to the stor to buy bred and milke"
+        Output: "i went to the stor to buy bred and milke"
+        (explanation: uncertain words kept as-is)
 
-        Input: "the meting is schedled for monday"
-        Output: "the meeting is schedled for monday"
+        Input:  "the meeting is schedled for monday"
+        Output: "the meeting is scheduled for monday"
+        (explanation: "schedled" → "scheduled" — clear typo)
 
-        Input: "please send the reprot by tomorrow"
+        Input:  "please send the reprot by tomorrow"
         Output: "please send the report by tomorrow"
+        (explanation: "reprot" → "report" — clear typo)
       EXAMPLES
     else
       <<~EXAMPLES
-        Input: "он сказал чо это невозможно"
-        Output: "он сказал чо это невозможно"
-
-        Input: "встреча в понедельник в десять чесов"
+        Input:  "встреча в понедельник в десять чесов"
         Output: "встреча в понедельник в десять часов"
+        (explanation: "чесов" → "часов" — clear typo)
 
-        Input: "нужно купить хлеп и малако"
+        Input:  "нужно купить хлеп и малако"
         Output: "нужно купить хлеп и малако"
+        (explanation: uncertain words kept as-is)
+
+        Input:  "он сказал чо это невозможно"
+        Output: "он сказал чо это невозможно"
+        (explanation: "чо" might be intentional slang — keep as-is)
       EXAMPLES
     end
   end
