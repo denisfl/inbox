@@ -30,6 +30,8 @@ Rails.application.routes.draw do
       member do
         post :classify
         post :extract_tags
+        post :upload
+        get  :preview
         get 'export/:format', to: 'documents#export', as: :export
       end
     end
@@ -47,7 +49,7 @@ Rails.application.routes.draw do
 
   # Web UI routes
   resources :documents, only: [:index, :show, :edit, :new]
-  
+
   # Shortcut for creating new document
   get '/new', to: 'documents#new', as: :new_note
 

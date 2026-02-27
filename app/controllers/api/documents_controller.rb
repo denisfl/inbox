@@ -1,5 +1,5 @@
 class Api::DocumentsController < Api::BaseController
-  before_action :set_document, only: [:show, :update, :destroy]
+  before_action :set_document, only: [:show, :update, :destroy, :upload, :preview]
 
   # GET /api/documents
   def index
@@ -71,6 +71,82 @@ class Api::DocumentsController < Api::BaseController
   def destroy
     @document.destroy
     head :no_content
+  end
+
+  # GET /api/documents/:id/preview
+  # Returns rendered HTML for the whole document:
+  #   - native <audio> players for each audio file block
+  #   - markdown-rendered text from the first text block
+  def preview
+    audio_mime_re = /\Aaudio\//
+    audio_ext_re  = /\.(ogg|mp3|m4a|wav|opus|aac|flac|webm)\z/i
+    audio_html    = ""
+
+    @document.blocks.where(block_type: "file").find_each do |b|
+      next unless b.file.attached?
+      next unless b.file.content_type.to_s.match?(audio_mime_re) ||
+                  b.file.filename.to_s.match?(audio_ext_re)
+
+      audio_url = url_for(b.file)
+      filename  = ERB::Util.html_escape(b.file.filename.to_s)
+      safe_url  = ERB::Util.html_escape(audio_url)
+      audio_html += <<~HTML
+        <div class="audio-block">
+          <audio controls preload="metadata" src="#{safe_url}" style="width:100%">
+            Your browser does not support audio playback.
+          </audio>
+          <div class="audio-block-filename">🎙 #{filename}</div>
+        </div>
+      HTML
+    end
+
+    text_block = @document.blocks.find_by(block_type: "text")
+    text_html  = ""
+
+    if text_block
+      text = text_block.content_hash["text"].to_s
+      # Pre-process task lists (Redcarpet doesn't support GFM tasklists)
+      text = text
+        .gsub(/^- \[x\] /i, "- \x00CHECKED\x00 ")
+        .gsub(/^- \[ \] /,  "- \x00UNCHECKED\x00 ")
+      renderer = Redcarpet::Render::HTML.new(
+        hard_wrap: true,
+        link_attributes: { target: "_blank", rel: "noopener noreferrer" }
+      )
+      md = Redcarpet::Markdown.new(renderer,
+        autolink: true, tables: true, fenced_code_blocks: true,
+        strikethrough: true, lax_spacing: true,
+        no_intra_emphasis: true, space_after_headers: false
+      )
+      text_html = md.render(text)
+        .gsub("\x00CHECKED\x00",   '<input type="checkbox" checked>')
+        .gsub("\x00UNCHECKED\x00", '<input type="checkbox">')
+    end
+
+    render json: { html: audio_html + text_html }
+  end
+
+  # POST /api/documents/:id/upload
+  # Attaches a file or image to the document via Active Storage.
+  # Returns { url, filename, is_image } on success.
+  def upload    file = params[:file]
+    return render json: { error: "No file provided" }, status: :bad_request if file.blank?
+
+    is_image = file.content_type.to_s.start_with?("image/")
+
+    if is_image
+      @document.images.attach(file)
+      attachment = @document.images.last
+    else
+      @document.files.attach(file)
+      attachment = @document.files.last
+    end
+
+    render json: {
+      url: url_for(attachment),
+      filename: attachment.filename.to_s,
+      is_image: is_image
+    }
   end
 
   private

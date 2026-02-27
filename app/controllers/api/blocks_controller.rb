@@ -61,6 +61,7 @@ class Api::BlocksController < Api::BaseController
     }
   end
 
+
   private
 
   def set_document
