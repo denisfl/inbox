@@ -1,4 +1,7 @@
 class Document < ApplicationRecord
+  # Document types
+  DOCUMENT_TYPES = %w[note todo event].freeze
+
   # Associations
   has_many :blocks, dependent: :destroy
   has_many :document_tags, dependent: :destroy
@@ -7,6 +10,7 @@ class Document < ApplicationRecord
   # Validations
   validates :title, presence: true
   validates :slug, uniqueness: true, allow_blank: true
+  validates :document_type, inclusion: { in: DOCUMENT_TYPES }, allow_nil: true
 
   # Callbacks
   before_validation :generate_slug, if: -> { slug.blank? && title.present? }
@@ -14,6 +18,8 @@ class Document < ApplicationRecord
   # Scopes
   scope :recent, -> { order(created_at: :desc) }
   scope :by_source, ->(source) { where(source: source) }
+  scope :todos, -> { where(document_type: 'todo') }
+  scope :notes, -> { where(document_type: 'note') }
 
   # Full-text search using SQLite FTS5
   def self.search(query, page: 1, per_page: 20)

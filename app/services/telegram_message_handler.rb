@@ -48,21 +48,13 @@ class TelegramMessageHandler
   end
 
   def handle_text
-    doc = Document.create!(
-      title: message.text.truncate(50),
-      source: 'telegram',
-      telegram_chat_id: message.chat.id,
-      telegram_message_id: message.message_id
-    )
+    result = IntentClassifierService.classify(message.text)
+    doc = IntentRouter.dispatch(result, message.chat.id)
 
-    doc.blocks.create!(
-      block_type: 'text',
-      position: 0,
-      content: { text: message.text }.to_json
-    )
+    # Update telegram_message_id after creation (IntentRouter doesn't have access to it)
+    doc.update_columns(telegram_message_id: message.message_id) if doc&.persisted?
 
-    send_reply("✅ Note saved")
-    Rails.logger.info("Created text document: #{doc.id}")
+    Rails.logger.info("Created #{result.intent} document: #{doc&.id} (confidence: #{result.confidence})")
   end
 
   def handle_photo
