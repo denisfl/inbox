@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Markdown editor controller for text blocks.
-// - View mode: rendered HTML + pencil edit button (appears on hover)
+// - View mode: rendered HTML + inline Edit button
 // - Edit mode: raw Markdown textarea — ⌘↵/Save button to save, Esc/Cancel to discard
 // - Checkbox toggling: click updates Markdown source and auto-saves
 export default class extends Controller {
@@ -9,10 +9,11 @@ export default class extends Controller {
   static values = { blockId: Number, documentId: Number }
 
   connect() {
+    console.log("✅ markdown-editor connected, blockId:", this.blockIdValue)
     // If block content is empty, go straight to edit mode on mount
     const content = this.hasRenderedContentTarget
       ? this.renderedContentTarget.textContent.trim()
-      : this.textareaTarget.value.trim()
+      : (this.hasTextareaTarget ? this.textareaTarget.value.trim() : "")
     if (!content) {
       this.startEditing()
     }
@@ -54,7 +55,7 @@ export default class extends Controller {
 
   async saveBlock() {
     const text = this.textareaTarget.value
-    const token = document.querySelector('meta[name="csrf-token"]')?.content
+    const authToken = document.querySelector('meta[name="auth-token"]')?.content
 
     try {
       const response = await fetch(
@@ -63,7 +64,7 @@ export default class extends Controller {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            "X-CSRF-Token": token,
+            "Authorization": `Token token=${authToken}`,
           },
           body: JSON.stringify({ block: { content: { text } } }),
         }
