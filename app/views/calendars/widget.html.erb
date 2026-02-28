@@ -1,0 +1,69 @@
+<%# Calendar widget content — rendered inside Turbo Frame "calendar-widget"
+    via GET /calendar/widget %>
+
+<%= turbo_frame_tag "calendar-widget" do %>
+  <div class="cal-widget">
+    <div class="cal-widget-header">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="cal-widget-icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5"/>
+      </svg>
+      <span class="cal-widget-title">Upcoming</span>
+      <%= link_to calendar_path, class: "cal-widget-link" do %>
+        View all →
+      <% end %>
+    </div>
+
+    <%# Today %>
+    <% if @today_events.any? %>
+      <div class="cal-widget-section">
+        <div class="cal-widget-section-label">Today</div>
+        <% @today_events.each do |ev| %>
+          <div class="cal-widget-event">
+            <span class="cal-widget-event-dot" style="background-color: <%= ev.display_color %>;"></span>
+            <div class="cal-widget-event-body">
+              <div class="cal-widget-event-time"><%= ev.time_label %><% if ev.duration_label %> · <%= ev.duration_label %><% end %></div>
+              <div class="cal-widget-event-title"><%= ev.title %></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Tomorrow %>
+    <% if @tomorrow_events.any? %>
+      <div class="cal-widget-section">
+        <div class="cal-widget-section-label">Tomorrow</div>
+        <% @tomorrow_events.each do |ev| %>
+          <div class="cal-widget-event">
+            <span class="cal-widget-event-dot" style="background-color: <%= ev.display_color %>;"></span>
+            <div class="cal-widget-event-body">
+              <div class="cal-widget-event-time"><%= ev.time_label %><% if ev.duration_label %> · <%= ev.duration_label %><% end %></div>
+              <div class="cal-widget-event-title"><%= ev.title %></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Rest of this week %>
+    <% if @week_events.any? %>
+      <div class="cal-widget-section">
+        <div class="cal-widget-section-label">This week</div>
+        <% @week_events.each do |ev| %>
+          <div class="cal-widget-event">
+            <span class="cal-widget-event-dot" style="background-color: <%= ev.display_color %>;"></span>
+            <div class="cal-widget-event-body">
+              <div class="cal-widget-event-time"><%= ev.time_label %><% if ev.duration_label %> · <%= ev.duration_label %><% end %></div>
+              <div class="cal-widget-event-title"><%= ev.title %></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Empty state %>
+    <% if @today_events.none? && @tomorrow_events.none? && @week_events.none? %>
+      <div class="cal-widget-empty">No upcoming events</div>
+    <% end %>
+  </div>
+<% end %>

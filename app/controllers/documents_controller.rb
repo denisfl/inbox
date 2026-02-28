@@ -55,6 +55,9 @@ class DocumentsController < ApplicationController
 
     # Pagy pagination (20 items per page)
     @pagy, @documents = pagy(documents_scope, limit: 20)
+
+    # Show calendar widget sidebar if there are upcoming events this week
+    @show_calendar_widget = CalendarEvent.this_week.exists?
   end
 
   def show

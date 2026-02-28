@@ -1,0 +1,475 @@
+<% content_for :title, "Calendar — Inbox" %>
+
+<div class="calendar-page" data-controller="calendar">
+
+  <%# ── Top bar ─────────────────────────────────────────────────────── %>
+  <div class="calendar-topbar">
+    <h1 class="calendar-heading">Calendar</h1>
+    <div class="calendar-topbar-actions">
+      <%= link_to calendar_path(date: Date.today), class: "btn btn-sm" do %>
+        Today
+      <% end %>
+    </div>
+  </div>
+
+  <div class="calendar-layout">
+
+    <%# ── Left: Mini-month ────────────────────────────────────────────── %>
+    <aside class="calendar-sidebar">
+      <%# Navigation arrows %>
+      <div class="mini-month-header">
+        <%= link_to calendar_path(date: (@month_start - 1.month).to_s),
+              class: "mini-month-nav-btn", "aria-label": "Previous month" do %>
+          ‹
+        <% end %>
+        <span class="mini-month-title"><%= @month_start.strftime("%B %Y") %></span>
+        <%= link_to calendar_path(date: (@month_start + 1.month).to_s),
+              class: "mini-month-nav-btn", "aria-label": "Next month" do %>
+          ›
+        <% end %>
+      </div>
+
+      <%# Day-of-week headers %>
+      <div class="mini-month-grid">
+        <% %w[Mo Tu We Th Fr Sa Su].each do |day| %>
+          <div class="mini-month-dow"><%= day %></div>
+        <% end %>
+
+        <%# Blank cells before month start %>
+        <% ((@month_start.wday - 1) % 7).times do %>
+          <div class="mini-month-cell mini-month-cell--empty"></div>
+        <% end %>
+
+        <%# Days of the month %>
+        <% (@month_start..@month_end).each do |day| %>
+          <%
+            is_today    = day == Date.today
+            is_selected = day == @view_date
+            has_content = @days_with_content.include?(day)
+            classes = ["mini-month-cell"]
+            classes << "mini-month-cell--today"    if is_today
+            classes << "mini-month-cell--selected" if is_selected
+            classes << "mini-month-cell--has-events" if has_content
+          %>
+          <%= link_to calendar_path(date: day.to_s),
+                class: classes.join(" "),
+                "data-calendar-target": "miniDay",
+                "data-date": day.to_s do %>
+            <%= day.day %>
+            <% if has_content %>
+              <span class="mini-month-dot"></span>
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+
+      <%# Quick stats %>
+      <div class="calendar-sidebar-stats">
+        <div class="calendar-stat">
+          <span class="calendar-stat-value"><%= CalendarEvent.today.count %></span>
+          <span class="calendar-stat-label">today</span>
+        </div>
+        <div class="calendar-stat">
+          <span class="calendar-stat-value"><%= CalendarEvent.this_week.count %></span>
+          <span class="calendar-stat-label">this week</span>
+        </div>
+      </div>
+    </aside>
+
+    <%# ── Right: Agenda ───────────────────────────────────────────────── %>
+    <section class="calendar-agenda">
+      <% if @timeline.empty? %>
+        <div class="agenda-empty">
+          <div class="agenda-empty-icon">📅</div>
+          <div class="agenda-empty-text">No events in this period</div>
+          <div class="agenda-empty-sub">Sync Google Calendar to see events here</div>
+        </div>
+      <% else %>
+        <% @timeline.each do |date, entries| %>
+          <%
+            date_id = "day-#{date}"
+            is_today = date == Date.today
+          %>
+          <div class="agenda-day" id="<%= date_id %>" data-calendar-target="agendaDay" data-date="<%= date %>">
+            <%# Day header %>
+            <div class="agenda-day-header <%= 'agenda-day-header--today' if is_today %>">
+              <span class="agenda-day-label">
+                <span class="agenda-day-name"><%= date.strftime("%A") %></span>
+                <span class="agenda-day-date"><%= date.strftime("%B %-d") %></span>
+              </span>
+              <% if is_today %>
+                <span class="agenda-today-badge">Today</span>
+              <% end %>
+            </div>
+
+            <%# Day entries %>
+            <div class="agenda-entries">
+              <% entries.each do |entry| %>
+                <% if entry[:type] == :event %>
+                  <% ev = entry[:record] %>
+                  <div class="agenda-entry agenda-entry--event">
+                    <div class="agenda-entry-color-bar"
+                         style="background: <%= ev.display_color %>"></div>
+                    <div class="agenda-entry-time">
+                      <%= ev.time_label %>
+                    </div>
+                    <div class="agenda-entry-body">
+                      <% if ev.html_link.present? %>
+                        <%= link_to ev.title, ev.html_link, target: "_blank",
+                              rel: "noopener noreferrer",
+                              class: "agenda-entry-title" %>
+                      <% else %>
+                        <span class="agenda-entry-title"><%= ev.title %></span>
+                      <% end %>
+                      <% if ev.duration_label.present? && !ev.all_day? %>
+                        <span class="agenda-entry-duration"><%= ev.duration_label %></span>
+                      <% end %>
+                      <% if ev.description.present? %>
+                        <div class="agenda-entry-desc"><%= truncate(ev.description, length: 80) %></div>
+                      <% end %>
+                    </div>
+                    <div class="agenda-entry-source agenda-entry-source--gcal">
+                      GCal
+                    </div>
+                  </div>
+                <% elsif entry[:type] == :document %>
+                  <% doc = entry[:record] %>
+                  <div class="agenda-entry agenda-entry--document">
+                    <div class="agenda-entry-color-bar"
+                         style="background: var(--color-text-muted, #9ca3af)"></div>
+                    <div class="agenda-entry-time">
+                      <%= doc.created_at.strftime("%-H:%M") %>
+                    </div>
+                    <div class="agenda-entry-body">
+                      <%= link_to doc.title.presence || "(untitled)",
+                            document_path(doc),
+                            class: "agenda-entry-title" %>
+                      <% text_block = doc.blocks.find_by(block_type: "text") %>
+                      <% if text_block %>
+                        <div class="agenda-entry-desc">
+                          <%= truncate(text_block.content_hash["text"].to_s.gsub(/[#*`>\-\[\]]+/, " ").squish, length: 80) %>
+                        </div>
+                      <% end %>
+                    </div>
+                    <div class="agenda-entry-source agenda-entry-source--inbox">
+                      Inbox
+                    </div>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    </section>
+
+  </div><%# .calendar-layout %>
+</div><%# .calendar-page %>
+
+<style>
+  /* ── Layout ──────────────────────────────────────────────────────────────── */
+  .calendar-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 24px 60px;
+  }
+
+  .calendar-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .calendar-heading {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text, #111827);
+    margin: 0;
+  }
+
+  .calendar-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  @media (max-width: 700px) {
+    .calendar-layout { grid-template-columns: 1fr; }
+    .calendar-sidebar { order: 2; }
+    .calendar-agenda  { order: 1; }
+  }
+
+  /* ── Mini-month ──────────────────────────────────────────────────────────── */
+  .calendar-sidebar {
+    position: sticky;
+    top: 80px;
+  }
+
+  .mini-month-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .mini-month-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--color-text, #111827);
+  }
+
+  .mini-month-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    font-size: 1.2rem;
+    line-height: 1;
+    color: var(--color-text-muted, #6b7280);
+    text-decoration: none;
+    transition: background 150ms;
+  }
+  .mini-month-nav-btn:hover {
+    background: var(--color-bg-secondary, #f3f4f6);
+    color: var(--color-text, #111827);
+  }
+
+  .mini-month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+
+  .mini-month-dow {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-text-muted, #9ca3af);
+    padding: 4px 0;
+  }
+
+  .mini-month-cell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--color-text, #111827);
+    transition: background 120ms;
+    cursor: pointer;
+  }
+
+  .mini-month-cell:hover {
+    background: var(--color-bg-secondary, #f3f4f6);
+  }
+
+  .mini-month-cell--empty {
+    pointer-events: none;
+  }
+
+  .mini-month-cell--today {
+    font-weight: 700;
+    color: var(--color-primary, #3b82f6);
+  }
+
+  .mini-month-cell--selected {
+    background: var(--color-primary, #3b82f6) !important;
+    color: #fff !important;
+  }
+
+  .mini-month-dot {
+    display: block;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--color-primary, #3b82f6);
+    margin-top: 1px;
+  }
+
+  .mini-month-cell--selected .mini-month-dot {
+    background: rgba(255,255,255,0.7);
+  }
+
+  /* Stats */
+  .calendar-sidebar-stats {
+    display: flex;
+    gap: 16px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border, #e5e7eb);
+  }
+
+  .calendar-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .calendar-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text, #111827);
+    line-height: 1;
+  }
+
+  .calendar-stat-label {
+    font-size: 0.7rem;
+    color: var(--color-text-muted, #9ca3af);
+    margin-top: 2px;
+  }
+
+  /* ── Agenda ───────────────────────────────────────────────────────────────── */
+  .calendar-agenda {
+    min-height: 400px;
+  }
+
+  .agenda-empty {
+    text-align: center;
+    padding: 80px 24px;
+    color: var(--color-text-muted, #9ca3af);
+  }
+
+  .agenda-empty-icon { font-size: 3rem; margin-bottom: 12px; }
+  .agenda-empty-text { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+  .agenda-empty-sub  { font-size: 0.85rem; }
+
+  /* Day group */
+  .agenda-day {
+    margin-bottom: 32px;
+    scroll-margin-top: 80px;
+  }
+
+  .agenda-day-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--color-border, #e5e7eb);
+    margin-bottom: 10px;
+  }
+
+  .agenda-day-header--today {
+    border-color: var(--color-primary, #3b82f6);
+  }
+
+  .agenda-day-label {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .agenda-day-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-muted, #9ca3af);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .agenda-day-date {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-text, #111827);
+  }
+
+  .agenda-today-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: var(--color-primary, #3b82f6);
+    color: #fff;
+    border-radius: 999px;
+    padding: 2px 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* Entry row */
+  .agenda-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--color-border, #f3f4f6);
+  }
+
+  .agenda-entry:last-child { border-bottom: none; }
+
+  .agenda-entry-color-bar {
+    flex-shrink: 0;
+    width: 3px;
+    border-radius: 2px;
+    align-self: stretch;
+    min-height: 20px;
+  }
+
+  .agenda-entry-time {
+    flex-shrink: 0;
+    width: 48px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-muted, #6b7280);
+    padding-top: 2px;
+    text-align: right;
+  }
+
+  .agenda-entry-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .agenda-entry-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text, #111827);
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .agenda-entry-title:hover { text-decoration: underline; }
+
+  .agenda-entry-duration {
+    font-size: 0.75rem;
+    color: var(--color-text-muted, #9ca3af);
+    margin-left: 6px;
+  }
+
+  .agenda-entry-desc {
+    font-size: 0.78rem;
+    color: var(--color-text-muted, #6b7280);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .agenda-entry-source {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    align-self: flex-start;
+    margin-top: 2px;
+  }
+
+  .agenda-entry-source--gcal {
+    background: #e8f0fe;
+    color: #1a73e8;
+  }
+
+  .agenda-entry-source--inbox {
+    background: var(--color-bg-secondary, #f3f4f6);
+    color: var(--color-text-muted, #6b7280);
+  }
+</style>

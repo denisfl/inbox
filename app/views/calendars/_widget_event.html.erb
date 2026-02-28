@@ -1,0 +1,8 @@
+<%# Single event row in the calendar widget %>
+<div class="cal-widget-event">
+  <span class="cal-widget-event-dot" style="background-color: <%= event.display_color %>;"></span>
+  <div class="cal-widget-event-body">
+    <div class="cal-widget-event-time"><%= event.time_label %><% if event.duration_label %> · <%= event.duration_label %><% end %></div>
+    <div class="cal-widget-event-title"><%= event.title %></div>
+  </div>
+</div>

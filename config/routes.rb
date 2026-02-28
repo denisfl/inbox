@@ -50,6 +50,10 @@ Rails.application.routes.draw do
   # Web UI routes
   resources :documents, only: [:index, :show, :edit, :new]
 
+  # Calendar (Agenda + mini-month)
+  get "/calendar",        to: "calendars#index",  as: :calendar
+  get "/calendar/widget", to: "calendars#widget", as: :calendar_widget
+
   # Shortcut for creating new document
   get '/new', to: 'documents#new', as: :new_note
 
