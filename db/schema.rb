@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_01_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_01_100000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -106,9 +106,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_01_000000) do
     t.index ["name"], name: "index_tags_on_name"
   end
 
+  create_table "tasks", force: :cascade do |t|
+    t.boolean "completed", default: false, null: false
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.integer "document_id"
+    t.date "due_date"
+    t.time "due_time"
+    t.integer "position", default: 0, null: false
+    t.string "priority", default: "mid", null: false
+    t.string "recurrence_rule"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["completed", "due_date"], name: "index_tasks_on_completed_and_due_date"
+    t.index ["completed", "priority", "position"], name: "index_tasks_on_completed_and_priority_and_position"
+    t.index ["document_id"], name: "index_tasks_on_document_id"
+    t.index ["due_date"], name: "index_tasks_on_due_date"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "blocks", "documents"
   add_foreign_key "document_tags", "documents"
   add_foreign_key "document_tags", "tags"
+  add_foreign_key "tasks", "documents"
 end

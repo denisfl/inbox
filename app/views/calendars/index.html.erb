@@ -115,6 +115,7 @@
         <%
           filter_options = [
             ["events", "Events"],
+            ["tasks", "Tasks"],
             ["notes", "Notes"],
             ["all", "All"]
           ]
@@ -178,6 +179,14 @@
                         <%= link_to (doc.title.presence || "(untitled)").truncate(30),
                               edit_document_path(doc), class: "week-event-title" %>
                       </div>
+                    <% elsif entry[:type] == :task %>
+                      <% task = entry[:record] %>
+                      <div class="week-event week-event--task week-event--priority-<%= task.priority %>">
+                        <div class="week-event-time">
+                          <% if task.due_time.present? %><%= task.due_time.strftime("%-H:%M") %><% end %>
+                        </div>
+                        <%= link_to task.title.truncate(30), edit_task_path(task), class: "week-event-title" %>
+                      </div>
                     <% end %>
                   <% end %>
                   <% if (@week_events_by_day[day] || []).empty? %>
@@ -233,6 +242,11 @@
                         <div class="event-popup" hidden data-event-popup-target="popup">
                           <%= render "calendar_events/popup", event: ev %>
                         </div>
+                      </div>
+                    <% elsif entry[:type] == :task %>
+                      <% task = entry[:record] %>
+                      <div class="month-event month-event--task" style="border-left: 2px solid var(--color-primary);">
+                        <span class="month-event-title"><%= task.title.truncate(15) %></span>
                       </div>
                     <% else %>
                       <div class="month-event month-event--doc">
@@ -335,6 +349,36 @@
                     </div>
                     <div class="agenda-entry-source agenda-entry-source--inbox">
                       Inbox
+                    </div>
+                  </div>
+                <% elsif entry[:type] == :task %>
+                  <% task = entry[:record] %>
+                  <div class="agenda-entry agenda-entry--task">
+                    <div class="agenda-entry-color-bar"
+                         style="background: var(--color-primary)"></div>
+                    <%= button_to toggle_task_path(task), method: :patch,
+                          class: "agenda-task-checkbox-btn" do %>
+                      <span class="task-checkbox <%= 'task-checkbox--checked' if task.completed? %>">
+                        <% if task.completed? %>
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width:12px;height:12px;">
+                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                          </svg>
+                        <% end %>
+                      </span>
+                    <% end %>
+                    <div class="agenda-entry-body">
+                      <span class="agenda-entry-title <%= 'agenda-entry-title--done' if task.completed? %>">
+                        <%= task.title %>
+                      </span>
+                      <% if task.due_time.present? %>
+                        <span class="agenda-entry-duration"><%= task.due_time.strftime("%H:%M") %></span>
+                      <% end %>
+                      <% if task.description.present? %>
+                        <div class="agenda-entry-desc"><%= truncate(task.description, length: 80) %></div>
+                      <% end %>
+                    </div>
+                    <div class="agenda-entry-source agenda-entry-source--task">
+                      Task
                     </div>
                   </div>
                 <% end %>
@@ -708,6 +752,57 @@
   .agenda-entry-source--ical {
     background: color-mix(in srgb, var(--color-accent) 20%, var(--color-bg-primary));
     color: color-mix(in srgb, var(--color-accent) 70%, var(--color-text-primary));
+  }
+
+  .agenda-entry-source--task {
+    background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-primary));
+    color: var(--color-primary);
+  }
+
+  .agenda-entry-title--done {
+    text-decoration: line-through;
+    color: var(--color-text-tertiary);
+  }
+
+  .agenda-task-checkbox-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .agenda-entry--task .task-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--color-border-hover);
+    border-radius: var(--radius-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    color: transparent;
+  }
+
+  .agenda-entry--task .task-checkbox:hover {
+    border-color: var(--color-primary);
+  }
+
+  .agenda-entry--task .task-checkbox--checked {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+  }
+
+  .month-event--task {
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg-primary));
+  }
+
+  .week-event--task {
+    border-left: 3px solid var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg-primary));
   }
 
   /* Entry actions (source badge + edit + delete) */

@@ -1,0 +1,98 @@
+<% content_for :title, "New Task — Inbox" %>
+
+<div class="task-form-page">
+  <div class="task-form-container">
+    <header class="task-form-header">
+      <%= link_to tasks_path, class: "back-link" do %>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Задачи
+      <% end %>
+      <h1 class="task-form-title">Новая задача</h1>
+    </header>
+
+    <%= render "form", task: @task, url: tasks_path, method: :post, submit_label: "Создать" %>
+  </div>
+</div>
+
+<style>
+  .task-form-page {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+  }
+
+  .task-form-container {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+  }
+
+  .task-form-header {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .task-form-title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-bold);
+    color: var(--color-text-primary);
+    margin: var(--spacing-sm) 0 0;
+  }
+
+  .task-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .task-form-errors {
+    background: color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-primary));
+    border: 1px solid color-mix(in srgb, var(--color-danger) 30%, var(--color-border));
+    border-radius: var(--radius-base);
+    padding: var(--spacing-md);
+    color: var(--color-danger);
+    font-size: var(--text-sm);
+  }
+  .task-form-errors ul { margin: var(--spacing-xs) 0 0; padding-left: var(--spacing-md); }
+
+  .task-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .task-field-label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-secondary);
+  }
+
+  .task-field-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .task-description-input {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    resize: vertical;
+  }
+
+  .task-form-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+  }
+
+  @media (max-width: 640px) {
+    .task-form-page {
+      padding: var(--spacing-sm);
+    }
+    .task-field-group {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
