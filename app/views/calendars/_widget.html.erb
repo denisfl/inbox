@@ -1,0 +1,26 @@
+<%# Calendar widget — embedded via Turbo Frame in the sidebar.
+    Lazily fetches from /calendar/widget. Auto-refreshes every 5 minutes. %>
+
+<%= turbo_frame_tag "calendar-widget", src: calendar_widget_path, loading: :lazy do %>
+  <div class="cal-widget">
+    <div class="cal-widget-header">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="cal-widget-icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5"/>
+      </svg>
+      <span class="cal-widget-title">Upcoming</span>
+    </div>
+    <div class="cal-widget-empty">Loading…</div>
+  </div>
+<% end %>
+
+<%# Auto-refresh every 5 minutes %>
+<script>
+  (function() {
+    var frame = document.getElementById('calendar-widget');
+    if (!frame) return;
+    setInterval(function() {
+      frame.src = frame.getAttribute('src') || '<%= calendar_widget_path %>';
+    }, 5 * 60 * 1000);
+  })();
+</script>
+

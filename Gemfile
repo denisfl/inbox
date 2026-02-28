@@ -32,6 +32,12 @@ gem "redis", "~> 5.0"
 # Telegram bot integration
 gem "telegram-bot-ruby"
 
+# Google Calendar API
+gem "google-apis-calendar_v3", "~> 0.24"
+
+# iCalendar import/export
+gem "icalendar", "~> 2.10"
+
 # HTTP client for API calls
 gem "http", "~> 5.0"
 

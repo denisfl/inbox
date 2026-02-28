@@ -1,6 +1,12 @@
 <% content_for :title, "Inbox - Documents" %>
 <% content_for :page_title, @page_title || "All Notes" %>
 
+<%# Calendar widget sidebar (lazy-loaded via Turbo Frame) %>
+<% if @show_calendar_widget %>
+  <div class="inbox-with-sidebar">
+    <div class="inbox-main">
+<% end %>
+
 <div class="documents-container">
   <%# Filters and sorting bar %>
   <div class="filters-bar">
@@ -184,3 +190,12 @@
 }
 
 </style>
+
+<%# Close inbox-main + render calendar widget sidebar if active %>
+<% if @show_calendar_widget %>
+    </div><%# .inbox-main %>
+    <aside class="inbox-sidebar">
+      <%= render "calendars/widget" %>
+    </aside>
+  </div><%# .inbox-with-sidebar %>
+<% end %>

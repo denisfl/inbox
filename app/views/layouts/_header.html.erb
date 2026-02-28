@@ -11,6 +11,12 @@
 
     <div class="header-right">
 
+      <%# Calendar link %>
+      <%= link_to calendar_path, class: "btn btn-icon #{'btn-icon--active' if controller_name == 'calendars'}",
+            "aria-label": "Calendar", title: "Calendar" do %>
+        <%= heroicon(:calendar_days, style: 'width: 1.25rem; height: 1.25rem;') %>
+      <% end %>
+
       <%# Search button with popup input %>
       <div class="search-container" data-controller="search">
         <button class="btn btn-icon"
