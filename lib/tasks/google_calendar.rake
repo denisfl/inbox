@@ -8,11 +8,10 @@
 namespace :google_calendar do
   desc "One-time OAuth2 flow — starts local server, opens browser, saves refresh_token"
   task authorize: :environment do
-    require "googleauth"
     require "net/http"
     require "json"
     require "uri"
-    require "webrick"
+    require "socket"
 
     client_id     = ENV.fetch("GOOGLE_CLIENT_ID") { abort "GOOGLE_CLIENT_ID env var is required" }
     client_secret = ENV.fetch("GOOGLE_CLIENT_SECRET") { abort "GOOGLE_CLIENT_SECRET env var is required" }
@@ -21,14 +20,14 @@ namespace :google_calendar do
     port         = 8765
     callback_uri = "http://localhost:#{port}/oauth2callback"
 
-    # Build auth URL manually (avoid OOB flow which is deprecated)
+    # Build auth URL (OOB flow is deprecated by Google — use localhost redirect instead)
     auth_params = URI.encode_www_form(
       client_id:     client_id,
       redirect_uri:  callback_uri,
       response_type: "code",
       scope:         scope,
       access_type:   "offline",
-      prompt:        "consent"  # force refresh_token even if already authorized
+      prompt:        "consent"
     )
     auth_url = "https://accounts.google.com/o/oauth2/v2/auth?#{auth_params}"
 
@@ -41,24 +40,28 @@ namespace :google_calendar do
     puts "  URL: #{auth_url}"
     puts ""
 
-    # Try to open browser automatically
     system("open '#{auth_url}' 2>/dev/null || xdg-open '#{auth_url}' 2>/dev/null || true")
 
-    # Start a one-shot local WEBrick server to receive the redirect
+    # Minimal TCP server — no WEBrick gem needed
     received_code = nil
-    server = WEBrick::HTTPServer.new(Port: port, Logger: WEBrick::Log.new("/dev/null"), AccessLog: [])
+    puts "  Waiting for browser redirect on http://localhost:#{port}/oauth2callback ..."
+    puts "  (If browser did not open automatically, paste the URL above manually)"
+    puts ""
 
-    server.mount_proc "/oauth2callback" do |req, res|
-      received_code = req.query["code"]
-      res.body = "<html><body><h2>Authorization received! You can close this tab.</h2></body></html>"
-      res.content_type = "text/html"
-      server.shutdown
+    server = TCPServer.new("127.0.0.1", port)
+    client = server.accept
+    request = client.readpartial(4096)
+
+    # Parse "GET /oauth2callback?code=XXX HTTP/1.1"
+    if (m = request.match(/GET \/oauth2callback\?([^\s]+)/))
+      params = URI.decode_www_form(m[1]).to_h
+      received_code = params["code"]
     end
 
-    puts "  Waiting for browser redirect on http://localhost:#{port}/oauth2callback ..."
-    puts "  (If the browser did not open automatically, paste the URL above manually)"
-    puts ""
-    server.start
+    resp_body = "<html><body><h2>Authorization received! You can close this tab.</h2></body></html>"
+    client.write "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: #{resp_body.bytesize}\r\nConnection: close\r\n\r\n#{resp_body}"
+    client.close
+    server.close
 
     abort "No authorization code received." unless received_code
 
@@ -89,7 +92,7 @@ namespace :google_calendar do
       puts ""
     else
       puts "  ERROR: #{body.inspect}"
-      abort "Failed to obtain refresh_token. Make sure http://localhost:#{port}/oauth2callback is added as an Authorized Redirect URI in Google Cloud Console."
+      abort "Failed to obtain refresh_token. Make sure http://localhost:#{port}/oauth2callback is listed as Authorized Redirect URI in Google Cloud Console."
     end
   end
 
