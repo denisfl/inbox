@@ -21,3 +21,6 @@ application.register("markdown-editor", MarkdownEditorController);
 
 import SimpleEditorController from "./simple_editor_controller";
 application.register("simple-editor", SimpleEditorController);
+
+import EventPopupController from "./event_popup_controller";
+application.register("event-popup", EventPopupController);

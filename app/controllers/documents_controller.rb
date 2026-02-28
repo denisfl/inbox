@@ -1,5 +1,5 @@
 class DocumentsController < ApplicationController
-  before_action :set_document, only: [:show, :edit]
+  before_action :set_document, only: [:show, :edit, :destroy]
 
   def index
     documents_scope = Document.includes(:blocks, :tags)
@@ -56,16 +56,14 @@ class DocumentsController < ApplicationController
     # Pagy pagination (20 items per page)
     @pagy, @documents = pagy(documents_scope, limit: 20)
 
-    # Calendar widget: load upcoming events directly (no Turbo Frame needed)
-    @show_calendar_widget = CalendarEvent.this_week.exists?
-    if @show_calendar_widget
-      @widget_today    = CalendarEvent.today
-      @widget_tomorrow = CalendarEvent.tomorrow
-      @widget_week     = CalendarEvent.this_week
-                           .where.not(starts_at: Time.current.beginning_of_day..Time.current.end_of_day)
-                           .where.not(starts_at: 1.day.from_now.beginning_of_day..1.day.from_now.end_of_day)
-                           .limit(5)
-    end
+    # Calendar widget: always show, with events if available
+    @show_calendar_widget = true
+    @widget_today    = CalendarEvent.today
+    @widget_tomorrow = CalendarEvent.tomorrow
+    @widget_week     = CalendarEvent.this_week
+                         .where.not(starts_at: Time.current.beginning_of_day..Time.current.end_of_day)
+                         .where.not(starts_at: 1.day.from_now.beginning_of_day..1.day.from_now.end_of_day)
+                         .limit(5)
   end
 
   def show
@@ -94,6 +92,13 @@ class DocumentsController < ApplicationController
 
     # Redirect to edit page with 303 status (prevents Turbo caching)
     redirect_to edit_document_path(@document), status: :see_other
+  end
+
+  def destroy
+    @document.images.purge_later if @document.images.attached?
+    @document.files.purge_later if @document.files.attached?
+    @document.destroy!
+    redirect_to root_path, notice: "Note deleted", status: :see_other
   end
 
   private
