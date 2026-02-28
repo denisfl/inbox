@@ -115,7 +115,7 @@ class TelegramMessageHandler
 
     # Add timestamp to ensure unique slug
     title = "🎤 Voice #{Time.current.to_i}"
-    
+
     doc = Document.create!(
       title: title,
       source: 'telegram',

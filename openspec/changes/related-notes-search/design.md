@@ -7,12 +7,14 @@ The system already uses SQLite FTS5 for search (`documents_fts` table). Ollama i
 ## Goals / Non-Goals
 
 **Goals:**
+
 - After a document is created or its text content changes (via transcription), find the top-N most similar existing documents
 - Store relation results transiently (in memory for now; optionally persist)
 - Surface related documents in the document show/edit view
 - Run the search asynchronously (background job) to not block the transcription response
 
 **Non-Goals:**
+
 - Real-time semantic embeddings (Ollama embeddings are a future enhancement)
 - Bi-directional relation graph / knowledge graph
 - Persisting similarity scores in a separate table (v1 can query on-the-fly or cache on document)
@@ -25,6 +27,7 @@ The system already uses SQLite FTS5 for search (`documents_fts` table). Ollama i
 **Chosen:** Reuse the existing `documents_fts` MATCH query. After transcription, extract key terms from the new document's content and run an FTS5 MATCH query against all other documents. Return top-5 results by BM25 rank.
 
 **Rationale:**
+
 - Zero new dependencies
 - FTS5 already indexed — fast
 - Good enough for keyword-based Russian text similarity

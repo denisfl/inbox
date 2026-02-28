@@ -9,6 +9,7 @@ When `IntentClassifierService` returns `intent: 'event'`, `IntentRouter` creates
 ## Functional Requirements
 
 ### FR-1: CalendarEvent Creation
+
 - Create a `CalendarEvent` with:
   - `title`: from `Result#title`
   - `description`: `result.body` (full original text)
@@ -17,6 +18,7 @@ When `IntentClassifierService` returns `intent: 'event'`, `IntentRouter` creates
   - `google_event_id`: `"local_<SecureRandom.hex(8)>"` (local-only marker)
 
 ### FR-2: Telegram Confirmation
+
 - Send confirmation with extracted time:
   ```
   📅 Событие сохранено: <title> на <DD.MM HH:MM>
@@ -24,10 +26,12 @@ When `IntentClassifierService` returns `intent: 'event'`, `IntentRouter` creates
 - If `due_at` was nil (no time extracted), still confirm with the default time
 
 ### FR-3: Fallback to Note
+
 - If `CalendarEvent` save fails for any reason, log at `WARN` and call `create_note` instead
 - User receives note confirmation; no error shown
 
 ### FR-4: Date/Time Extraction
+
 - The LLM extracts relative dates using today's date injected into prompt
 - Examples that must resolve correctly:
   - "в пятницу в 15:00" → next Friday 15:00
@@ -36,6 +40,7 @@ When `IntentClassifierService` returns `intent: 'event'`, `IntentRouter` creates
 - If the extracted `due_at` is in the past (e.g., "вчера"), treat it as `nil` → use default
 
 ### FR-5: Integration with google-calendar Story
+
 - If `google-calendar` story is live, the locally-created `CalendarEvent` will be pushed to Google Calendar on next sync (out of scope of this story — one-way for now)
 - The `google_event_id: "local_*"` prefix distinguishes local-only events from synced ones
 
@@ -50,12 +55,12 @@ When `IntentClassifierService` returns `intent: 'event'`, `IntentRouter` creates
 
 ## Error Handling
 
-| Scenario | Behavior |
-|----------|----------|
+| Scenario                               | Behavior                                                  |
+| -------------------------------------- | --------------------------------------------------------- |
 | `CalendarEvent` table not yet migrated | Rescue `ActiveRecord::StatementInvalid`; fallback to note |
-| `due_at` in the past | Use default `1.day.from_now.noon` |
-| LLM returns `due_at: null` | Use default time; confirm with it |
-| Telegram send fails | Log at `WARN`; event is saved |
+| `due_at` in the past                   | Use default `1.day.from_now.noon`                         |
+| LLM returns `due_at: null`             | Use default time; confirm with it                         |
+| Telegram send fails                    | Log at `WARN`; event is saved                             |
 
 ---
 

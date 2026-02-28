@@ -11,9 +11,11 @@ Users want to send PDF files to the Telegram bot and have the text extracted and
 ## Capabilities
 
 ### New Capabilities
+
 - `pdf-text-extraction`: Telegram bot receives a PDF document message. Text is extracted (embedded text first, then OCR fallback for scanned/image PDFs). Extracted text is saved as blocks in a new document.
 
 ### New Components
+
 - `OcrPdfJob`: Background job — downloads PDF from Telegram, extracts text via `pdf-reader` gem (digital) or `rtesseract`/`tesseract-ocr` CLI (scanned), creates document with text blocks
 - Telegram handler update: `TelegramMessageHandler` — handle `document` messages with `application/pdf` MIME type
 

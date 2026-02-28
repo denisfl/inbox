@@ -8,6 +8,7 @@ created: 2026-02-27
 ## Problem
 
 The block-based editor is complex with 8 block types, drag-and-drop, keyboard shortcuts, and multiple interaction patterns. Users struggle with:
+
 - Too many block types to remember
 - Block switching (text → heading → todo) is friction
 - The editor feels like a CMS, not a notepad
@@ -15,6 +16,7 @@ The block-based editor is complex with 8 block types, drag-and-drop, keyboard sh
 ## Solution
 
 Replace the multi-block editor with a single Markdown textarea per document. The document has one text block. The editor is a simple textarea with:
+
 - Full-width Markdown input
 - Auto-save with debounce
 - File/image upload with Markdown link insertion

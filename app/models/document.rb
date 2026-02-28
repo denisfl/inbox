@@ -82,7 +82,7 @@ class Document < ApplicationRecord
 
   def generate_slug
     base_slug = title.parameterize
-    
+
     # Check if slug already exists
     if Document.exists?(slug: base_slug)
       # Append timestamp to make it unique
