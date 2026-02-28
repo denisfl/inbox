@@ -56,6 +56,14 @@
               data-action="click->simple-editor#togglePreview">
         Preview
       </button>
+
+      <%# Delete %>
+      <%= button_to document_path(@document), method: :delete,
+            class: "simple-editor-delete-btn",
+            title: "Delete note",
+            form: { data: { turbo_confirm: "Delete \"#{j @document.title.truncate(40)}\"? This will remove the note and all attached files. This cannot be undone." } } do %>
+        <%= heroicon(:trash, style: 'width: 1rem; height: 1rem;') %>
+      <% end %>
     </div>
   </header>
 
@@ -104,18 +112,13 @@
 </div>
 
 <style>
-  .back-link {
-    display: inline-flex;
-    gap: var(--spacing-sm);
-    align-items: center;
-  }
   .simple-editor-container {
     max-width: 800px;
     margin: 0 auto;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background: var(--color-bg, #fff);
+    background: var(--color-bg-primary);
   }
 
   /* Header */
@@ -123,19 +126,19 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 24px;
-    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
     position: sticky;
     top: 0;
-    background: var(--color-bg, #fff);
-    z-index: 100;
+    background: var(--color-bg-primary);
+    z-index: var(--z-sticky);
   }
 
   .simple-editor-header-left,
   .simple-editor-header-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--spacing-sm);
   }
 
   /* Upload icon buttons */
@@ -144,45 +147,65 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    padding: 5px 7px;
-    border-radius: 6px;
-    color: var(--color-text-muted, #6b7280);
-    border: 1px solid var(--color-border, #e5e7eb);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+    color: var(--color-text-tertiary);
+    border: 1px solid var(--color-border);
     background: none;
-    transition: background 150ms, color 150ms;
+    transition: background var(--transition-fast), color var(--transition-fast);
     line-height: 1;
   }
 
   .simple-editor-upload-btn:hover {
-    background: var(--color-bg-secondary, #f3f4f6);
-    color: var(--color-text, #111827);
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
   }
 
   /* Preview toggle button */
   .simple-editor-preview-btn {
-    font-size: 0.8rem;
-    padding: 4px 12px;
+    font-size: var(--text-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  /* Delete button */
+  .simple-editor-delete-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+    color: var(--color-text-tertiary);
+    border: 1px solid var(--color-border);
+    background: none;
+    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+    line-height: 1;
+  }
+  .simple-editor-delete-btn:hover {
+    color: var(--color-danger);
+    border-color: color-mix(in srgb, var(--color-danger) 25%, var(--color-border));
+    background: color-mix(in srgb, var(--color-danger) 6%, var(--color-bg-primary));
   }
 
   /* Title */
   .simple-editor-title-wrapper {
-    padding: 24px 32px 0;
+    padding: var(--spacing-lg) var(--spacing-xl) 0;
   }
 
   .simple-editor-title {
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
     line-height: 1.25;
     margin: 0;
-    padding: 4px 0;
+    padding: var(--spacing-xs) 0;
     outline: none;
     border-bottom: 2px solid transparent;
     word-break: break-word;
-    color: var(--color-text, #111827);
+    color: var(--color-text-primary);
   }
 
   .simple-editor-title:focus {
-    border-bottom-color: var(--color-primary, #3b82f6);
+    border-bottom-color: var(--color-primary);
   }
 
   /* Body */
@@ -190,7 +213,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 16px 32px 40px;
+    padding: var(--spacing-md) var(--spacing-xl) var(--spacing-2xl);
   }
 
   /* Textarea */
@@ -198,10 +221,10 @@
     flex: 1;
     width: 100%;
     min-height: calc(100vh - 200px);
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.9rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
     line-height: 1.7;
-    color: var(--color-text, #111827);
+    color: var(--color-text-primary);
     background: transparent;
     border: none;
     outline: none;
@@ -211,7 +234,7 @@
   }
 
   .simple-editor-textarea::placeholder {
-    color: var(--color-text-muted, #9ca3af);
+    color: var(--color-text-tertiary);
   }
 
   /* Preview pane */
@@ -225,34 +248,34 @@
   .simple-editor-audio-section {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
   }
 
   .simple-editor-audio-player {
-    background: var(--color-bg-secondary, #f3f4f6);
-    border: 1px solid var(--color-border, #e5e7eb);
-    border-radius: 8px;
-    padding: 12px 16px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
   }
 
   .simple-editor-audio-filename {
-    font-size: 0.75rem;
-    color: var(--color-text-muted, #6b7280);
-    margin-top: 6px;
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin-top: var(--spacing-xs);
   }
 
   /* Save indicator */
-  .save-indicator { font-size: 0.75rem; }
-  .save-indicator--saving { color: var(--color-warning, #f59e0b); }
-  .save-indicator--saved  { color: var(--color-success, #10b981); }
-  .save-indicator--error  { color: var(--color-danger,  #ef4444); }
+  .save-indicator { font-size: var(--text-xs); }
+  .save-indicator--saving { color: var(--color-accent); }
+  .save-indicator--saved  { color: var(--color-success); }
+  .save-indicator--error  { color: var(--color-danger); }
 
   /* Responsive */
   @media (max-width: 640px) {
-    .simple-editor-header { padding: 10px 16px; }
-    .simple-editor-title-wrapper { padding: 16px 16px 0; }
-    .simple-editor-body { padding: 12px 16px 32px; }
-    .simple-editor-title { font-size: 1.5rem; }
+    .simple-editor-header { padding: var(--spacing-sm) var(--spacing-md); }
+    .simple-editor-title-wrapper { padding: var(--spacing-md) var(--spacing-md) 0; }
+    .simple-editor-body { padding: var(--spacing-sm) var(--spacing-md) var(--spacing-xl); }
+    .simple-editor-title { font-size: var(--text-xl); }
   }
 </style>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_28_110249) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_01_000000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -57,15 +57,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_28_110249) do
     t.text "description"
     t.datetime "ends_at"
     t.string "google_calendar_id", default: "primary", null: false
-    t.string "google_event_id", null: false
+    t.string "google_event_id"
     t.string "html_link"
     t.datetime "reminded_at"
+    t.string "source", default: "google", null: false
     t.datetime "starts_at", null: false
     t.string "status", default: "confirmed", null: false
     t.datetime "synced_at"
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["google_event_id"], name: "index_calendar_events_on_google_event_id", unique: true
+    t.index ["source"], name: "index_calendar_events_on_source"
     t.index ["starts_at"], name: "index_calendar_events_on_starts_at"
     t.index ["status", "starts_at"], name: "index_calendar_events_on_status_and_starts_at"
     t.index ["status"], name: "index_calendar_events_on_status"

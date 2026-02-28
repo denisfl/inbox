@@ -61,9 +61,24 @@
       </div>
     <% end %>
 
-    <%# Empty state %>
+    <%# Empty state — show mini week calendar %>
     <% if @today_events.none? && @tomorrow_events.none? && @week_events.none? %>
-      <div class="cal-widget-empty">No upcoming events</div>
+      <div class="cal-widget-mini-week">
+        <% today = Date.today %>
+        <% week_start = today.beginning_of_week(:monday) %>
+        <% 7.times do |i| %>
+          <% day = week_start + i %>
+          <div class="cal-mini-day<%= ' cal-mini-day--today' if day == today %><%= ' cal-mini-day--past' if day < today %>">
+            <span class="cal-mini-day-name"><%= day.strftime('%a') %></span>
+            <span class="cal-mini-day-num"><%= day.day %></span>
+          </div>
+        <% end %>
+      </div>
+      <div class="cal-widget-empty">
+        No events this week ·
+        <%= link_to "Open Calendar", calendar_path, class: "cal-widget-empty-link",
+              data: { turbo_frame: "_top" } %>
+      </div>
     <% end %>
   </div>
 <% end %>
