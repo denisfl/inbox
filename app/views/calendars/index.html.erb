@@ -142,7 +142,7 @@
                     </div>
                     <div class="agenda-entry-body">
                       <%= link_to doc.title.presence || "(untitled)",
-                            document_path(doc),
+                            edit_document_path(doc),
                             class: "agenda-entry-title" %>
                       <% text_block = doc.blocks.find_by(block_type: "text") %>
                       <% if text_block %>

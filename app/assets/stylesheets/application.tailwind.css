@@ -293,6 +293,10 @@
   width: 100%;
 }
 
+.inbox-with-sidebar--no-sidebar {
+  grid-template-columns: 1fr;
+}
+
 .inbox-main {
   min-width: 0; /* prevent overflow */
 }
@@ -319,10 +323,15 @@
 }
 
 .cal-widget-icon {
-  width: 1rem;
-  height: 1rem;
+  width: 1.25rem;
+  height: 1.25rem;
   color: var(--color-primary, #3b82f6);
   flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+a:hover .cal-widget-icon {
+  color: var(--color-primary-dark, #2563eb);
 }
 
 .cal-widget-title {
