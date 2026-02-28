@@ -42,7 +42,7 @@ gem "icalendar", "~> 2.10"
 gem "http", "~> 5.0"
 
 # Pagination
-gem "pagy", "~> 9.0"
+gem "pagy", "~> 43.3"
 
 # Markdown rendering
 gem "redcarpet"
