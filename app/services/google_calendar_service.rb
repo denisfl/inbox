@@ -99,10 +99,15 @@ class GoogleCalendarService
 
       next_sync  = result.next_sync_token
       page_token = result.next_page_token
+      Rails.logger.debug "[GoogleCalendarService] page items=#{(result.items || []).size}, next_sync_token=#{next_sync.present? ? 'present' : 'nil'}, next_page_token=#{page_token.present? ? 'present' : 'nil'}"
       break if page_token.nil?
     end
 
-    save_sync_token(cal_id, next_sync)
+    if next_sync.present?
+      save_sync_token(cal_id, next_sync)
+    else
+      Rails.logger.warn "[GoogleCalendarService] No syncToken returned for #{cal_id} — next sync will be full again"
+    end
     Rails.logger.info "[GoogleCalendarService] Full sync complete: #{cal_id}"
   end
 
