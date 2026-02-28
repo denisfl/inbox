@@ -11,9 +11,11 @@ Whisper currently only transcribes Russian (`language: 'ru'`). Users may send vo
 ## Capabilities
 
 ### New Capabilities
+
 - `multilingual-transcription`: Whisper automatically detects the spoken language. Detected language is stored in document/block metadata and displayed in the UI.
 
 ### Modified Capabilities
+
 - `transcription`: `TranscribeAudioJob` no longer hardcodes `language: 'ru'`; uses automatic detection or user preference.
 
 ## Impact

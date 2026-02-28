@@ -1,4 +1,4 @@
-import { Controller } from "@hotwired/stimulus"
+import { Controller } from "@hotwired/stimulus";
 
 // Simple document editor — one Markdown textarea for the whole document.
 //
@@ -19,20 +19,25 @@ export default class extends Controller {
     "title",
     "imageInput",
     "fileInput",
-  ]
+  ];
   static values = {
     documentId: Number,
     blockId: Number,
-  }
+  };
 
   connect() {
-    console.log("✅ simple-editor connected, documentId:", this.documentIdValue, "blockId:", this.blockIdValue)
-    this._saveTimer = null
-    this._previewMode = false
+    console.log(
+      "✅ simple-editor connected, documentId:",
+      this.documentIdValue,
+      "blockId:",
+      this.blockIdValue,
+    );
+    this._saveTimer = null;
+    this._previewMode = false;
   }
 
   disconnect() {
-    clearTimeout(this._saveTimer)
+    clearTimeout(this._saveTimer);
   }
 
   // ──────────────────────────────────────────────
@@ -40,30 +45,30 @@ export default class extends Controller {
   // ──────────────────────────────────────────────
 
   scheduleAutoSave() {
-    clearTimeout(this._saveTimer)
-    this._saveTimer = setTimeout(() => this.saveContent(), 1000)
+    clearTimeout(this._saveTimer);
+    this._saveTimer = setTimeout(() => this.saveContent(), 1000);
   }
 
   async saveContent() {
-    const text = this.textareaTarget.value
+    const text = this.textareaTarget.value;
     // No text block on this document (e.g. audio-only) — skip save
-    if (!this.blockIdValue) return
+    if (!this.blockIdValue) return;
 
-    this._showIndicator("saving…", "saving")
+    this._showIndicator("saving…", "saving");
 
     try {
       const res = await this._api(
         `/api/documents/${this.documentIdValue}/blocks/${this.blockIdValue}`,
         "PATCH",
-        { block: { content: { text } } }
-      )
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      this._showIndicator("saved", "saved")
+        { block: { content: { text } } },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      this._showIndicator("saved", "saved");
       // Fade out after 2 s
-      setTimeout(() => this._clearIndicator(), 2000)
+      setTimeout(() => this._clearIndicator(), 2000);
     } catch (err) {
-      console.error("Auto-save failed:", err)
-      this._showIndicator("error saving", "error")
+      console.error("Auto-save failed:", err);
+      this._showIndicator("error saving", "error");
     }
   }
 
@@ -72,18 +77,18 @@ export default class extends Controller {
   // ──────────────────────────────────────────────
 
   async saveTitle() {
-    const title = this.titleTarget.textContent.trim()
-    if (!title) return
+    const title = this.titleTarget.textContent.trim();
+    if (!title) return;
 
     try {
       const res = await this._api(
         `/api/documents/${this.documentIdValue}`,
         "PATCH",
-        { document: { title } }
-      )
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        { document: { title } },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
     } catch (err) {
-      console.error("Title save failed:", err)
+      console.error("Title save failed:", err);
     }
   }
 
@@ -92,40 +97,40 @@ export default class extends Controller {
   // ──────────────────────────────────────────────
 
   async togglePreview() {
-    this._previewMode = !this._previewMode
+    this._previewMode = !this._previewMode;
 
     if (this._previewMode) {
       // Save first so preview shows latest content (only if there's a text block)
       if (this.blockIdValue) {
-        clearTimeout(this._saveTimer)
-        await this.saveContent()
+        clearTimeout(this._saveTimer);
+        await this.saveContent();
       }
 
       // Fetch rendered preview from server (document-level: includes audio + text)
       try {
         const res = await fetch(
           `/api/documents/${this.documentIdValue}/preview`,
-          { headers: this._authHeaders() }
-        )
+          { headers: this._authHeaders() },
+        );
         if (res.ok) {
-          const { html } = await res.json()
-          this.previewTarget.innerHTML = html
+          const { html } = await res.json();
+          this.previewTarget.innerHTML = html;
         } else {
           // Fallback: show raw text in <pre>
-          this.previewTarget.innerHTML = `<pre>${this._escapeHtml(this.textareaTarget.value)}</pre>`
+          this.previewTarget.innerHTML = `<pre>${this._escapeHtml(this.textareaTarget.value)}</pre>`;
         }
       } catch {
-        this.previewTarget.innerHTML = `<pre>${this._escapeHtml(this.textareaTarget.value)}</pre>`
+        this.previewTarget.innerHTML = `<pre>${this._escapeHtml(this.textareaTarget.value)}</pre>`;
       }
 
-      this.textareaTarget.classList.add("hidden")
-      this.previewTarget.classList.remove("hidden")
-      this.previewToggleBtnTarget.textContent = "Edit"
+      this.textareaTarget.classList.add("hidden");
+      this.previewTarget.classList.remove("hidden");
+      this.previewToggleBtnTarget.textContent = "Edit";
     } else {
-      this.previewTarget.classList.add("hidden")
-      this.textareaTarget.classList.remove("hidden")
-      this.textareaTarget.focus()
-      this.previewToggleBtnTarget.textContent = "Preview"
+      this.previewTarget.classList.add("hidden");
+      this.textareaTarget.classList.remove("hidden");
+      this.textareaTarget.focus();
+      this.previewToggleBtnTarget.textContent = "Preview";
     }
   }
 
@@ -134,54 +139,54 @@ export default class extends Controller {
   // ──────────────────────────────────────────────
 
   triggerImageUpload() {
-    this.imageInputTarget.click()
+    this.imageInputTarget.click();
   }
 
   triggerFileUpload() {
-    this.fileInputTarget.click()
+    this.fileInputTarget.click();
   }
 
   async handleImageChange(event) {
-    await this._uploadFile(event.target.files[0], true)
-    event.target.value = ""
+    await this._uploadFile(event.target.files[0], true);
+    event.target.value = "";
   }
 
   async handleFileChange(event) {
-    await this._uploadFile(event.target.files[0], false)
-    event.target.value = ""
+    await this._uploadFile(event.target.files[0], false);
+    event.target.value = "";
   }
 
   async _uploadFile(file, isImage) {
-    if (!file) return
+    if (!file) return;
 
-    this._showIndicator("uploading…", "saving")
+    this._showIndicator("uploading…", "saving");
 
-    const formData = new FormData()
-    formData.append("file", file)
+    const formData = new FormData();
+    formData.append("file", file);
 
     try {
       const res = await fetch(`/api/documents/${this.documentIdValue}/upload`, {
         method: "POST",
         headers: this._authHeaders(), // no Content-Type — browser sets multipart boundary
         body: formData,
-      })
+      });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const { url, filename } = await res.json()
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { url, filename } = await res.json();
 
       const markdown = isImage
         ? `![${filename}](${url})`
-        : `[${filename}](${url})`
+        : `[${filename}](${url})`;
 
-      this._insertAtCursor(markdown)
-      this._showIndicator("uploaded", "saved")
-      setTimeout(() => this._clearIndicator(), 2000)
+      this._insertAtCursor(markdown);
+      this._showIndicator("uploaded", "saved");
+      setTimeout(() => this._clearIndicator(), 2000);
 
       // Trigger auto-save
-      this.scheduleAutoSave()
+      this.scheduleAutoSave();
     } catch (err) {
-      console.error("Upload failed:", err)
-      this._showIndicator("upload failed", "error")
+      console.error("Upload failed:", err);
+      this._showIndicator("upload failed", "error");
     }
   }
 
@@ -190,17 +195,17 @@ export default class extends Controller {
   // ──────────────────────────────────────────────
 
   _insertAtCursor(text) {
-    const ta = this.textareaTarget
-    const start = ta.selectionStart
-    const end = ta.selectionEnd
-    ta.value = ta.value.slice(0, start) + text + ta.value.slice(end)
-    ta.selectionStart = ta.selectionEnd = start + text.length
-    ta.focus()
+    const ta = this.textareaTarget;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    ta.value = ta.value.slice(0, start) + text + ta.value.slice(end);
+    ta.selectionStart = ta.selectionEnd = start + text.length;
+    ta.focus();
   }
 
   _authHeaders() {
-    const token = document.querySelector('meta[name="auth-token"]')?.content
-    return { "Authorization": `Token token=${token}` }
+    const token = document.querySelector('meta[name="auth-token"]')?.content;
+    return { Authorization: `Token token=${token}` };
   }
 
   async _api(url, method, body) {
@@ -211,26 +216,26 @@ export default class extends Controller {
         ...this._authHeaders(),
       },
       body: JSON.stringify(body),
-    })
+    });
   }
 
   _showIndicator(message, state) {
-    if (!this.hasSaveIndicatorTarget) return
-    const el = this.saveIndicatorTarget
-    el.textContent = message
-    el.className = `save-indicator save-indicator--${state}`
+    if (!this.hasSaveIndicatorTarget) return;
+    const el = this.saveIndicatorTarget;
+    el.textContent = message;
+    el.className = `save-indicator save-indicator--${state}`;
   }
 
   _clearIndicator() {
-    if (!this.hasSaveIndicatorTarget) return
-    this.saveIndicatorTarget.textContent = ""
-    this.saveIndicatorTarget.className = "save-indicator"
+    if (!this.hasSaveIndicatorTarget) return;
+    this.saveIndicatorTarget.textContent = "";
+    this.saveIndicatorTarget.className = "save-indicator";
   }
 
   _escapeHtml(text) {
     return text
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
+      .replace(/>/g, "&gt;");
   }
 }

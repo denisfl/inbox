@@ -13,9 +13,11 @@ The web UI at `https://your-domain.com` is currently inaccessible (nginx returns
 ## Capabilities
 
 ### New Capabilities
+
 - `web-ui-auth`: Password-only HTTP Basic Auth protecting all web UI routes. Single user — no username required. Telegram API routes are excluded from auth. Credentials are browser-native (no login form).
 
 ### Modified Capabilities
+
 - none
 
 ## Impact

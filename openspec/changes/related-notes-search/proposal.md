@@ -11,9 +11,11 @@ After a voice note is transcribed, the user has no way to discover existing docu
 ## Capabilities
 
 ### New Capabilities
+
 - `related-notes-discovery`: After a document is created or updated, a background job computes similarity against existing documents. Results are stored and displayed in the UI.
 
 ### New Components
+
 - `FindRelatedNotesJob`: Runs after transcription completes; uses keyword overlap (TF-IDF or simple token matching) or Ollama embeddings for semantic similarity
 - `DocumentRelation` model (or metadata field): Stores pairs of related document IDs with a similarity score
 - UI component: "Related Notes" panel in document show view

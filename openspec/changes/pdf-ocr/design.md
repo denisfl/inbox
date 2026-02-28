@@ -7,6 +7,7 @@ The existing `handle_document` method in `TelegramMessageHandler` already downlo
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Accept PDF files sent to the Telegram bot
 - Extract text from digital PDFs (embedded text, no image rendering needed)
 - Fallback to Tesseract OCR for scanned/image-only PDFs
@@ -14,6 +15,7 @@ The existing `handle_document` method in `TelegramMessageHandler` already downlo
 - Run extraction in a background job (async, non-blocking webhook response)
 
 **Non-Goals:**
+
 - OCR for image files (JPEG/PNG) sent as documents — out of scope for this story
 - Table/layout preservation — plain text extraction only
 - Handwriting recognition
@@ -24,11 +26,13 @@ The existing `handle_document` method in `TelegramMessageHandler` already downlo
 ### Decision: Two-tier extraction: `pdf-reader` gem first, Tesseract fallback
 
 **Tier 1 — `pdf-reader` gem (pure Ruby):**
+
 - Extracts embedded text from digital PDFs with no binary dependencies
 - Fast, no Docker changes needed
 - Handles 90% of use cases (notes, articles, exported documents)
 
 **Tier 2 — Tesseract OCR (for scanned PDFs):**
+
 - Used only when `pdf-reader` returns < 50 characters of text (heuristic for image-only PDFs)
 - Requires `apk add tesseract-ocr poppler-utils` in Dockerfile (poppler's `pdftoppm` converts PDF pages to images)
 - Adds ~30MB to Docker image
