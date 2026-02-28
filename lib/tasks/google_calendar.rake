@@ -2,43 +2,35 @@
 
 # rake google_calendar:authorize  — perform one-time OAuth2 flow to obtain refresh_token
 # rake google_calendar:sync       — trigger a manual sync
-# rake google_calendar:reset      — clear syncToken (next sync will be full)
+# rake google_calendar:reset      — clear syncTokens (next sync will be full for all calendars)
 # rake google_calendar:status     — show event counts
 
 namespace :google_calendar do
   desc "One-time OAuth2 flow — opens browser, prompts for auth code, prints refresh_token"
   task authorize: :environment do
     require "googleauth"
-    require "googleauth/stores/file_token_store"
 
-    creds = Rails.application.credentials.google_calendar || {}
-    client_id     = creds[:client_id]     or abort "google_calendar.client_id missing from credentials"
-    client_secret = creds[:client_secret] or abort "google_calendar.client_secret missing from credentials"
+    client_id     = ENV.fetch("GOOGLE_CLIENT_ID") { abort "GOOGLE_CLIENT_ID env var is required" }
+    client_secret = ENV.fetch("GOOGLE_CLIENT_SECRET") { abort "GOOGLE_CLIENT_SECRET env var is required" }
 
     scope = "https://www.googleapis.com/auth/calendar.readonly"
 
-    # Build the authorization URL
     client_config = {
       "installed" => {
-        "client_id"                   => client_id,
-        "client_secret"               => client_secret,
-        "redirect_uris"               => ["urn:ietf:wg:oauth:2.0:oob"],
-        "auth_uri"                    => "https://accounts.google.com/o/oauth2/auth",
-        "token_uri"                   => "https://oauth2.googleapis.com/token"
+        "client_id"     => client_id,
+        "client_secret" => client_secret,
+        "redirect_uris" => [ "urn:ietf:wg:oauth:2.0:oob" ],
+        "auth_uri"      => "https://accounts.google.com/o/oauth2/auth",
+        "token_uri"     => "https://oauth2.googleapis.com/token"
       }
     }
 
     client_secrets = Google::Auth::ClientId.from_hash(client_config)
     callback_uri   = "urn:ietf:wg:oauth:2.0:oob"
 
-    authorizer = Google::Auth::UserAuthorizer.new(
-      client_secrets,
-      scope,
-      nil # no token store — we'll handle it manually
-    )
-
-    # Build the auth URL
+    authorizer = Google::Auth::UserAuthorizer.new(client_secrets, scope, nil)
     url = authorizer.get_authorization_url(base_url: callback_uri)
+
     puts ""
     puts "=" * 70
     puts "  GOOGLE CALENDAR AUTHORIZATION"
@@ -54,7 +46,6 @@ namespace :google_calendar do
     print "  Enter authorization code: "
     code = $stdin.gets.strip
 
-    # Exchange code for tokens using Google's token endpoint directly
     require "net/http"
     require "json"
 
@@ -71,15 +62,15 @@ namespace :google_calendar do
     if body["refresh_token"]
       puts ""
       puts "=" * 70
-      puts "  SUCCESS! Add the following to your Rails credentials:"
-      puts "  (run: EDITOR=nano bin/rails credentials:edit)"
+      puts "  SUCCESS! Add the following to your .env.production on RPi:"
       puts "=" * 70
       puts ""
-      puts "  google_calendar:"
-      puts "    client_id: #{client_id}"
-      puts "    client_secret: #{client_secret}"
-      puts "    refresh_token: #{body['refresh_token']}"
-      puts "    calendar_id: primary"
+      puts "  GOOGLE_CLIENT_ID=#{client_id}"
+      puts "  GOOGLE_CLIENT_SECRET=#{client_secret}"
+      puts "  GOOGLE_REFRESH_TOKEN=#{body['refresh_token']}"
+      puts "  GOOGLE_CALENDAR_IDS=primary"
+      puts ""
+      puts "  Then run:  bin/rails google_calendar:sync"
       puts ""
     else
       puts "  ERROR: #{body.inspect}"
@@ -87,21 +78,23 @@ namespace :google_calendar do
     end
   end
 
-  desc "Trigger a manual Google Calendar sync"
+  desc "Trigger a manual Google Calendar sync (all calendars in GOOGLE_CALENDAR_IDS)"
   task sync: :environment do
     puts "Starting Google Calendar sync..."
     GoogleCalendarService.new.sync!
     puts "Sync complete. Events: #{CalendarEvent.count}"
   end
 
-  desc "Clear the stored syncToken (next sync will be a full reload)"
+  desc "Clear all stored syncTokens (next sync will be a full reload for every calendar)"
   task reset: :environment do
-    token_path = Rails.root.join("tmp", "google_sync_token.txt")
-    if File.exist?(token_path)
-      File.delete(token_path)
-      puts "syncToken cleared. Next sync will be a full load."
+    tokens = Dir[Rails.root.join("tmp", "google_sync_token_*.txt").to_s]
+    # Also handle old single-calendar token file
+    tokens += [ Rails.root.join("tmp", "google_sync_token.txt").to_s ]
+    deleted = tokens.select { |p| File.exist?(p) }.each { |p| File.delete(p) }
+    if deleted.any?
+      puts "Deleted #{deleted.size} syncToken file(s). Next sync will be a full load."
     else
-      puts "No syncToken found."
+      puts "No syncToken files found."
     end
   end
 
@@ -110,16 +103,22 @@ namespace :google_calendar do
     total     = CalendarEvent.count
     confirmed = CalendarEvent.confirmed.count
     upcoming  = CalendarEvent.upcoming.count
-    token     = File.exist?(Rails.root.join("tmp", "google_sync_token.txt")) ? "present" : "missing"
+    tokens    = Dir[Rails.root.join("tmp", "google_sync_token_*.txt").to_s].map { |p| File.basename(p) }
 
     puts ""
     puts "CalendarEvent status:"
     puts "  Total events   : #{total}"
     puts "  Confirmed      : #{confirmed}"
     puts "  Upcoming       : #{upcoming}"
-    puts "  syncToken      : #{token}"
+    puts "  syncToken files: #{tokens.any? ? tokens.join(', ') : 'none'}"
     last = CalendarEvent.order(synced_at: :desc).first
     puts "  Last synced    : #{last&.synced_at || 'never'}"
+    puts ""
+    puts "  Configured calendar IDs (GOOGLE_CALENDAR_IDS):"
+    ENV.fetch("GOOGLE_CALENDAR_IDS", "primary").split(",").map(&:strip).each do |id|
+      count = CalendarEvent.where(google_calendar_id: id).count
+      puts "    #{id}  →  #{count} events"
+    end
     puts ""
   end
 end
