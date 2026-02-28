@@ -28,6 +28,7 @@ gem "redcarpet"
 ```
 
 Renderer configuration:
+
 ```ruby
 # app/helpers/application_helper.rb (or markdown_helper.rb)
 def render_markdown(text)
@@ -97,61 +98,59 @@ end
 ## Stimulus Controller (`markdown_editor_controller.js`)
 
 ```javascript
-import { Controller } from "@hotwired/stimulus"
+import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-  static targets = ["preview", "editArea", "textarea"]
-  static values = { blockId: Number }
+  static targets = ["preview", "editArea", "textarea"];
+  static values = { blockId: Number };
 
   startEditing() {
-    this.previewTarget.classList.add("hidden")
-    this.editAreaTarget.classList.remove("hidden")
-    this.textareaTarget.focus()
+    this.previewTarget.classList.add("hidden");
+    this.editAreaTarget.classList.remove("hidden");
+    this.textareaTarget.focus();
   }
 
   cancelEdit() {
-    this.editAreaTarget.classList.add("hidden")
-    this.previewTarget.classList.remove("hidden")
+    this.editAreaTarget.classList.add("hidden");
+    this.previewTarget.classList.remove("hidden");
   }
 
   async saveBlock() {
-    const text = this.textareaTarget.value
+    const text = this.textareaTarget.value;
     await fetch(`/api/blocks/${this.blockIdValue}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content },
-      body: JSON.stringify({ block: { content: { text } } })
-    })
+      body: JSON.stringify({ block: { content: { text } } }),
+    });
     // Re-render preview by reloading the turbo frame or doing a full replace
-    this.cancelEdit()
+    this.cancelEdit();
     // Reload the page section to show rendered Markdown
-    window.location.reload()
+    window.location.reload();
   }
 
   toggleCheckbox(event) {
-    const checkbox = event.currentTarget
-    const checked = checkbox.checked
-    const itemText = checkbox.nextElementSibling?.textContent?.trim()
-    if (!itemText) return
+    const checkbox = event.currentTarget;
+    const checked = checkbox.checked;
+    const itemText = checkbox.nextElementSibling?.textContent?.trim();
+    if (!itemText) return;
 
-    let text = this.currentText()
+    let text = this.currentText();
     // Toggle - [ ] <-> - [x] for the matching line
-    const pattern = checked
-      ? new RegExp(`- \\[ \\] (${escapeRegex(itemText)})`)
-      : new RegExp(`- \\[x\\] (${escapeRegex(itemText)})`, "i")
-    const replacement = checked ? "- [x] $1" : "- [ ] $1"
-    const newText = text.replace(pattern, replacement)
+    const pattern = checked ? new RegExp(`- \\[ \\] (${escapeRegex(itemText)})`) : new RegExp(`- \\[x\\] (${escapeRegex(itemText)})`, "i");
+    const replacement = checked ? "- [x] $1" : "- [ ] $1";
+    const newText = text.replace(pattern, replacement);
 
-    this.textareaTarget.value = newText
-    this.saveBlock()
+    this.textareaTarget.value = newText;
+    this.saveBlock();
   }
 
   currentText() {
-    return this.textareaTarget.value || this.previewTarget.dataset.rawText || ""
+    return this.textareaTarget.value || this.previewTarget.dataset.rawText || "";
   }
 }
 
 function escapeRegex(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 ```
 
@@ -162,6 +161,7 @@ function escapeRegex(str) {
 Redcarpet renders `- [ ]` as `<input type="checkbox" disabled>`. To make them interactive, override the rendered HTML:
 
 Option 1 — Custom Redcarpet renderer:
+
 ```ruby
 class InboxMarkdownRenderer < Redcarpet::Render::HTML
   def list_item(text, _list_type)
@@ -179,6 +179,7 @@ end
 ```
 
 Option 2 — Post-process via regex replace (simpler, no subclassing):
+
 ```ruby
 def render_markdown(text)
   html = markdown_engine.render(text)
@@ -195,6 +196,7 @@ end
 ## Tailwind Prose Plugin
 
 Use `@tailwindcss/typography` for styled Markdown output:
+
 ```html
 <div class="prose prose-sm max-w-none dark:prose-invert">
   <!-- rendered markdown -->

@@ -17,15 +17,18 @@ Detecting intent at input time allows Inbox to automatically create the right ki
 ## Capabilities
 
 ### New Capabilities
+
 - `intent-detection`: LLM (Ollama `gemma3:4b`) classifies incoming text into `todo`, `event`, or `note`. Returns structured JSON with intent, title, due date (for events/todos), and confidence score.
 - `todo-creation`: When intent is `todo`, creates a document with a `todo` block type containing the task text and completion checkbox. Tagged `#todo`.
 - `event-from-text`: When intent is `event`, extracts datetime and summary, creates a `CalendarEvent` record (or queues Google Calendar creation if calendar story is live).
 
 ### Modified Capabilities
+
 - `text-handling` in `TelegramMessageHandler#handle_text`: delegates to `IntentRouter` service after LLM classification
 - `transcription` in `TranscribeAudioJob`: after transcription, runs intent classification on the result (same `IntentRouter`)
 
 ### New Components
+
 - `IntentClassifierService` — calls Ollama with structured prompt; returns `{ intent:, confidence:, title:, due_at: }`
 - `IntentRouter` — dispatches to the right document/event creator based on classified intent
 - `config/recurring.yml` — no changes needed (intent runs inline per message)

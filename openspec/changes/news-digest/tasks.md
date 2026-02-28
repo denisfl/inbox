@@ -23,6 +23,7 @@
 ## 4. FetchNewsJob
 
 - [ ] 4.1 Create `app/jobs/fetch_news_job.rb`:
+
   ```ruby
   class FetchNewsJob < ApplicationJob
     queue_as :default
@@ -65,6 +66,7 @@
 ## 5. SendNewsDigestJob
 
 - [ ] 5.1 Create `app/jobs/send_news_digest_job.rb`:
+
   ```ruby
   class SendNewsDigestJob < ApplicationJob
     queue_as :default
@@ -126,12 +128,12 @@
 
 - [ ] 6.1 Add to `config/recurring.yml` under `production:`:
   ```yaml
-    fetch_news:
-      class: FetchNewsJob
-      schedule: at 2am every day
-    send_news_digest:
-      class: SendNewsDigestJob
-      schedule: at 8pm every day
+  fetch_news:
+    class: FetchNewsJob
+    schedule: at 2am every day
+  send_news_digest:
+    class: SendNewsDigestJob
+    schedule: at 8pm every day
   ```
 
 ## 7. Verification

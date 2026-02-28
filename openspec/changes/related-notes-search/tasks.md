@@ -7,6 +7,7 @@
 ## 2. Document Model
 
 - [ ] 2.1 Add accessor helper to `app/models/document.rb`:
+
   ```ruby
   def related_document_ids
     JSON.parse(self[:related_document_ids] || '[]')
@@ -28,6 +29,7 @@
 ## 3. FindRelatedNotesJob
 
 - [ ] 3.1 Create `app/jobs/find_related_notes_job.rb`:
+
   ```ruby
   class FindRelatedNotesJob < ApplicationJob
     queue_as :default

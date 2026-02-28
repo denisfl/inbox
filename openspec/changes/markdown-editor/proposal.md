@@ -18,11 +18,13 @@ Adopting Markdown as the content format for text blocks gives users a simple, po
 ## Capabilities
 
 ### New Capabilities
+
 - `markdown-rendering`: Text blocks render Markdown to HTML using Redcarpet. Supports headings, bold, italic, inline code, fenced code blocks, unordered/ordered lists, and GFM task lists (`- [ ]` / `- [x]`).
 - `markdown-editing`: Text block editing switches from `contenteditable div` to a `<textarea>`. A "Preview" button toggles between raw Markdown and rendered output.
 - `interactive-checkboxes`: `- [ ]` and `- [x]` items in rendered Markdown are clickable. Toggling a checkbox updates the raw Markdown in the block content and saves via the existing block API.
 
 ### Modified Capabilities
+
 - `text-handling` (if exists): text block display now renders Markdown
 
 ## Impact

@@ -52,7 +52,7 @@
             Clear search
           <% end %>
         </div>
-      
+
       <% elsif params[:source].present? || params[:type].present? || params[:tag].present? %>
         <%# No results for filters %>
         <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -67,7 +67,7 @@
             Clear all filters
           <% end %>
         </div>
-      
+
       <% else %>
         <%# No documents at all %>
         <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

@@ -6,11 +6,11 @@ class Api::BlocksController < Api::BaseController
   def create
     params_for_create = block_params.to_h
     content_data = params_for_create.delete(:content)
-    
+
     @block = @document.blocks.build(params_for_create)
     @block.content_hash = content_data if content_data.present?
     @block.save!
-    
+
     render json: serialize_block(@block), status: :created
   end
 
