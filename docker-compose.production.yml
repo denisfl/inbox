@@ -25,6 +25,12 @@ services:
       - WEB_PASSWORD=${WEB_PASSWORD}
       - API_TOKEN=${API_TOKEN}
       - WHISPER_BASE_URL=http://whisper:5000
+      - RAILS_HOSTS=${RAILS_HOSTS}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN}
+      - GOOGLE_CALENDAR_IDS=${GOOGLE_CALENDAR_IDS:-primary}
+      - CALENDAR_REMINDER_MINUTES=${CALENDAR_REMINDER_MINUTES:-10}
       # Omit WHISPER_LANGUAGE to use auto-detection; set to 'ru' or 'en' to force a language
       # - WHISPER_LANGUAGE=ru
       # Ollama model for transcription correction (default: gemma3:4b)
@@ -50,8 +56,12 @@ services:
       - TELEGRAM_ALLOWED_USER_ID=${TELEGRAM_ALLOWED_USER_ID}
       - SECRET_KEY_BASE=${SECRET_KEY_BASE}
       - WHISPER_BASE_URL=http://whisper:5000
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      # Omit WHISPER_LANGUAGE to use auto-detection; set to 'ru' or 'en' to force a language
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}      - RAILS_HOSTS=${RAILS_HOSTS}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN}
+      - GOOGLE_CALENDAR_IDS=${GOOGLE_CALENDAR_IDS:-primary}
+      - CALENDAR_REMINDER_MINUTES=${CALENDAR_REMINDER_MINUTES:-10}      # Omit WHISPER_LANGUAGE to use auto-detection; set to 'ru' or 'en' to force a language
       # - WHISPER_LANGUAGE=ru
       # Ollama model for transcription correction (default: gemma3:4b)
       - OLLAMA_CORRECTION_MODEL=gemma3:4b
