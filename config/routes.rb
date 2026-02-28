@@ -48,11 +48,15 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Web UI routes
-  resources :documents, only: [:index, :show, :edit, :new]
+  resources :documents, only: [:index, :show, :edit, :new, :destroy]
 
   # Calendar (Agenda + mini-month)
   get "/calendar",        to: "calendars#index",  as: :calendar
   get "/calendar/widget", to: "calendars#widget", as: :calendar_widget
+
+  # Calendar events (manual creation + iCal import)
+  resources :calendar_events, only: [:new, :create, :edit, :update, :destroy], path: "calendar/events"
+  post "/calendar/import", to: "calendar_events#import_ical", as: :import_ical
 
   # Shortcut for creating new document
   get '/new', to: 'documents#new', as: :new_note

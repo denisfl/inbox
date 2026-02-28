@@ -1,0 +1,126 @@
+<%# Event detail popup content — rendered inside data-event-popup-target="popup" %>
+<% ev = event %>
+
+<div class="event-popup-header">
+  <div class="event-popup-color" style="background: <%= ev.display_color %>;"></div>
+  <div class="event-popup-title"><%= ev.title %></div>
+  <button class="event-popup-close" data-action="click->event-popup#close" aria-label="Close">&times;</button>
+</div>
+
+<div class="event-popup-body">
+  <%# Date & time %>
+  <div class="event-popup-row">
+    <svg class="event-popup-icon-svg" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+    </svg>
+    <div>
+      <% if ev.all_day? %>
+        <div class="event-popup-detail"><%= ev.starts_at.strftime("%A, %-d %B %Y") %></div>
+        <div class="event-popup-detail-sub">All day</div>
+      <% else %>
+        <div class="event-popup-detail"><%= ev.starts_at.strftime("%A, %-d %B %Y") %></div>
+        <div class="event-popup-detail-sub">
+          <%= ev.starts_at.strftime("%-H:%M") %><% if ev.ends_at %> — <%= ev.ends_at.strftime("%-H:%M") %><% end %>
+          <% if ev.duration_label.present? %>
+            <span class="event-popup-duration">(<%= ev.duration_label %>)</span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Description %>
+  <% if ev.description.present? %>
+    <div class="event-popup-row">
+      <svg class="event-popup-icon-svg" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+      </svg>
+      <div class="event-popup-description"><%= simple_format(ev.description.truncate(500)) %></div>
+    </div>
+  <% end %>
+
+  <%# Calendar / Source %>
+  <div class="event-popup-row">
+    <svg class="event-popup-icon-svg" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+    </svg>
+    <div>
+      <span class="agenda-entry-source agenda-entry-source--<%= ev.source == 'google' ? 'gcal' : ev.source %>">
+        <%= case ev.source
+            when 'google' then 'Google Calendar'
+            when 'manual'  then 'Manual'
+            when 'ical'    then 'iCal Import'
+            end %>
+      </span>
+      <% if ev.google_calendar_id.present? && ev.source == 'google' %>
+        <span class="event-popup-calendar-name"><%= ev.google_calendar_id %></span>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Status %>
+  <% if ev.status != "confirmed" %>
+    <div class="event-popup-row">
+      <svg class="event-popup-icon-svg" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+      </svg>
+      <span class="event-popup-status event-popup-status--<%= ev.status %>"><%= ev.status.capitalize %></span>
+    </div>
+  <% end %>
+
+  <%# Color name %>
+  <% color_names = { "1" => "Lavender", "2" => "Sage", "3" => "Grape", "4" => "Flamingo", "5" => "Banana", "6" => "Tangerine", "7" => "Peacock", "8" => "Graphite", "9" => "Blueberry", "10" => "Basil", "11" => "Tomato" } %>
+  <% if ev.color.present? && color_names[ev.color.to_s] %>
+    <div class="event-popup-row">
+      <svg class="event-popup-icon-svg" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072" />
+      </svg>
+      <span><%= color_names[ev.color.to_s] %></span>
+    </div>
+  <% end %>
+
+  <%# Synced timestamp %>
+  <% if ev.synced_at.present? %>
+    <div class="event-popup-row event-popup-row--muted">
+      <svg class="event-popup-icon-svg" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+      </svg>
+      <span>Synced <%= time_ago_in_words(ev.synced_at) %> ago</span>
+    </div>
+  <% end %>
+
+  <%# Created timestamp %>
+  <div class="event-popup-row event-popup-row--muted">
+    <svg class="event-popup-icon-svg" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+    </svg>
+    <span>Created <%= ev.created_at.strftime("%-d %b %Y, %-H:%M") %></span>
+  </div>
+</div>
+
+<div class="event-popup-actions">
+  <% if ev.html_link.present? %>
+    <%= link_to ev.html_link, target: "_blank", rel: "noopener noreferrer", class: "event-popup-btn" do %>
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+      </svg>
+      Open in Google
+    <% end %>
+  <% end %>
+  <% if ev.local? %>
+    <%= link_to edit_calendar_event_path(ev), class: "event-popup-btn" do %>
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z" />
+      </svg>
+      Edit
+    <% end %>
+    <%= button_to calendar_event_path(ev), method: :delete,
+          class: "event-popup-btn event-popup-btn--danger",
+          form: { data: { turbo_confirm: "Delete \"#{j ev.title.truncate(40)}\"?" } } do %>
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+      </svg>
+      Delete
+    <% end %>
+  <% end %>
+</div>

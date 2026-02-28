@@ -1,7 +1,7 @@
 <% content_for :title, "Inbox - Documents" %>
 <% content_for :page_title, @page_title || "All Notes" %>
 
-<div class="inbox-with-sidebar<%= ' inbox-with-sidebar--no-sidebar' unless @show_calendar_widget %>">
+<div class="inbox-with-sidebar">
   <div class="inbox-main">
 
 <div class="documents-container">
@@ -33,6 +33,14 @@
     <div class="documents-grid">
       <% @documents.each do |document| %>
         <%= render 'documents/card', document: document %>
+      <% end %>
+
+      <%# ── Dashed "New Note" card ── %>
+      <%= link_to new_note_path, class: "new-note-card", data: { turbo: false } do %>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 1.5rem; height: 1.5rem;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        <span>New Note</span>
       <% end %>
     </div>
   <% else %>
@@ -162,6 +170,28 @@
   gap: var(--spacing-lg);
 }
 
+/* ── Dashed "New Note" card ── */
+.new-note-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  min-height: 140px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+}
+.new-note-card:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-bg-secondary);
+}
+
 @media (max-width: 768px) {
   .documents-grid {
     grid-template-columns: 1fr;
@@ -190,9 +220,7 @@
 
 <%# Close inbox-main + render calendar widget sidebar %>
   </div><%# .inbox-main %>
-  <% if @show_calendar_widget %>
-    <aside class="inbox-sidebar">
-      <%= render "calendars/widget" %>
-    </aside>
-  <% end %>
+  <aside class="inbox-sidebar">
+    <%= render "calendars/widget" %>
+  </aside>
 </div><%# .inbox-with-sidebar %>
