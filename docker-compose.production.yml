@@ -62,7 +62,8 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN}
       - GOOGLE_CALENDAR_IDS=${GOOGLE_CALENDAR_IDS:-primary}
-      - CALENDAR_REMINDER_MINUTES=${CALENDAR_REMINDER_MINUTES:-10} # Omit WHISPER_LANGUAGE to use auto-detection; set to 'ru' or 'en' to force a language
+      - CALENDAR_REMINDER_MINUTES=${CALENDAR_REMINDER_MINUTES:-10}
+      # Omit WHISPER_LANGUAGE to use auto-detection; set to 'ru' or 'en' to force a language
       # - WHISPER_LANGUAGE=ru
       # Ollama model for transcription correction (default: gemma3:4b)
       - OLLAMA_CORRECTION_MODEL=gemma3:4b
