@@ -56,8 +56,16 @@ class DocumentsController < ApplicationController
     # Pagy pagination (20 items per page)
     @pagy, @documents = pagy(documents_scope, limit: 20)
 
-    # Show calendar widget sidebar if there are upcoming events this week
+    # Calendar widget: load upcoming events directly (no Turbo Frame needed)
     @show_calendar_widget = CalendarEvent.this_week.exists?
+    if @show_calendar_widget
+      @widget_today    = CalendarEvent.today
+      @widget_tomorrow = CalendarEvent.tomorrow
+      @widget_week     = CalendarEvent.this_week
+                           .where.not(starts_at: Time.current.beginning_of_day..Time.current.end_of_day)
+                           .where.not(starts_at: 1.day.from_now.beginning_of_day..1.day.from_now.end_of_day)
+                           .limit(5)
+    end
   end
 
   def show
