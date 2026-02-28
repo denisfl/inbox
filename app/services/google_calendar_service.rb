@@ -170,8 +170,9 @@ class GoogleCalendarService
     return [ nil, nil, false ] if gstart.nil?
 
     if gstart.date.present?
-      starts = Date.parse(gstart.date).beginning_of_day
-      ends   = gend&.date.present? ? Date.parse(gend.date).beginning_of_day : nil
+      # All-day event: gstart.date is a Date object from the Google gem
+      starts = Date.parse(gstart.date.to_s).beginning_of_day
+      ends   = gend&.date.present? ? Date.parse(gend.date.to_s).beginning_of_day : nil
       [ starts, ends, true ]
     else
       starts = Time.parse(gstart.date_time.to_s)
