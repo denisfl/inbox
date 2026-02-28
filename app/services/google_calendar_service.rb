@@ -89,8 +89,8 @@ class GoogleCalendarService
         cal_id,
         single_events: true,
         order_by:      "startTime",
-        time_min:      1.month.ago.iso8601,
-        time_max:      3.months.from_now.iso8601,
+        time_min:      3.months.ago.iso8601,
+        time_max:      1.year.from_now.iso8601,
         page_token:    page_token,
         max_results:   250
       )
@@ -152,6 +152,7 @@ class GoogleCalendarService
 
       CalendarEvent.find_or_initialize_by(google_event_id: item.id).tap do |ev|
         ev.google_calendar_id = cal_id
+        ev.source             = "google"
         ev.title              = item.summary.presence || "(no title)"
         ev.description        = item.description
         ev.starts_at          = starts_at
