@@ -18,10 +18,16 @@
   end
 %>
 
-<article class="document-card">
+<%= tag.article id: dom_id(document), class: "document-card #{document.pinned? ? 'document-card--pinned' : ''}" do %>
   <%# ── Header: badges + time ── %>
   <div class="card-header">
     <div class="card-badges">
+      <% if document.pinned? %>
+        <span class="source-badge source-badge--pinned" title="Pinned">
+          <%= heroicon(:map_pin, variant: :solid, style: 'width: 10px; height: 10px;') %>
+          Pinned
+        </span>
+      <% end %>
       <% if document.source == 'telegram' %>
         <span class="source-badge source-badge--tg">Telegram</span>
       <% else %>
@@ -69,6 +75,12 @@
 
   <%# ── Hover actions ── %>
   <div class="card-hover-actions">
+    <%= button_to toggle_pinned_document_path(document), method: :patch,
+          class: "card-hover-btn #{document.pinned? ? 'card-hover-btn--pinned' : ''}",
+          title: document.pinned? ? "Unpin" : "Pin",
+          data: { turbo: true } do %>
+      <%= heroicon(:map_pin, variant: document.pinned? ? :solid : :outline, style: 'width: 1rem; height: 1rem;') %>
+    <% end %>
     <%= button_to document_path(document), method: :delete,
           class: "card-hover-btn card-hover-btn--delete",
           title: "Delete note",
@@ -76,7 +88,7 @@
       <%= heroicon(:trash, style: 'width: 1rem; height: 1rem;') %>
     <% end %>
   </div>
-</article>
+<% end %>
 
 <style>
 /* ── Card ── */
@@ -212,6 +224,24 @@
   color: var(--color-danger);
   border-color: color-mix(in srgb, var(--color-danger) 25%, var(--color-border));
   background: color-mix(in srgb, var(--color-danger) 6%, var(--color-bg-primary));
+}
+
+/* ── Pinned card ── */
+.document-card--pinned {
+  border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary) 3%, var(--color-bg-primary));
+}
+.source-badge--pinned {
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-primary));
+  color: var(--color-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.card-hover-btn--pinned {
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 25%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg-primary));
 }
 
 /* ── Mobile: always show actions ── */

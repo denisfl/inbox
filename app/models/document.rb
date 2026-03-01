@@ -24,6 +24,14 @@ class Document < ApplicationRecord
   scope :by_source, ->(source) { where(source: source) }
   scope :todos, -> { where(document_type: 'todo') }
   scope :notes, -> { where(document_type: 'note') }
+  scope :pinned, -> { where(pinned: true) }
+  scope :not_pinned, -> { where(pinned: false) }
+  scope :pinned_first, -> { order(pinned: :desc) }
+
+  # Toggle pinned status
+  def toggle_pinned!
+    update!(pinned: !pinned)
+  end
 
   # Full-text search using SQLite FTS5
   def self.search(query, page: 1, per_page: 20)
