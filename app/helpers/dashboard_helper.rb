@@ -5,6 +5,7 @@ module DashboardHelper
   def time_ago_short(time)
     return "—" unless time
 
+    time = Time.zone.parse(time) if time.is_a?(String)
     seconds = (Time.current - time).to_i
     case seconds
     when 0..59       then "now"

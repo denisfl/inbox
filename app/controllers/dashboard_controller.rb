@@ -152,10 +152,11 @@ class DashboardController < ApplicationController
                  .order("sync_date DESC")
                  .limit(3)
                  .each do |row|
+      sync_time = row.last_sync.is_a?(String) ? Time.zone.parse(row.last_sync) : row.last_sync
       activities << {
         icon_type: :calendar,
         text: "GCal synced — <strong>#{row.cnt} events</strong>",
-        time: row.last_sync
+        time: sync_time
       }
     end
 
