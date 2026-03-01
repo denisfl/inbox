@@ -5,7 +5,7 @@
   <%# ── Greeting ──────────────────────────────────────────────────────────── %>
   <div class="dash-greeting">
     <div class="dash-greeting-date"><%= Date.current.strftime("%A · %B %-d, %Y") %></div>
-    <div class="dash-greeting-title"><%= greeting_text %> — here's your day at a glance</div>
+    <div class="dash-greeting-title"><%= greeting_text %> — <%= @greeting_subtitle %></div>
   </div>
 
   <%# ── Stat strip ────────────────────────────────────────────────────────── %>

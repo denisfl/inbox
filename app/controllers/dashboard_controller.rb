@@ -40,6 +40,9 @@ class DashboardController < ApplicationController
                           .order(:starts_at)
                           .limit(5)
 
+    # ── Contextual greeting subtitle ────────────────────────────────────────
+    @greeting_subtitle = build_greeting_subtitle
+
     # ── Activity feed (assembled from existing records) ──────────────────────
     @activities = build_activity_feed
 
@@ -179,4 +182,71 @@ class DashboardController < ApplicationController
     else :note
     end
   end
+
+  # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+  def build_greeting_subtitle
+    hour          = Time.current.hour
+    wday          = Date.current.wday # 0=Sun, 1=Mon … 5=Fri, 6=Sat
+    tasks_today   = @stats[:tasks_today]
+    overdue       = @stats[:tasks_overdue]
+    events_today  = @stats[:events_today]
+    inbox         = @stats[:inbox_count]
+
+    # Priority: overdue > busy day > clear day > day-of-week flavor > generic
+    if overdue > 3
+      return "You have #{overdue} overdue tasks — might be worth a quick triage."
+    end
+
+    if overdue > 0 && tasks_today > 0
+      return "#{tasks_today} tasks today, plus #{overdue} overdue — let's sort that out."
+    end
+
+    if overdue > 0
+      return "#{overdue} overdue #{'task'.pluralize(overdue)} waiting for you."
+    end
+
+    if tasks_today == 0 && events_today == 0
+      case wday
+      when 0, 6 then return "No tasks, no meetings — enjoy your weekend."
+      when 5
+        return hour >= 16 ? "Nothing left for today. Almost Friday-done." : "Clean slate today — nice."
+      else return "Nothing on the agenda — a blank canvas kind of day."
+      end
+    end
+
+    if tasks_today > 5 && events_today > 3
+      return "Packed day ahead — #{tasks_today} tasks and #{events_today} events."
+    end
+
+    if events_today > 3
+      return "Meeting-heavy day — #{events_today} events lined up."
+    end
+
+    # Day-of-week flavor
+    case wday
+    when 1
+      return "Monday. #{tasks_today} tasks to kick things off."
+    when 5
+      if hour >= 16
+        return "Almost there — #{tasks_today} tasks left before the weekend."
+      else
+        return "Friday. #{tasks_today} tasks and the weekend is in sight."
+      end
+    when 0, 6
+      return "Weekend mode. #{tasks_today} #{'task'.pluralize(tasks_today)} if you feel like it."
+    end
+
+    # Late night
+    if hour >= 23 || hour < 5
+      return "Burning the midnight oil? #{tasks_today} tasks on the board."
+    end
+
+    # Generic with inbox mention
+    if inbox > 5
+      return "#{tasks_today} tasks today and #{inbox} items in your inbox."
+    end
+
+    "#{tasks_today} tasks and #{events_today} #{'event'.pluralize(events_today)} — here's your day."
+  end
+  # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 end
