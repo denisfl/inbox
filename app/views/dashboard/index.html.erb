@@ -63,41 +63,6 @@
           </div>
           <%= link_to tasks_path, class: "panel-action" do %>All tasks →<% end %>
         </div>
-        <div class="task-list">
-          <% @tasks_today.each do |task| %>
-            <div class="task-item" data-controller="task-toggle" data-task-toggle-url-value="<%= toggle_task_path(task) %>">
-              <button type="button" class="task-toggle-btn" data-action="click->task-toggle#toggle">
-                <div class="task-check <%= task.priority %>"></div>
-              </button>
-              <div class="task-title"><%= task.title %></div>
-              <% if task.priority == "pinned" %>
-                <span class="task-tag">#pinned</span>
-              <% end %>
-              <% if task.due_date %>
-                <span class="task-due <%= 'overdue' if task.overdue? %>"><%= task.due_date.strftime("%d.%m") %></span>
-              <% end %>
-            </div>
-          <% end %>
-
-          <%# Completed today %>
-          <% @tasks_completed_today.each do |task| %>
-            <div class="task-item" style="opacity:0.5">
-              <div class="task-check done">
-                <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                  <path d="M1.5 4l2 2 3-3" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-              <div class="task-title done"><%= task.title %></div>
-              <span class="task-due">done</span>
-            </div>
-          <% end %>
-
-          <% if @tasks_today.empty? && @tasks_completed_today.empty? %>
-            <div class="task-item" style="color:var(--color-text-tertiary);font-size:var(--text-sm)">
-              No tasks for today
-            </div>
-          <% end %>
-        </div>
         <%= form_with(url: tasks_path, method: :post, class: "task-add") do |f| %>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M6 2V10M2 6H10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
@@ -106,6 +71,23 @@
           <input type="hidden" name="task[due_date]" value="<%= Date.current.to_s %>">
           <input type="hidden" name="redirect_to" value="<%= root_path %>">
         <% end %>
+        <div class="task-list">
+          <% @tasks_today.each do |task| %>
+            <%= render "tasks/task", task: task %>
+          <% end %>
+
+          <%# Completed today %>
+          <% @tasks_completed_today.each do |task| %>
+            <%= render "tasks/task", task: task %>
+          <% end %>
+
+          <% if @tasks_today.empty? && @tasks_completed_today.empty? %>
+            <div class="task-item" style="color:var(--color-text-tertiary);font-size:var(--text-sm)">
+              No tasks for today
+            </div>
+          <% end %>
+        </div>
+
       </div>
 
       <%# ── Events today ── %>
@@ -322,8 +304,8 @@
         </div>
       </div>
 
-      <%# ── Activity ── %>
-      <div class="panel">
+      <%# ── Activity (desktop only) ── %>
+      <div class="panel panel-activity">
         <div class="panel-header">
           <div class="panel-title">
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
@@ -398,6 +380,8 @@
 
 .dashboard {
   width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 /* ── Greeting ── */
@@ -461,11 +445,13 @@
   grid-template-columns: 1fr 320px;
   gap: var(--spacing-lg);
   align-items: start;
+  overflow: hidden;
 }
 .dash-left, .dash-right {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+  min-width: 0;
 }
 
 /* ── Panel (card wrapper) ── */
@@ -502,84 +488,16 @@
 }
 .panel-action:hover { color: var(--color-primary); }
 
-/* ── Task list ── */
+/* ── Task list (dashboard compact overrides) ── */
 .task-list {
   padding: 0;
-}
-.task-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-bottom: 1px solid var(--color-bg-tertiary);
-  font-size: var(--text-sm);
-}
-.task-item:last-child { border-bottom: none; }
-
-.task-check {
-  width: 18px;
-  height: 18px;
-  border-radius: var(--radius-base);
-  border: 1.5px solid var(--color-border-hover);
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.task-check.pinned {
-  border-color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-}
-.task-check.high, .task-check.urgent {
-  border-color: var(--color-danger);
-  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
-}
-.task-check.done {
-  border-color: var(--color-secondary);
-  background: var(--color-secondary);
-}
-.task-toggle-btn {
-  all: unset;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.task-toggle-btn:disabled {
-  cursor: default;
-}
-.task-title {
-  flex: 1;
-  min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--color-text-primary);
 }
-.task-title.done {
-  text-decoration: line-through;
-  color: var(--color-text-tertiary);
+.task-list .task-item-actions {
+  display: none;
 }
-.task-tag {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
-  padding: 1px 6px;
-  border-radius: var(--radius-full);
-}
-.task-due {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-text-tertiary);
-  flex-shrink: 0;
-}
-.task-due.overdue {
-  color: var(--color-danger);
-}
+
+/* ── Task add form ── */
 .task-add {
   display: flex;
   align-items: center;
@@ -607,7 +525,6 @@
 }
 .task-add-input::placeholder {
   color: var(--color-text-tertiary);
-}
 }
 
 /* ── Timeline / Event list ── */
@@ -972,10 +889,13 @@
 /* ── Responsive ── */
 @media (max-width: 1100px) {
   .dash-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 100%;
   }
   .dash-right {
     order: -1;
+  }
+  .panel-activity {
+    display: none;
   }
 }
 
