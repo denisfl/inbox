@@ -7,10 +7,19 @@ body {
   overflow-x: hidden;
 }
 
-.app-container {
+/* ── App layout: sidebar + main ── */
+.app-layout {
   display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--color-bg-secondary);
 }
 
 .main-content {

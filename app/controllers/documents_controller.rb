@@ -98,7 +98,7 @@ class DocumentsController < ApplicationController
     @document.images.purge_later if @document.images.attached?
     @document.files.purge_later if @document.files.attached?
     @document.destroy!
-    redirect_to root_path, notice: "Note deleted", status: :see_other
+    redirect_to documents_path, notice: "Note deleted", status: :see_other
   end
 
   private

@@ -6,41 +6,41 @@
     <header class="tasks-header">
       <h1 class="tasks-page-title">
         <%= heroicon(:clipboard, style: 'width: 1.5rem; height: 1.5rem;') %>
-        Задачи
+        Tasks
       </h1>
 
       <%= link_to new_task_path, class: "btn btn-success btn-sm" do %>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1rem; height: 1rem;">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
         </svg>
-        Новая задача
+        New Task
       <% end %>
     </header>
 
     <%# Filter Tabs %>
     <nav class="tasks-filters">
       <%= link_to tasks_path(filter: "today"), class: "tasks-filter-tab #{'tasks-filter-tab--active' if @filter == 'today'}" do %>
-        Сегодня
+        Today
         <% if @today_count > 0 %><span class="tasks-filter-count"><%= @today_count %></span><% end %>
       <% end %>
       <%= link_to tasks_path(filter: "upcoming"), class: "tasks-filter-tab #{'tasks-filter-tab--active' if @filter == 'upcoming'}" do %>
-        Предстоящие
+        Upcoming
       <% end %>
       <%= link_to tasks_path(filter: "inbox"), class: "tasks-filter-tab #{'tasks-filter-tab--active' if @filter == 'inbox'}" do %>
-        Входящие
+        Inbox
         <% if @inbox_count > 0 %><span class="tasks-filter-count"><%= @inbox_count %></span><% end %>
       <% end %>
       <% if @overdue_count > 0 %>
         <%= link_to tasks_path(filter: "overdue"), class: "tasks-filter-tab tasks-filter-tab--overdue #{'tasks-filter-tab--active' if @filter == 'overdue'}" do %>
-          Просрочено
+          Overdue
           <span class="tasks-filter-count tasks-filter-count--danger"><%= @overdue_count %></span>
         <% end %>
       <% end %>
       <%= link_to tasks_path(filter: "all"), class: "tasks-filter-tab #{'tasks-filter-tab--active' if @filter == 'all'}" do %>
-        Все
+        All
       <% end %>
       <%= link_to tasks_path(filter: "completed"), class: "tasks-filter-tab #{'tasks-filter-tab--active' if @filter == 'completed'}" do %>
-        Выполненные
+        Completed
       <% end %>
     </nav>
 
@@ -52,7 +52,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
         </span>
-        <%= f.text_field :title, name: "task[title]", class: "task-quick-add-input", placeholder: "Добавить задачу...", autocomplete: "off" %>
+        <%= f.text_field :title, name: "task[title]", class: "task-quick-add-input", placeholder: "Add task...", autocomplete: "off" %>
         <% if @filter == "today" %>
           <%= f.hidden_field :due_date, name: "task[due_date]", value: Date.current.to_s %>
         <% end %>
@@ -90,21 +90,21 @@
           <div class="tasks-empty-text">
             <% case @filter %>
             <% when "today" %>
-              Нет задач на сегодня
+              No tasks for today
             <% when "upcoming" %>
-              Нет предстоящих задач
+              No upcoming tasks
             <% when "inbox" %>
-              Все входящие разобраны
+              All inbox items sorted
             <% when "overdue" %>
-              Нет просроченных задач
+              No overdue tasks
             <% when "completed" %>
-              Пока нет выполненных задач
+              No completed tasks yet
             <% else %>
-              Задач нет
+              No tasks
             <% end %>
           </div>
           <div class="tasks-empty-sub">
-            <%= link_to "Создать задачу", new_task_path %>
+            <%= link_to "Create task", new_task_path %>
           </div>
         </div>
       <% end %>

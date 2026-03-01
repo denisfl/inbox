@@ -24,3 +24,12 @@ application.register("simple-editor", SimpleEditorController);
 
 import EventPopupController from "./event_popup_controller";
 application.register("event-popup", EventPopupController);
+
+import QuickCaptureController from "./quick_capture_controller";
+application.register("quick-capture", QuickCaptureController);
+
+import SidebarController from "./sidebar_controller";
+application.register("sidebar", SidebarController);
+
+import TaskToggleController from "./task_toggle_controller";
+application.register("task-toggle", TaskToggleController);

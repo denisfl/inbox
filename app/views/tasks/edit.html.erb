@@ -7,12 +7,12 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
-        Задачи
+        Tasks
       <% end %>
-      <h1 class="task-form-title">Редактировать задачу</h1>
+      <h1 class="task-form-title">Edit Task</h1>
     </header>
 
-    <%= render "form", task: @task, url: task_path(@task), method: :patch, submit_label: "Сохранить" %>
+    <%= render "form", task: @task, url: task_path(@task), method: :patch, submit_label: "Save" %>
   </div>
 </div>
 

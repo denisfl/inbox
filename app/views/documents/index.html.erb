@@ -56,7 +56,7 @@
           Try a different search term or clear filters
         </p>
         <div class="empty-state-actions">
-          <%= link_to root_path, class: "btn btn-secondary" do %>
+          <%= link_to documents_path, class: "btn btn-secondary" do %>
             Clear search
           <% end %>
         </div>
@@ -71,7 +71,7 @@
           Try adjusting your filters or browse all notes
         </p>
         <div class="empty-state-actions">
-          <%= link_to root_path, class: "btn btn-secondary" do %>
+          <%= link_to documents_path, class: "btn btn-secondary" do %>
             Clear all filters
           <% end %>
         </div>
@@ -218,9 +218,6 @@
 
 </style>
 
-<%# Close inbox-main + render calendar widget sidebar %>
+<%# Close inbox-main %>
   </div><%# .inbox-main %>
-  <aside class="inbox-sidebar">
-    <%= render "calendars/widget" %>
-  </aside>
 </div><%# .inbox-with-sidebar %>

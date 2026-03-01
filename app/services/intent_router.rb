@@ -24,7 +24,7 @@ class IntentRouter
       due_date: result.due_at&.to_date,
       due_time: result.due_at
     )
-    reply(telegram_chat_id, "✅ Задача добавлена: #{result.title}")
+    reply(telegram_chat_id, "✅ Task added: #{result.title}")
     Rails.logger.info("IntentRouter: created task #{task.id}")
     task
   end
@@ -47,7 +47,7 @@ class IntentRouter
     document.tags << tag unless document.tags.include?(tag)
 
     time_str = result.due_at ? result.due_at.strftime("%d.%m %H:%M") : "??"
-    reply(telegram_chat_id, "📅 Событие сохранено: #{result.title} на #{time_str}")
+    reply(telegram_chat_id, "📅 Event saved: #{result.title} on #{time_str}")
     Rails.logger.info("IntentRouter: created event document #{document.id}")
     document
   rescue StandardError => e
@@ -67,7 +67,7 @@ class IntentRouter
       position: 0,
       content: { text: result.body }.to_json
     )
-    reply(telegram_chat_id, "📝 Заметка сохранена")
+    reply(telegram_chat_id, "📝 Note saved")
     Rails.logger.info("IntentRouter: created note document #{document.id}")
     document
   end

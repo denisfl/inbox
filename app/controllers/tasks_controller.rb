@@ -34,7 +34,7 @@ class TasksController < ApplicationController
     @task = Task.new(task_params)
     @task.priority ||= "mid"
     if @task.save
-      redirect_to tasks_path(filter: determine_redirect_filter), notice: "Задача создана"
+      redirect_to (params[:redirect_to].presence || tasks_path(filter: determine_redirect_filter)), notice: "Task created"
     else
       render :new, status: :unprocessable_entity
     end
@@ -47,7 +47,7 @@ class TasksController < ApplicationController
   # PATCH /tasks/:id
   def update
     if @task.update(task_params)
-      redirect_to tasks_path(filter: determine_redirect_filter), notice: "Задача обновлена"
+      redirect_to tasks_path(filter: determine_redirect_filter), notice: "Task updated"
     else
       render :edit, status: :unprocessable_entity
     end
@@ -56,7 +56,7 @@ class TasksController < ApplicationController
   # DELETE /tasks/:id
   def destroy
     @task.destroy
-    redirect_to tasks_path(filter: params[:filter]), notice: "Задача удалена"
+    redirect_to tasks_path(filter: params[:filter]), notice: "Task deleted"
   end
 
   # PATCH /tasks/:id/toggle
@@ -65,6 +65,7 @@ class TasksController < ApplicationController
 
     respond_to do |format|
       format.html { redirect_back fallback_location: tasks_path }
+      format.json { head :ok }
       format.turbo_stream {
         render turbo_stream: turbo_stream.replace(
           dom_id(@task),

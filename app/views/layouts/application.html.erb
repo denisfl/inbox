@@ -28,21 +28,44 @@
     <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
   </head>
 
-    <body class="antialiased" data-controller="pwa keyboard">
-    <div class="app-container">
-      <main class="main-content">
-        <%= render "layouts/header" %>
-        
+    <body class="antialiased" data-controller="pwa keyboard sidebar">
+    <%# ── Mobile top bar (visible < 769px) ── %>
+    <div class="mobile-topbar">
+      <button class="btn btn-icon" data-action="click->sidebar#toggle" aria-label="Menu">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <%= link_to root_path, class: "sidebar-logo" do %>
+        <%= heroicon(:inbox, style: 'width: 1.25rem; height: 1.25rem;') %>
+        <span>Inbox</span>
+      <% end %>
+      <%= link_to new_note_path, class: "btn btn-success btn-sm", data: { turbo: false } do %>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M7 3v8M3 7h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      <% end %>
+    </div>
+
+    <div class="app-layout">
+      <%# ── Global sidebar ── %>
+      <%= render "layouts/sidebar" %>
+
+      <%# ── Mobile overlay ── %>
+      <div class="sidebar-overlay" data-action="click->sidebar#close" data-sidebar-target="overlay"></div>
+
+      <%# ── Main content area ── %>
+      <div class="app-main">
         <div class="content-wrapper">
           <%= yield %>
         </div>
-      </main>
-      
-      <%# PWA Update Button (shown when new version available) %>
-      <div class="pwa-update-banner hidden" data-pwa-target="updateButton">
-        <span>New version available!</span>
-        <button class="btn btn-sm" data-action="click->pwa#update">Update</button>
       </div>
+    </div>
+
+    <%# PWA Update Button (shown when new version available) %>
+    <div class="pwa-update-banner hidden" data-pwa-target="updateButton">
+      <span>New version available!</span>
+      <button class="btn btn-sm" data-action="click->pwa#update">Update</button>
     </div>
   </body>
 </html>
