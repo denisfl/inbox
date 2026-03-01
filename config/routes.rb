@@ -58,9 +58,20 @@ Rails.application.routes.draw do
   resources :calendar_events, only: [:new, :create, :edit, :update, :destroy], path: "calendar/events"
   post "/calendar/import", to: "calendar_events#import_ical", as: :import_ical
 
+  # Tasks
+  resources :tasks, only: [:index, :new, :create, :edit, :update, :destroy] do
+    member do
+      patch :toggle
+    end
+  end
+
   # Shortcut for creating new document
   get '/new', to: 'documents#new', as: :new_note
 
-  # Root path
-  root "documents#index"
+  # Dashboard
+  get '/dashboard', to: 'dashboard#index', as: :dashboard
+  post '/quick_capture', to: 'dashboard#quick_capture', as: :quick_capture
+
+  # Root path — Dashboard
+  root "dashboard#index"
 end

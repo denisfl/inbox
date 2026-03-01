@@ -1,0 +1,53 @@
+<%= form_with(model: task, url: url, method: method, class: "task-form") do |f| %>
+  <% if task.errors.any? %>
+    <div class="task-form-errors">
+      <strong><%= pluralize(task.errors.count, "error") %>:</strong>
+      <ul>
+        <% task.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="task-field">
+    <%= f.label :title, "Title", class: "task-field-label" %>
+    <%= f.text_field :title, class: "input", placeholder: "What needs to be done?", autofocus: true %>
+  </div>
+
+  <div class="task-field">
+    <%= f.label :description, "Description (Markdown)", class: "task-field-label" %>
+    <%= f.text_area :description, class: "input task-description-input", placeholder: "Task details...", rows: 4 %>
+  </div>
+
+  <div class="task-field-group">
+    <div class="task-field">
+      <%= f.label :due_date, "Date", class: "task-field-label" %>
+      <%= f.date_field :due_date, class: "input" %>
+    </div>
+    <div class="task-field">
+      <%= f.label :due_time, "Time", class: "task-field-label" %>
+      <%= f.time_field :due_time, class: "input" %>
+    </div>
+  </div>
+
+  <div class="task-field-group">
+    <div class="task-field">
+      <%= f.label :priority, "Priority", class: "task-field-label" %>
+      <%= f.select :priority,
+            [["Pinned", "pinned"], ["High", "high"], ["Normal", "mid"], ["Low", "low"]],
+            {}, class: "input" %>
+    </div>
+    <div class="task-field">
+      <%= f.label :recurrence_rule, "Recurrence", class: "task-field-label" %>
+      <%= f.select :recurrence_rule,
+            [["No repeat", ""], ["Daily", "daily"], ["Weekly", "weekly"], ["Monthly", "monthly"], ["Yearly", "yearly"]],
+            { include_blank: false }, class: "input" %>
+    </div>
+  </div>
+
+  <div class="task-form-actions">
+    <%= f.submit submit_label, class: "btn btn-success" %>
+    <%= link_to "Cancel", tasks_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>
