@@ -42,6 +42,15 @@
       <% end %>
     </nav>
 
+    <%# Tag filter bar %>
+    <% if @selected_tags.any? || Tag.any? %>
+      <%= render partial: "shared/tag_filter_bar", locals: {
+        selected_tags: @selected_tags,
+        base_path: tasks_path,
+        preserve: { filter: @filter }.compact_blank
+      } %>
+    <% end %>
+
     <%# Quick Add Form %>
     <div class="task-quick-add">
       <%= form_with(url: tasks_path, method: :post, class: "task-quick-add-form") do |f| %>

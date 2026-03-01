@@ -5,6 +5,15 @@
   <div class="inbox-main">
 
 <div class="documents-container">
+  <%# Tag filter bar — always shown when tags exist or tags are selected %>
+  <% if @selected_tags.any? || Tag.any? %>
+    <%= render partial: "shared/tag_filter_bar", locals: {
+      selected_tags: @selected_tags,
+      base_path: documents_path,
+      preserve: { sort: params[:sort], type: params[:type], q: params[:q] }.compact_blank
+    } %>
+  <% end %>
+
   <%# Filters and sorting bar %>
   <div class="filters-bar">
     <div class="filters-left">
@@ -70,7 +79,7 @@
           <% end %>
         </div>
 
-      <% elsif params[:source].present? || params[:type].present? || params[:tag].present? %>
+      <% elsif params[:type].present? || params[:tag].present? || params[:tags].present? %>
         <%# No results for filters %>
         <%= heroicon(:funnel, class: 'empty-state-icon') %>
         <h2 class="empty-state-title">No matches for current filters</h2>

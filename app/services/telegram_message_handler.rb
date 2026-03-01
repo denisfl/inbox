@@ -95,6 +95,10 @@ class TelegramMessageHandler
       content_type: 'image/jpeg'
     )
 
+    # Auto-tag as file
+    file_tag = Tag.find_or_create_by!(name: 'file')
+    doc.tags << file_tag unless doc.tags.include?(file_tag)
+
     # Add caption as text block if present
     if message.caption.present?
       doc.blocks.create!(
@@ -139,6 +143,10 @@ class TelegramMessageHandler
       content_type: 'audio/ogg'
     )
 
+    # Auto-tag as audio
+    audio_tag = Tag.find_or_create_by!(name: 'audio')
+    doc.tags << audio_tag unless doc.tags.include?(audio_tag)
+
     # Queue transcription job
     TranscribeAudioJob.perform_later(doc.id, file_block.file.blob.key)
 
@@ -178,6 +186,10 @@ class TelegramMessageHandler
       content_type: message.audio.mime_type || 'audio/mpeg'
     )
 
+    # Auto-tag as audio
+    audio_tag = Tag.find_or_create_by!(name: 'audio')
+    doc.tags << audio_tag unless doc.tags.include?(audio_tag)
+
     send_reply("🎵 Audio file saved")
     Rails.logger.info("Created audio document: #{doc.id}")
   end
@@ -212,6 +224,10 @@ class TelegramMessageHandler
       filename: filename,
       content_type: message.document.mime_type
     )
+
+    # Auto-tag as file
+    file_tag = Tag.find_or_create_by!(name: 'file')
+    doc.tags << file_tag unless doc.tags.include?(file_tag)
 
     # Add caption as text block if present
     if message.caption.present?

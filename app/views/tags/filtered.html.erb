@@ -1,0 +1,57 @@
+<% content_for :title, "#{@selected_tags.map { |t| '#' + t.name }.join(' + ')} — Inbox" %>
+
+<div class="tag-detail-page">
+  <header class="tag-detail-header">
+    <%= back_link(tags_path, "Tags") %>
+    <h1 class="tag-detail-title">
+      <% @selected_tags.each do |tag| %>
+        <span class="tag-filter-pill" style="font-size: var(--text-base);">
+          <span class="tag-color-dot" style="background:<%= tag_dot_color(tag) %>"></span>
+          #<%= tag.name %>
+        </span>
+      <% end %>
+    </h1>
+  </header>
+
+  <%# Tag filter bar for adding/removing tags %>
+  <%= render partial: "shared/tag_filter_bar", locals: {
+    selected_tags: @selected_tags,
+    base_path: tags_path,
+    preserve: {}
+  } %>
+
+  <% if @documents.any? %>
+    <section class="tag-section">
+      <h2 class="tag-section-title">Documents (<%= @documents.count %>)</h2>
+      <div class="documents-grid">
+        <%= render partial: "documents/card", collection: @documents, as: :document %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @tasks.any? %>
+    <section class="tag-section">
+      <h2 class="tag-section-title">Tasks (<%= @tasks.count %>)</h2>
+      <div class="task-list">
+        <% @tasks.each do |task| %>
+          <%= render partial: "tasks/task", locals: { task: task } %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @documents.empty? && @tasks.empty? %>
+    <div class="empty-state">
+      <%= heroicon(:funnel, class: 'empty-state-icon') %>
+      <h2 class="empty-state-title">No items match all selected tags</h2>
+      <p class="empty-state-description">
+        Try removing a tag filter to broaden the results.
+      </p>
+      <div class="empty-state-actions">
+        <%= link_to tags_path, class: "btn btn-secondary" do %>
+          Clear all tags
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

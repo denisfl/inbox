@@ -27,34 +27,6 @@ module DashboardHelper
     end
   end
 
-  # Source badge CSS class
-  def source_badge_class(source)
-    case source
-    when "telegram" then "source-badge tg"
-    when "voice"    then "source-badge voice"
-    else "source-badge"
-    end
-  end
-
-  # Source display label
-  def source_label(source)
-    case source
-    when "telegram" then "Telegram"
-    when "web"      then "Manual"
-    when "api"      then "API"
-    else source&.capitalize || "Note"
-    end
-  end
-
-  # Color for source dot in sidebar / notes list
-  def source_dot_color(source)
-    case source
-    when "telegram" then "#1b4f8a"
-    when "voice"    then "#2d6a4f"
-    else "#a09890"
-    end
-  end
-
   # Default tag color fallback
   def tag_dot_color(tag)
     return tag.color if tag.color.present?

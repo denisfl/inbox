@@ -1,0 +1,41 @@
+<% content_for :title, "##{@tag.name} — Inbox" %>
+
+<div class="tag-detail-page">
+  <header class="tag-detail-header">
+    <%= back_link(tags_path, "Tags") %>
+    <h1 class="tag-detail-title">
+      <span class="tag-color-dot" style="background:<%= tag_dot_color(@tag) %>"></span>
+      #<%= @tag.name %>
+    </h1>
+  </header>
+
+  <% if @documents.any? %>
+    <section class="tag-section">
+      <h2 class="tag-section-title">Documents (<%= @documents.count %>)</h2>
+      <div class="documents-grid">
+        <%= render partial: "documents/card", collection: @documents, as: :document %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @tasks.any? %>
+    <section class="tag-section">
+      <h2 class="tag-section-title">Tasks (<%= @tasks.count %>)</h2>
+      <div class="task-list">
+        <% @tasks.each do |task| %>
+          <%= render partial: "tasks/task", locals: { task: task } %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @documents.empty? && @tasks.empty? %>
+    <div class="empty-state">
+      <%= heroicon(:tag, class: 'empty-state-icon') %>
+      <h2 class="empty-state-title">No items with this tag</h2>
+      <p class="empty-state-description">
+        Documents and tasks tagged with <strong>#<%= @tag.name %></strong> will appear here.
+      </p>
+    </div>
+  <% end %>
+</div>

@@ -28,6 +28,19 @@ class Document < ApplicationRecord
   scope :not_pinned, -> { where(pinned: false) }
   scope :pinned_first, -> { order(pinned: :desc) }
 
+  # Filter by multiple tags (AND — documents must have ALL specified tags)
+  scope :tagged_with, ->(tag_names) {
+    return all if tag_names.blank?
+
+    names = Array(tag_names).map { |n| n.to_s.strip.downcase }.reject(&:blank?)
+    return all if names.empty?
+
+    joins(:tags)
+      .where(tags: { name: names })
+      .group("documents.id")
+      .having("COUNT(DISTINCT tags.id) = ?", names.size)
+  }
+
   # Toggle pinned status
   def toggle_pinned!
     update!(pinned: !pinned)

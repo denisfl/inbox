@@ -46,6 +46,35 @@
     </div>
   </div>
 
+  <% if task.persisted? %>
+    <div class="task-field">
+      <label class="task-field-label">Tags</label>
+      <div class="task-tag-input"
+           data-controller="tag-input"
+           data-tag-input-entity-type-value="task"
+           data-tag-input-entity-id-value="<%= task.id %>">
+        <div class="tag-input-pills" data-tag-input-target="pills">
+          <% task.tags.each do |tag| %>
+            <span class="tag-pill" data-tag-name="<%= tag.name %>">
+              <span class="tag-pill-dot" style="background:<%= tag_dot_color(tag) %>"></span>
+              #<%= tag.name %>
+              <button type="button" class="tag-pill-remove" data-action="click->tag-input#removeTag">&times;</button>
+            </span>
+          <% end %>
+        </div>
+        <div class="tag-input-wrapper">
+          <input type="text"
+                 class="tag-input-field"
+                 placeholder="Add tag…"
+                 data-tag-input-target="input"
+                 data-action="input->tag-input#onInput keydown->tag-input#onKeydown"
+                 autocomplete="off">
+          <div class="tag-dropdown hidden" data-tag-input-target="dropdown"></div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
   <div class="task-form-actions">
     <%= f.submit submit_label, class: "btn btn-success" %>
     <%= link_to "Cancel", tasks_path, class: "btn btn-secondary" %>

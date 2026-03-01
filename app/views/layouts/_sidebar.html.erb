@@ -46,38 +46,16 @@
     <% end %>
   <% end %>
 
-  <%# ── Sources ── %>
-  <div class="nav-group-label">Sources</div>
-
-  <%= link_to documents_path(source: "telegram"), class: "nav-item" do %>
-    <div class="nav-dot" style="background:#1b4f8a"></div>
-    Telegram
-    <% if @sidebar_counts[:telegram] > 0 %>
-      <span class="count"><%= @sidebar_counts[:telegram] %></span>
-    <% end %>
-  <% end %>
-
-  <%= link_to documents_path(type: "voice"), class: "nav-item" do %>
-    <div class="nav-dot" style="background:#2d6a4f"></div>
-    Voice
-    <% if @sidebar_counts[:voice] > 0 %>
-      <span class="count"><%= @sidebar_counts[:voice] %></span>
-    <% end %>
-  <% end %>
-
-  <%= link_to documents_path(source: "web"), class: "nav-item" do %>
-    <div class="nav-dot" style="background:#a09890"></div>
-    Manual
-    <% if @sidebar_counts[:manual] > 0 %>
-      <span class="count"><%= @sidebar_counts[:manual] %></span>
-    <% end %>
+  <%= link_to tags_path, class: "nav-item #{'active' if controller_name == 'tags'}" do %>
+    <div class="nav-icon"><%= heroicon(:tag, style: 'width: 14px; height: 14px;') %></div>
+    Tags
   <% end %>
 
   <%# ── Tags ── %>
   <% if @sidebar_tags.present? %>
     <div class="nav-group-label">Tags</div>
     <% @sidebar_tags.each do |tag| %>
-      <%= link_to documents_path(tag: tag.name), class: "nav-item" do %>
+      <%= link_to tag_path(tag.name), class: "nav-item" do %>
         <div class="nav-dot" style="background:<%= tag_dot_color(tag) %>"></div>
         #<%= tag.name %>
         <span class="count"><%= tag.docs_count %></span>

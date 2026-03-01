@@ -41,6 +41,17 @@
         <% end %>
       </div>
     <% end %>
+
+    <% if task.tags.any? %>
+      <div class="task-item-tags">
+        <% task.tags.limit(3).each do |t| %>
+          <%= link_to tag_path(t.name), class: "task-tag-link" do %>
+            <span class="tag-color-dot" style="background:<%= tag_dot_color(t) %>; width:5px; height:5px;"></span>
+            #<%= t.name %>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
   </div>
 
   <div class="task-item-actions">
