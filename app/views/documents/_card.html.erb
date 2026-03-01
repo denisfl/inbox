@@ -28,12 +28,6 @@
           Pinned
         </span>
       <% end %>
-      <% if document.source == 'telegram' %>
-        <span class="source-badge source-badge--tg">Telegram</span>
-      <% else %>
-        <span class="source-badge">Manual</span>
-      <% end %>
-
       <% if has_voice %>
         <span class="source-badge source-badge--voice">Voice</span>
       <% elsif has_photo %>
@@ -63,7 +57,7 @@
   <% if document.tags.any? %>
     <div class="card-footer">
       <% document.tags.limit(3).each do |tag| %>
-        <%= link_to root_path(tag: tag.name), class: "card-tag" do %>
+        <%= link_to tag_path(tag.name), class: "card-tag" do %>
           #<%= tag.name %>
         <% end %>
       <% end %>
@@ -127,7 +121,7 @@
   white-space: nowrap;
 }
 
-/* ── Source badges ── */
+/* ── Content-type badges ── */
 .source-badge {
   display: inline-block;
   font-size: var(--text-xs);
@@ -138,7 +132,6 @@
   background: var(--color-bg-secondary);
   color: var(--color-text-secondary);
 }
-.source-badge--tg  { background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-primary)); color: var(--color-primary); }
 .source-badge--voice { background: color-mix(in srgb, var(--color-accent) 20%, var(--color-bg-primary)); color: color-mix(in srgb, var(--color-accent) 70%, var(--color-text-primary)); }
 .source-badge--photo { background: color-mix(in srgb, var(--color-secondary) 15%, var(--color-bg-primary)); color: var(--color-secondary); }
 .source-badge--file  { background: var(--color-bg-tertiary); color: var(--color-text-secondary); }

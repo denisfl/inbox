@@ -33,3 +33,9 @@ application.register("file-upload", FileUploadController);
 
 import SidebarController from "./sidebar_controller";
 application.register("sidebar", SidebarController);
+
+import TagInputController from "./tag_input_controller";
+application.register("tag-input", TagInputController);
+
+import TagFilterController from "./tag_filter_controller";
+application.register("tag-filter", TagFilterController);

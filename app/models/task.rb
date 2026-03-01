@@ -3,6 +3,8 @@
 class Task < ApplicationRecord
   # ── Associations ──────────────────────────────────────────────────────────
   belongs_to :document, optional: true
+  has_many :task_tags, dependent: :destroy
+  has_many :tags, through: :task_tags
 
   # ── Validations ───────────────────────────────────────────────────────────
   validates :title, presence: true
@@ -36,6 +38,19 @@ class Task < ApplicationRecord
     active.where("due_date < ?", Date.current)
   }
   scope :with_due_date, -> { where.not(due_date: nil) }
+
+  # Filter by multiple tags (AND — tasks must have ALL specified tags)
+  scope :tagged_with, ->(tag_names) {
+    return all if tag_names.blank?
+
+    names = Array(tag_names).map { |n| n.to_s.strip.downcase }.reject(&:blank?)
+    return all if names.empty?
+
+    joins(:tags)
+      .where(tags: { name: names })
+      .group("tasks.id")
+      .having("COUNT(DISTINCT tags.id) = ?", names.size)
+  }
 
   # Date range scope for calendar integration
   scope :in_date_range, ->(from, to) {

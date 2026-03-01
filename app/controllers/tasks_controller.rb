@@ -18,6 +18,14 @@ class TasksController < ApplicationController
              when "overdue"   then Task.overdue.ordered
              end
 
+    # Multi-tag AND filter
+    tag_names = normalize_tag_params
+    if tag_names.present?
+      @tasks = @tasks.tagged_with(tag_names)
+      @selected_tags = Tag.where(name: tag_names).to_a
+    end
+    @selected_tags ||= []
+
     @overdue_count = Task.overdue.count
     @today_count   = Task.today.count
     @inbox_count   = Task.inbox.count
@@ -91,5 +99,16 @@ class TasksController < ApplicationController
     return "upcoming" if @task.due_date.present? && @task.due_date > Date.current
     return "inbox" if @task.due_date.nil?
     "all"
+  end
+
+  # Normalize tag params: supports both ?tag=name (single) and ?tags[]=a&tags[]=b (multi)
+  def normalize_tag_params
+    if params[:tags].present?
+      Array(params[:tags]).map { |t| t.to_s.strip.downcase }.reject(&:blank?)
+    elsif params[:tag].present?
+      [params[:tag].to_s.strip.downcase]
+    else
+      []
+    end
   end
 end

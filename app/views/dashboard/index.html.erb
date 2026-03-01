@@ -109,7 +109,6 @@
               end
             %>
             <%= link_to edit_document_path(doc), class: "note-row" do %>
-              <div class="note-source-dot" style="background:<%= source_dot_color(doc.source) %>"></div>
               <div class="note-row-info">
                 <div class="note-row-title"><%= doc.title.truncate(50) %></div>
                 <% if preview_text %>
@@ -118,7 +117,6 @@
               </div>
               <div class="note-row-meta">
                 <span class="note-time"><%= time_ago_short(doc.created_at) %></span>
-                <span class="<%= source_badge_class(doc.source) %>"><%= source_label(doc.source) %></span>
               </div>
             <% end %>
           <% end %>
@@ -567,13 +565,6 @@
 .note-row:hover { background: var(--color-bg-secondary); }
 .note-row:last-child { border-bottom: none; }
 
-.note-source-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  flex-shrink: 0;
-  margin-top: 5px;
-}
 .note-row-info { flex: 1; min-width: 0; }
 .note-row-title {
   font-weight: var(--font-medium);
@@ -603,29 +594,6 @@
   font-size: 11px;
   font-weight: 600;
   color: var(--color-text-tertiary);
-}
-
-/* Source badges (compact) */
-.source-badge {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 1px 5px;
-  border-radius: var(--radius-sm);
-  background: var(--color-bg-tertiary);
-  color: var(--color-text-tertiary);
-  border: 1px solid var(--color-border);
-  letter-spacing: 0.02em;
-}
-.source-badge.tg {
-  background: #dce8f7;
-  color: #1b4f8a;
-  border-color: #c5d3e8;
-}
-.source-badge.voice {
-  background: #d8eddf;
-  color: #2d6a4f;
-  border-color: #b8d9c3;
 }
 
 /* ── Quick Capture ── */

@@ -14,11 +14,6 @@ class DocumentsController < ApplicationController
         .distinct
     end
 
-    # Filter by source (telegram, api)
-    if params[:source].present?
-      documents_scope = documents_scope.where(source: params[:source])
-    end
-
     # Filter by type (voice, photo)
     if params[:type].present?
       case params[:type]
@@ -35,10 +30,13 @@ class DocumentsController < ApplicationController
       end
     end
 
-    # Filter by tag
-    if params[:tag].present?
-      documents_scope = documents_scope.joins(:tags).where(tags: {name: params[:tag]})
+    # Filter by tag(s) — supports both single tag and multi-tag AND filter
+    tag_names = normalize_tag_params
+    if tag_names.present?
+      documents_scope = documents_scope.tagged_with(tag_names)
+      @selected_tags = Tag.where(name: tag_names).to_a
     end
+    @selected_tags ||= []
 
     # Sort — pinned documents always appear first
     documents_scope = documents_scope.pinned_first
@@ -139,6 +137,15 @@ class DocumentsController < ApplicationController
         block.file.attach(file)
       end
 
+      # Auto-tag based on content type
+      if file.content_type.start_with?('audio/')
+        auto_tag = Tag.find_or_create_by!(name: 'audio')
+        doc.tags << auto_tag unless doc.tags.include?(auto_tag)
+      elsif !file.content_type.start_with?('image/')
+        auto_tag = Tag.find_or_create_by!(name: 'file')
+        doc.tags << auto_tag unless doc.tags.include?(auto_tag)
+      end
+
       created += 1
     end
 
@@ -166,5 +173,16 @@ class DocumentsController < ApplicationController
 
   def set_document
     @document = Document.includes(blocks: []).find(params[:id])
+  end
+
+  # Normalize tag params: supports both ?tag=name (single) and ?tags[]=a&tags[]=b (multi)
+  def normalize_tag_params
+    if params[:tags].present?
+      Array(params[:tags]).map { |t| t.to_s.strip.downcase }.reject(&:blank?)
+    elsif params[:tag].present?
+      [params[:tag].to_s.strip.downcase]
+    else
+      []
+    end
   end
 end

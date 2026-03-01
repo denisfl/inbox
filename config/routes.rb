@@ -26,6 +26,9 @@ Rails.application.routes.draw do
         end
       end
 
+      # Document tag management
+      resources :tags, only: [:create, :destroy], param: :name, controller: 'document_tags'
+
       # Document-specific actions
       member do
         post :classify
@@ -35,6 +38,14 @@ Rails.application.routes.draw do
         get 'export/:format', to: 'documents#export', as: :export
       end
     end
+
+    # Task tag management
+    resources :tasks, only: [] do
+      resources :tags, only: [:create, :destroy], param: :name, controller: 'task_tags'
+    end
+
+    # Tag autocomplete
+    resources :tags, only: [:index]
 
     # Search endpoint
     get 'documents/search', to: 'documents#search', as: :search_documents
@@ -71,6 +82,9 @@ Rails.application.routes.draw do
       patch :toggle
     end
   end
+
+  # Tags
+  resources :tags, only: [:index, :show], param: :name
 
   # Shortcut for creating new document
   get '/new', to: 'documents#new', as: :new_note

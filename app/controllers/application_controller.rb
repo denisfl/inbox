@@ -25,16 +25,9 @@ class ApplicationController < ActionController::Base
 
   # Load sidebar navigation data (counts, tags) for every web page.
   def load_sidebar_data
-    source_counts = Document.group(:source).count
     @sidebar_counts = {
       documents: Document.count,
-      tasks:     Task.active.count,
-      telegram:  source_counts["telegram"] || 0,
-      voice:     Document.joins(:blocks)
-                         .where(blocks: { block_type: "file" })
-                         .where("blocks.content LIKE ?", "%voice%")
-                         .distinct.count,
-      manual:    (source_counts["web"] || 0) + (source_counts["api"] || 0)
+      tasks:     Task.active.count
     }
     @sidebar_tags = Tag.joins(:document_tags)
                        .select("tags.*, COUNT(document_tags.id) as docs_count")
