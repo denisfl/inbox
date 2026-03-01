@@ -1,0 +1,996 @@
+<% content_for :title, "Inbox — Dashboard" %>
+
+<div class="dashboard">
+
+  <%# ── Greeting ──────────────────────────────────────────────────────────── %>
+  <div class="dash-greeting">
+    <div class="dash-greeting-date"><%= Date.current.strftime("%A · %B %-d, %Y") %></div>
+    <div class="dash-greeting-title"><%= greeting_text %> — <%= @greeting_subtitle %></div>
+  </div>
+
+  <%# ── Stat strip ────────────────────────────────────────────────────────── %>
+  <div class="stat-strip">
+    <div class="stat-card">
+      <div class="stat-label">Tasks today</div>
+      <div class="stat-value stat-accent"><%= @stats[:tasks_today] %></div>
+      <div class="stat-sub">
+        <% if @stats[:tasks_overdue] > 0 %>
+          <%= @stats[:tasks_overdue] %> overdue
+        <% else %>
+          all on track
+        <% end %>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Events today</div>
+      <div class="stat-value"><%= @stats[:events_today] %></div>
+      <div class="stat-sub">
+        <% if @stats[:next_event] %>
+          next: <%= @stats[:next_event].starts_at.strftime("%-H:%M") %>
+        <% else %>
+          no upcoming
+        <% end %>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">New notes</div>
+      <div class="stat-value"><%= @stats[:new_notes] %></div>
+      <div class="stat-sub">since yesterday</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Inbox total</div>
+      <div class="stat-value stat-accent-red"><%= @stats[:inbox_count] %></div>
+      <div class="stat-sub">documents</div>
+    </div>
+  </div>
+
+  <%# ── Main grid ─────────────────────────────────────────────────────────── %>
+  <div class="dash-grid">
+
+    <%# ════════ LEFT COLUMN ════════ %>
+    <div class="dash-left">
+
+      <%# ── Tasks today ── %>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <rect x="1.5" y="1.5" width="11" height="11" rx="2" stroke="#292524" stroke-width="1.2"/>
+              <path d="M4 7l2 2 4-4" stroke="#292524" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Today's Tasks
+            <span style="font-family:var(--font-mono);font-size:11px;font-weight:400;color:var(--color-text-tertiary)">(<%= @tasks_today.size %>)</span>
+          </div>
+          <%= link_to tasks_path, class: "panel-action" do %>All tasks →<% end %>
+        </div>
+        <div class="task-list">
+          <% @tasks_today.each do |task| %>
+            <div class="task-item" data-controller="task-toggle" data-task-toggle-url-value="<%= toggle_task_path(task) %>">
+              <button type="button" class="task-toggle-btn" data-action="click->task-toggle#toggle">
+                <div class="task-check <%= task.priority %>"></div>
+              </button>
+              <div class="task-title"><%= task.title %></div>
+              <% if task.priority == "pinned" %>
+                <span class="task-tag">#pinned</span>
+              <% end %>
+              <% if task.due_date %>
+                <span class="task-due <%= 'overdue' if task.overdue? %>"><%= task.due_date.strftime("%d.%m") %></span>
+              <% end %>
+            </div>
+          <% end %>
+
+          <%# Completed today %>
+          <% @tasks_completed_today.each do |task| %>
+            <div class="task-item" style="opacity:0.5">
+              <div class="task-check done">
+                <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                  <path d="M1.5 4l2 2 3-3" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="task-title done"><%= task.title %></div>
+              <span class="task-due">done</span>
+            </div>
+          <% end %>
+
+          <% if @tasks_today.empty? && @tasks_completed_today.empty? %>
+            <div class="task-item" style="color:var(--color-text-tertiary);font-size:var(--text-sm)">
+              No tasks for today
+            </div>
+          <% end %>
+        </div>
+        <%= form_with(url: tasks_path, method: :post, class: "task-add") do |f| %>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M6 2V10M2 6H10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          <input type="text" name="task[title]" class="task-add-input" placeholder="Add task..." autocomplete="off" autofocus>
+          <input type="hidden" name="task[due_date]" value="<%= Date.current.to_s %>">
+          <input type="hidden" name="redirect_to" value="<%= root_path %>">
+        <% end %>
+      </div>
+
+      <%# ── Events today ── %>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <rect x="1" y="2" width="12" height="11" rx="2" stroke="#292524" stroke-width="1.2"/>
+              <path d="M1 5.5h12" stroke="#292524" stroke-width="1.1"/>
+              <path d="M4.5 1V3M9.5 1V3" stroke="#292524" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            Today's Events
+          </div>
+          <%= link_to calendar_path, class: "panel-action" do %>Open Calendar →<% end %>
+        </div>
+        <div class="timeline-list">
+          <% if @events_today.any? %>
+            <% @events_today.each do |event| %>
+              <div class="tl-item">
+                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
+                <div class="tl-time"><%= event.time_label %></div>
+                <div class="tl-info">
+                  <div class="tl-title"><%= event.title %></div>
+                  <% if event.duration_label %>
+                    <div class="tl-dur"><%= event.duration_label %></div>
+                  <% end %>
+                </div>
+                <% badge = event_source_badge(event) %>
+                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="tl-empty">No events today</div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# ── Recent notes ── %>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <rect x="1" y="1" width="12" height="9" rx="2" stroke="#292524" stroke-width="1.2"/>
+              <path d="M3.5 5h7M3.5 7.5h4" stroke="#292524" stroke-width="1.1" stroke-linecap="round"/>
+            </svg>
+            Recent Notes
+          </div>
+          <%= link_to documents_path, class: "panel-action" do %>All notes →<% end %>
+        </div>
+        <div>
+          <% @recent_documents.each do |doc| %>
+            <%
+              preview_text = nil
+              text_block = doc.blocks.find { |b| b.block_type == 'text' }
+              if text_block && text_block.content.present?
+                begin
+                  data = JSON.parse(text_block.content)
+                  raw = data['text'] || data[:text]
+                  preview_text = raw.truncate(80) if raw.present? && raw != doc.title
+                rescue JSON::ParserError
+                end
+              end
+            %>
+            <%= link_to edit_document_path(doc), class: "note-row" do %>
+              <div class="note-source-dot" style="background:<%= source_dot_color(doc.source) %>"></div>
+              <div class="note-row-info">
+                <div class="note-row-title"><%= doc.title.truncate(50) %></div>
+                <% if preview_text %>
+                  <div class="note-row-preview"><%= preview_text %></div>
+                <% end %>
+              </div>
+              <div class="note-row-meta">
+                <span class="note-time"><%= time_ago_short(doc.created_at) %></span>
+                <span class="<%= source_badge_class(doc.source) %>"><%= source_label(doc.source) %></span>
+              </div>
+            <% end %>
+          <% end %>
+
+          <% if @recent_documents.empty? %>
+            <div class="tl-empty">No notes yet — send something to Telegram</div>
+          <% end %>
+        </div>
+      </div>
+
+    </div><%# .dash-left %>
+
+    <%# ════════ RIGHT COLUMN ════════ %>
+    <div class="dash-right">
+
+      <%# ── Mini Calendar ── %>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <rect x="1" y="1.5" width="11" height="10.5" rx="2" stroke="#292524" stroke-width="1.2"/>
+              <path d="M1 5h11" stroke="#292524" stroke-width="1.1"/>
+              <path d="M4 1V2.5M9 1V2.5" stroke="#292524" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            <%= @cal_date.strftime("%B %Y") %>
+          </div>
+          <div style="display:flex;gap:2px">
+            <%= link_to "‹", root_path(cal_month: (@cal_date - 1.month).strftime("%Y-%m")), class: "mini-cal-nav-btn" %>
+            <%= link_to "›", root_path(cal_month: (@cal_date + 1.month).strftime("%Y-%m")), class: "mini-cal-nav-btn" %>
+          </div>
+        </div>
+        <div class="mini-cal">
+          <div class="cal-grid">
+            <div class="cal-dow">Mo</div>
+            <div class="cal-dow">Tu</div>
+            <div class="cal-dow">We</div>
+            <div class="cal-dow">Th</div>
+            <div class="cal-dow">Fr</div>
+            <div class="cal-dow">Sa</div>
+            <div class="cal-dow">Su</div>
+
+            <%
+              first_wday = cal_first_wday(@cal_date)
+              days_in_month = @cal_month_end.day
+              prev_month_end = @cal_month_start - 1.day
+            %>
+
+            <%# Previous month trailing days %>
+            <% first_wday.times do |i| %>
+              <div class="cal-day other-month"><%= prev_month_end.day - first_wday + i + 1 %></div>
+            <% end %>
+
+            <%# Current month days %>
+            <% (1..days_in_month).each do |day| %>
+              <%
+                is_today = day == @cal_date.day && @cal_month_start.month == Date.current.month && @cal_month_start.year == Date.current.year
+                has_event = @cal_event_days.include?(day)
+                classes = ["cal-day"]
+                classes << "today" if is_today
+                classes << "has-event" if has_event
+              %>
+              <div class="<%= classes.join(' ') %>"><%= day %></div>
+            <% end %>
+
+            <%# Next month leading days %>
+            <% remaining = (7 - (first_wday + days_in_month) % 7) % 7 %>
+            <% remaining.times do |i| %>
+              <div class="cal-day other-month"><%= i + 1 %></div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <%# ── Upcoming ── %>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <circle cx="6.5" cy="6.5" r="5.5" stroke="#292524" stroke-width="1.2"/>
+              <path d="M6.5 3.5V6.5L8.5 8.5" stroke="#292524" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            Upcoming
+          </div>
+          <%= link_to calendar_path, class: "panel-action" do %>Calendar →<% end %>
+        </div>
+        <div class="timeline-list">
+          <% if @events_tomorrow.any? %>
+            <div class="tl-section-label">Tomorrow</div>
+            <% @events_tomorrow.each do |event| %>
+              <div class="tl-item">
+                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
+                <div class="tl-time"><%= event.time_label %></div>
+                <div class="tl-info">
+                  <div class="tl-title"><%= event.all_day? ? "All day: #{event.title}" : event.title %></div>
+                  <% if event.duration_label %>
+                    <div class="tl-dur"><%= event.duration_label %></div>
+                  <% end %>
+                </div>
+                <% badge = event_source_badge(event) %>
+                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
+              </div>
+            <% end %>
+          <% end %>
+
+          <% if @events_week.any? %>
+            <div class="tl-section-label">This week</div>
+            <% @events_week.each do |event| %>
+              <div class="tl-item">
+                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
+                <div class="tl-time"><%= event.time_label %></div>
+                <div class="tl-info">
+                  <div class="tl-title"><%= event.title %></div>
+                  <div class="tl-dur"><%= event.duration_label %><%= " · #{event.starts_at.strftime('%a %b %-d')}" %></div>
+                </div>
+                <% badge = event_source_badge(event) %>
+                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
+              </div>
+            <% end %>
+          <% end %>
+
+          <% if @events_next_week.any? %>
+            <div class="tl-section-label">Next week</div>
+            <% @events_next_week.each do |event| %>
+              <div class="tl-item">
+                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
+                <div class="tl-time"><%= event.time_label %></div>
+                <div class="tl-info">
+                  <div class="tl-title"><%= event.title %></div>
+                  <div class="tl-dur"><%= event.duration_label %><%= " · #{event.starts_at.strftime('%a %b %-d')}" %></div>
+                </div>
+                <% badge = event_source_badge(event) %>
+                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
+              </div>
+            <% end %>
+          <% end %>
+
+          <% if @events_tomorrow.empty? && @events_week.empty? && @events_next_week.empty? %>
+            <div class="tl-empty">No upcoming events</div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# ── Activity ── %>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path d="M2 10L5 7L8 9L11 3" stroke="#292524" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Activity
+          </div>
+        </div>
+        <div>
+          <% @activities.each do |act| %>
+            <div class="activity-item">
+              <div class="activity-icon <%= "activity-icon--#{act[:icon_type]}" %>">
+                <% case act[:icon_type] %>
+                <% when :telegram %>
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                    <path d="M1 8.5L3.5 6.5 6 8 9 2" stroke="#1b4f8a" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                <% when :task_done %>
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                    <circle cx="5.5" cy="5.5" r="4" stroke="#2d6a4f" stroke-width="1.1"/>
+                    <path d="M3.5 5.5l1.5 1.5 2.5-3" stroke="#2d6a4f" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                <% when :task_new %>
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                    <rect x="1.5" y="1.5" width="8" height="8" rx="1.5" stroke="#2563eb" stroke-width="1.1"/>
+                    <path d="M5.5 3.5v4M3.5 5.5h4" stroke="#2563eb" stroke-width="1.1" stroke-linecap="round"/>
+                  </svg>
+                <% when :voice %>
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                    <path d="M5.5 1.5v4M3.5 4a2 2 0 004 0" stroke="#2d6a4f" stroke-width="1.1" stroke-linecap="round"/>
+                    <path d="M5.5 7.5v2" stroke="#2d6a4f" stroke-width="1.1" stroke-linecap="round"/>
+                  </svg>
+                <% when :calendar %>
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                    <rect x="1" y="1.5" width="9" height="8" rx="1.5" stroke="#78716c" stroke-width="1.1"/>
+                    <path d="M1 4h9" stroke="#78716c" stroke-width="1"/>
+                  </svg>
+                <% else %>
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                    <rect x="1" y="1" width="9" height="7" rx="1.5" stroke="#78716c" stroke-width="1.1"/>
+                    <path d="M3 5h5M3 7h3" stroke="#78716c" stroke-width="0.9" stroke-linecap="round"/>
+                  </svg>
+                <% end %>
+              </div>
+              <div class="activity-text"><%= act[:text].html_safe %></div>
+              <div class="activity-time"><%= time_ago_short(act[:time]) %></div>
+            </div>
+          <% end %>
+
+          <% if @activities.empty? %>
+            <div class="tl-empty">No activity yet</div>
+          <% end %>
+        </div>
+      </div>
+
+    </div><%# .dash-right %>
+  </div><%# .dash-grid %>
+</div><%# .dashboard %>
+
+<%# ── Flash messages ── %>
+<% if flash[:notice] %>
+  <div class="flash-notice"><%= flash[:notice] %></div>
+<% end %>
+<% if flash[:alert] %>
+  <div class="flash-alert"><%= flash[:alert] %></div>
+<% end %>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   DASHBOARD STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.dashboard {
+  width: 100%;
+}
+
+/* ── Greeting ── */
+.dash-greeting {
+  margin-bottom: var(--spacing-lg);
+}
+.dash-greeting-date {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin-bottom: 4px;
+}
+.dash-greeting-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+}
+
+/* ── Stat strip ── */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+.stat-card {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin-bottom: 4px;
+}
+.stat-value {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+.stat-accent { color: var(--color-primary); }
+.stat-accent-red { color: var(--color-danger); }
+.stat-sub {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+
+/* ── Main grid ── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+.dash-left, .dash-right {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* ── Panel (card wrapper) ── */
+.panel {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+.panel-action {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+  white-space: nowrap;
+}
+.panel-action:hover { color: var(--color-primary); }
+
+/* ── Task list ── */
+.task-list {
+  padding: 0;
+}
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-bg-tertiary);
+  font-size: var(--text-sm);
+}
+.task-item:last-child { border-bottom: none; }
+
+.task-check {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-base);
+  border: 1.5px solid var(--color-border-hover);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.task-check.pinned {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+.task-check.high, .task-check.urgent {
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+}
+.task-check.done {
+  border-color: var(--color-secondary);
+  background: var(--color-secondary);
+}
+.task-toggle-btn {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.task-toggle-btn:disabled {
+  cursor: default;
+}
+.task-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-primary);
+}
+.task-title.done {
+  text-decoration: line-through;
+  color: var(--color-text-tertiary);
+}
+.task-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+}
+.task-due {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+.task-due.overdue {
+  color: var(--color-danger);
+}
+.task-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+  text-decoration: none;
+  border-top: 1px solid var(--color-border);
+}
+.task-add:hover {
+  color: var(--color-primary);
+  background: var(--color-bg-secondary);
+}
+.task-add-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  outline: none;
+  font-family: inherit;
+}
+.task-add-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+}
+
+/* ── Timeline / Event list ── */
+.timeline-list {
+  padding: 0;
+}
+.tl-section-label {
+  padding: 6px 16px 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+.tl-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-bg-tertiary);
+  font-size: var(--text-sm);
+}
+.tl-item:last-child { border-bottom: none; }
+
+.tl-bar {
+  width: 3px;
+  height: 28px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.tl-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  min-width: 36px;
+  flex-shrink: 0;
+}
+.tl-info { flex: 1; min-width: 0; }
+.tl-title {
+  font-weight: var(--font-medium);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tl-dur {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+.tl-src {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+.tl-src.gcal {
+  background: #e8f0fe;
+  color: #1a73e8;
+  border: 1px solid #c5d9f7;
+}
+.tl-src.manual {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-tertiary);
+  border: 1px solid var(--color-border);
+}
+.tl-empty {
+  padding: var(--spacing-md);
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+/* ── Recent notes ── */
+.note-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-bg-tertiary);
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--transition-fast);
+}
+.note-row:hover { background: var(--color-bg-secondary); }
+.note-row:last-child { border-bottom: none; }
+
+.note-source-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+.note-row-info { flex: 1; min-width: 0; }
+.note-row-title {
+  font-weight: var(--font-medium);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.note-row-preview {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+.note-row-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.note-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+}
+
+/* Source badges (compact) */
+.source-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-tertiary);
+  border: 1px solid var(--color-border);
+  letter-spacing: 0.02em;
+}
+.source-badge.tg {
+  background: #dce8f7;
+  color: #1b4f8a;
+  border-color: #c5d3e8;
+}
+.source-badge.voice {
+  background: #d8eddf;
+  color: #2d6a4f;
+  border-color: #b8d9c3;
+}
+
+/* ── Quick Capture ── */
+.quick-capture {
+  background: var(--color-bg-primary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+.qc-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--spacing-sm);
+}
+.qc-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+.qc-input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: var(--text-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+.qc-input:focus {
+  border-color: var(--color-primary);
+  background: var(--color-bg-primary);
+}
+.qc-types {
+  display: flex;
+  gap: 4px;
+}
+.qc-type {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.qc-type:hover {
+  border-color: var(--color-border-hover);
+  color: var(--color-text-secondary);
+}
+.qc-type.active {
+  background: var(--color-text-primary);
+  color: var(--color-bg-primary);
+  border-color: var(--color-text-primary);
+}
+
+/* ── Mini calendar ── */
+.mini-cal { padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md); }
+.mini-cal .cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  text-align: center;
+}
+.cal-dow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-tertiary);
+  padding: 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cal-day {
+  font-size: 12px;
+  padding: 4px 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  cursor: default;
+  position: relative;
+  font-weight: var(--font-medium);
+}
+.cal-day.other-month {
+  color: var(--color-text-tertiary);
+  opacity: 0.4;
+}
+.cal-day.today {
+  background: var(--color-primary);
+  color: white;
+  font-weight: var(--font-bold);
+  border-radius: var(--radius-base);
+}
+.cal-day.has-event::after {
+  content: '';
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+}
+.cal-day.today.has-event::after {
+  background: white;
+}
+.mini-cal-nav-btn {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+.mini-cal-nav-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+/* ── Activity feed ── */
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-bg-tertiary);
+  font-size: var(--text-sm);
+}
+.activity-item:last-child { border-bottom: none; }
+
+.activity-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-base);
+  background: var(--color-bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.activity-icon--telegram { background: #dce8f7; }
+.activity-icon--task_done { background: #d8eddf; }
+.activity-icon--task_new { background: #e0eaff; }
+.activity-icon--voice { background: #d8eddf; }
+
+.activity-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.activity-text strong {
+  color: var(--color-text-primary);
+  font-weight: var(--font-semibold);
+}
+.activity-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+/* ── Flash messages ── */
+.flash-notice, .flash-alert {
+  position: fixed;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-base);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  z-index: var(--z-tooltip);
+  animation: flash-in 0.3s ease, flash-out 0.3s ease 3s forwards;
+}
+.flash-notice {
+  background: var(--color-secondary);
+  color: white;
+}
+.flash-alert {
+  background: var(--color-danger);
+  color: white;
+}
+@keyframes flash-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes flash-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+  .dash-right {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .stat-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .dash-greeting-title {
+    font-size: var(--text-lg);
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-strip {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

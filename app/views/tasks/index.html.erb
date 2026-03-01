@@ -1,0 +1,522 @@
+<% content_for :title, "Tasks — Inbox" %>
+
+<div class="tasks-page">
+  <div class="tasks-container">
+    <%# Header %>
+    <header class="tasks-header">
+      <h1 class="tasks-page-title">
+        <%= heroicon(:clipboard, style: 'width: 1.5rem; height: 1.5rem;') %>
+        Tasks
+      </h1>
+
+      <%= link_to new_task_path, class: "btn btn-success btn-sm" do %>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1rem; height: 1rem;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        New Task
+      <% end %>
+    </header>
+
+    <%# Filter Tabs %>
+    <nav class="tasks-filters">
+      <%= link_to tasks_path(filter: "today"), class: "tasks-filter-tab #{'tasks-filter-tab--active' if @filter == 'today'}" do %>
+        Today
+        <% if @today_count > 0 %><span class="tasks-filter-count"><%= @today_count %></span><% end %>
+      <% end %>
+      <%= link_to tasks_path(filter: "upcoming"), class: "tasks-filter-tab #{'tasks-filter-tab--active' if @filter == 'upcoming'}" do %>
+        Upcoming
+      <% end %>
+      <%= link_to tasks_path(filter: "inbox"), class: "tasks-filter-tab #{'tasks-filter-tab--active' if @filter == 'inbox'}" do %>
+        Inbox
+        <% if @inbox_count > 0 %><span class="tasks-filter-count"><%= @inbox_count %></span><% end %>
+      <% end %>
+      <% if @overdue_count > 0 %>
+        <%= link_to tasks_path(filter: "overdue"), class: "tasks-filter-tab tasks-filter-tab--overdue #{'tasks-filter-tab--active' if @filter == 'overdue'}" do %>
+          Overdue
+          <span class="tasks-filter-count tasks-filter-count--danger"><%= @overdue_count %></span>
+        <% end %>
+      <% end %>
+      <%= link_to tasks_path(filter: "all"), class: "tasks-filter-tab #{'tasks-filter-tab--active' if @filter == 'all'}" do %>
+        All
+      <% end %>
+      <%= link_to tasks_path(filter: "completed"), class: "tasks-filter-tab #{'tasks-filter-tab--active' if @filter == 'completed'}" do %>
+        Completed
+      <% end %>
+    </nav>
+
+    <%# Quick Add Form %>
+    <div class="task-quick-add">
+      <%= form_with(url: tasks_path, method: :post, class: "task-quick-add-form") do |f| %>
+        <span class="task-quick-add-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1rem; height: 1rem;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+        </span>
+        <%= f.text_field :title, name: "task[title]", class: "task-quick-add-input", placeholder: "Add task...", autocomplete: "off" %>
+        <% if @filter == "today" %>
+          <%= f.hidden_field :due_date, name: "task[due_date]", value: Date.current.to_s %>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%# Task List %>
+    <div class="tasks-list">
+      <% if @tasks.any? %>
+        <% if @filter == "upcoming" %>
+          <%# Group upcoming tasks by date %>
+          <% @tasks.group_by(&:due_date).each do |date, tasks| %>
+            <div class="tasks-day-group">
+              <div class="tasks-day-header">
+                <span class="tasks-day-name"><%= l(date, format: "%A") %></span>
+                <span class="tasks-day-date"><%= date.strftime("%d.%m.%Y") %></span>
+              </div>
+              <% tasks.each do |task| %>
+                <%= render "tasks/task", task: task %>
+              <% end %>
+            </div>
+          <% end %>
+        <% else %>
+          <% @tasks.each do |task| %>
+            <%= render "tasks/task", task: task %>
+          <% end %>
+        <% end %>
+      <% else %>
+        <div class="tasks-empty">
+          <div class="tasks-empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 2.5rem; height: 2.5rem;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </div>
+          <div class="tasks-empty-text">
+            <% case @filter %>
+            <% when "today" %>
+              No tasks for today
+            <% when "upcoming" %>
+              No upcoming tasks
+            <% when "inbox" %>
+              All inbox items sorted
+            <% when "overdue" %>
+              No overdue tasks
+            <% when "completed" %>
+              No completed tasks yet
+            <% else %>
+              No tasks
+            <% end %>
+          </div>
+          <div class="tasks-empty-sub">
+            <%= link_to "Create task", new_task_path %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ── Page layout ─────────────────────────────────────────────────── */
+  .tasks-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+  }
+
+  .tasks-container {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  /* ── Header ──────────────────────────────────────────────────────── */
+  .tasks-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .tasks-page-title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  /* ── Filter tabs ─────────────────────────────────────────────────── */
+  .tasks-filters {
+    display: flex;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tasks-filter-tab {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-base);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all var(--transition-fast);
+  }
+
+  .tasks-filter-tab:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+  }
+
+  .tasks-filter-tab--active {
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-primary));
+    color: var(--color-primary);
+    font-weight: var(--font-medium);
+  }
+
+  .tasks-filter-tab--overdue {
+    color: var(--color-danger);
+  }
+
+  .tasks-filter-count {
+    font-size: var(--text-xs);
+    background: var(--color-bg-tertiary);
+    padding: 1px var(--spacing-xs);
+    border-radius: var(--radius-full);
+    font-weight: var(--font-medium);
+    min-width: 1.2em;
+    text-align: center;
+  }
+
+  .tasks-filter-count--danger {
+    background: color-mix(in srgb, var(--color-danger) 15%, var(--color-bg-primary));
+    color: var(--color-danger);
+  }
+
+  /* ── Task list ───────────────────────────────────────────────────── */
+  .tasks-list {
+    padding: var(--spacing-xs) 0;
+  }
+
+  /* ── Task item ───────────────────────────────────────────────────── */
+  .task-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+    transition: background var(--transition-fast);
+  }
+
+  .task-item:last-child {
+    border-bottom: none;
+  }
+
+  .task-item:hover {
+    background: var(--color-bg-hover);
+  }
+
+  .task-item--completed .task-item-title {
+    text-decoration: line-through;
+    color: var(--color-text-tertiary);
+  }
+
+  .task-item--overdue {
+    background: color-mix(in srgb, var(--color-danger) 4%, var(--color-bg-primary));
+  }
+
+  /* ── Checkbox ────────────────────────────────────────────────────── */
+  .task-item-left {
+    flex-shrink: 0;
+    padding-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+
+  .task-checkbox-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+  }
+
+  .task-checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--color-border-hover);
+    border-radius: var(--radius-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    color: transparent;
+  }
+
+  .task-checkbox:hover {
+    border-color: var(--color-primary);
+  }
+
+  .task-checkbox--checked {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+  }
+
+  .task-check-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Priority-based checkbox colors */
+  .task-item--priority-high .task-checkbox {
+    border-color: var(--color-danger);
+  }
+  .task-item--priority-high .task-checkbox--checked {
+    background: var(--color-danger);
+    border-color: var(--color-danger);
+  }
+
+  .task-item--priority-pinned .task-checkbox {
+    border-color: var(--color-primary);
+  }
+
+  /* Pin icon */
+  .task-pin-icon {
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+  }
+
+  /* ── Content ─────────────────────────────────────────────────────── */
+  .task-item-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .task-item-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+
+  .task-item-title {
+    font-size: var(--text-sm);
+    color: var(--color-text-primary);
+    font-weight: var(--font-medium);
+  }
+
+  /* Low priority: lighter font */
+  .task-item--priority-low .task-item-title {
+    color: var(--color-text-tertiary);
+    font-weight: var(--font-normal);
+  }
+
+  .task-recurrence-badge {
+    font-size: var(--text-xs);
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+    display: flex;
+    align-items: center;
+  }
+
+  .task-item-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-xs);
+  }
+
+  .task-due-badge {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+
+  .task-due-badge--overdue {
+    color: var(--color-danger);
+    font-weight: var(--font-medium);
+  }
+
+  .task-due-badge--today {
+    color: var(--color-primary);
+    font-weight: var(--font-medium);
+  }
+
+  .task-due-time {
+    color: var(--color-text-tertiary);
+  }
+
+  .task-has-desc {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+  }
+
+  /* ── Actions ─────────────────────────────────────────────────────── */
+  .task-item-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    flex-shrink: 0;
+  }
+
+  .task-item:hover .task-item-actions {
+    opacity: 1;
+  }
+
+  .task-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: var(--radius-base);
+    background: transparent;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+  }
+
+  .task-action-btn:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+  }
+
+  .task-action-btn--danger:hover {
+    background: color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-primary));
+    color: var(--color-danger);
+  }
+
+  /* ── Day groups (upcoming view) ──────────────────────────────────── */
+  .tasks-day-group {
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .tasks-day-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-lg);
+    background: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .tasks-day-name {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-primary);
+    text-transform: capitalize;
+  }
+
+  .tasks-day-date {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+  }
+
+  /* ── Empty state ─────────────────────────────────────────────────── */
+  .tasks-empty {
+    text-align: center;
+    padding: var(--spacing-2xl) var(--spacing-lg);
+  }
+
+  .tasks-empty-icon {
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .tasks-empty-text {
+    font-size: var(--text-base);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .tasks-empty-sub {
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+  }
+
+  .tasks-empty-sub a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .tasks-empty-sub a:hover {
+    text-decoration: underline;
+  }
+
+  /* ── Quick Add ─────────────────────────────────────────────────── */
+  .task-quick-add {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .task-quick-add-form {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  .task-quick-add-icon {
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .task-quick-add-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: var(--text-sm);
+    color: var(--color-text-primary);
+    padding: var(--spacing-xs) 0;
+  }
+
+  .task-quick-add-input::placeholder {
+    color: var(--color-text-tertiary);
+  }
+
+  /* ── Mobile ──────────────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .tasks-page {
+      padding: var(--spacing-sm);
+    }
+
+    .tasks-header {
+      padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .tasks-filters {
+      padding: var(--spacing-xs) var(--spacing-sm);
+    }
+
+    .task-item {
+      padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .task-item-actions {
+      opacity: 1;
+    }
+
+    .tasks-day-header {
+      padding: var(--spacing-xs) var(--spacing-md);
+    }
+
+    .task-quick-add {
+      padding: var(--spacing-sm) var(--spacing-md);
+    }
+  }
+</style>

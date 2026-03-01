@@ -7,10 +7,19 @@ body {
   overflow-x: hidden;
 }
 
-.app-container {
+/* ── App layout: sidebar + main ── */
+.app-layout {
   display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--color-bg-secondary);
 }
 
 .main-content {
@@ -292,7 +301,7 @@ body {
 /* ── Inbox + Calendar sidebar layout ──────────────────────────────────────── */
 .inbox-with-sidebar {
   display: grid;
-  grid-template-columns: 1fr 280px;
+  grid-template-columns: 1frx;
   gap: 1.5rem;
   align-items: start;
   width: 100%;
@@ -460,17 +469,6 @@ a:hover .cal-widget-icon {
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   margin-top: 1px;
-}
-
-@media (max-width: 900px) {
-  .inbox-with-sidebar {
-    grid-template-columns: 1fr;
-  }
-
-  .inbox-sidebar {
-    position: static;
-    order: -1; /* Show widget above the list on mobile */
-  }
 }
 
 .back-link {
