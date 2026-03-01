@@ -85,92 +85,6 @@
 
       </div>
 
-      <%# ── Events (unified: today + upcoming) ── %>
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <%= heroicon(:calendar, style: 'width: 14px; height: 14px;') %>
-            Events
-          </div>
-          <%= link_to calendar_path, class: "panel-action" do %>Calendar →<% end %>
-        </div>
-        <div class="timeline-list">
-          <% has_any_events = @events_today.any? || @events_tomorrow.any? || @events_week.any? || @events_next_week.any? %>
-
-          <% if @events_today.any? %>
-            <div class="tl-section-label">Today</div>
-            <% @events_today.each do |event| %>
-              <div class="tl-item">
-                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
-                <div class="tl-time"><%= event.time_label %></div>
-                <div class="tl-info">
-                  <div class="tl-title"><%= event.all_day? ? "All day: #{event.title}" : event.title %></div>
-                  <% if event.duration_label %>
-                    <div class="tl-dur"><%= event.duration_label %></div>
-                  <% end %>
-                </div>
-                <% badge = event_source_badge(event) %>
-                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
-              </div>
-            <% end %>
-          <% end %>
-
-          <% if @events_tomorrow.any? %>
-            <div class="tl-section-label">Tomorrow</div>
-            <% @events_tomorrow.each do |event| %>
-              <div class="tl-item">
-                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
-                <div class="tl-time"><%= event.time_label %></div>
-                <div class="tl-info">
-                  <div class="tl-title"><%= event.all_day? ? "All day: #{event.title}" : event.title %></div>
-                  <% if event.duration_label %>
-                    <div class="tl-dur"><%= event.duration_label %></div>
-                  <% end %>
-                </div>
-                <% badge = event_source_badge(event) %>
-                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
-              </div>
-            <% end %>
-          <% end %>
-
-          <% if @events_week.any? %>
-            <div class="tl-section-label">This week</div>
-            <% @events_week.each do |event| %>
-              <div class="tl-item">
-                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
-                <div class="tl-time"><%= event.time_label %></div>
-                <div class="tl-info">
-                  <div class="tl-title"><%= event.title %></div>
-                  <div class="tl-dur"><%= event.duration_label %><%= " · #{event.starts_at.strftime('%a %b %-d')}" %></div>
-                </div>
-                <% badge = event_source_badge(event) %>
-                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
-              </div>
-            <% end %>
-          <% end %>
-
-          <% if @events_next_week.any? %>
-            <div class="tl-section-label">Next week</div>
-            <% @events_next_week.each do |event| %>
-              <div class="tl-item">
-                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
-                <div class="tl-time"><%= event.time_label %></div>
-                <div class="tl-info">
-                  <div class="tl-title"><%= event.title %></div>
-                  <div class="tl-dur"><%= event.duration_label %><%= " · #{event.starts_at.strftime('%a %b %-d')}" %></div>
-                </div>
-                <% badge = event_source_badge(event) %>
-                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
-              </div>
-            <% end %>
-          <% end %>
-
-          <% unless has_any_events %>
-            <div class="tl-empty">No events scheduled</div>
-          <% end %>
-        </div>
-      </div>
-
       <%# ── Recent notes ── %>
       <div class="panel">
         <div class="panel-header">
@@ -271,6 +185,92 @@
               <div class="cal-day other-month"><%= i + 1 %></div>
             <% end %>
           </div>
+        </div>
+      </div>
+
+      <%# ── Events (unified: today + upcoming) ── %>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <%= heroicon(:calendar, style: 'width: 13px; height: 13px;') %>
+            Events
+          </div>
+          <%= link_to calendar_path, class: "panel-action" do %>Calendar →<% end %>
+        </div>
+        <div class="timeline-list">
+          <% has_any_events = @events_today.any? || @events_tomorrow.any? || @events_week.any? || @events_next_week.any? %>
+
+          <% if @events_today.any? %>
+            <div class="tl-section-label">Today</div>
+            <% @events_today.each do |event| %>
+              <div class="tl-item">
+                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
+                <div class="tl-time"><%= event.time_label %></div>
+                <div class="tl-info">
+                  <div class="tl-title"><%= event.all_day? ? "All day: #{event.title}" : event.title %></div>
+                  <% if event.duration_label %>
+                    <div class="tl-dur"><%= event.duration_label %></div>
+                  <% end %>
+                </div>
+                <% badge = event_source_badge(event) %>
+                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
+              </div>
+            <% end %>
+          <% end %>
+
+          <% if @events_tomorrow.any? %>
+            <div class="tl-section-label">Tomorrow</div>
+            <% @events_tomorrow.each do |event| %>
+              <div class="tl-item">
+                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
+                <div class="tl-time"><%= event.time_label %></div>
+                <div class="tl-info">
+                  <div class="tl-title"><%= event.all_day? ? "All day: #{event.title}" : event.title %></div>
+                  <% if event.duration_label %>
+                    <div class="tl-dur"><%= event.duration_label %></div>
+                  <% end %>
+                </div>
+                <% badge = event_source_badge(event) %>
+                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
+              </div>
+            <% end %>
+          <% end %>
+
+          <% if @events_week.any? %>
+            <div class="tl-section-label">This week</div>
+            <% @events_week.each do |event| %>
+              <div class="tl-item">
+                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
+                <div class="tl-time"><%= event.time_label %></div>
+                <div class="tl-info">
+                  <div class="tl-title"><%= event.title %></div>
+                  <div class="tl-dur"><%= event.duration_label %><%= " · #{event.starts_at.strftime('%a %b %-d')}" %></div>
+                </div>
+                <% badge = event_source_badge(event) %>
+                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
+              </div>
+            <% end %>
+          <% end %>
+
+          <% if @events_next_week.any? %>
+            <div class="tl-section-label">Next week</div>
+            <% @events_next_week.each do |event| %>
+              <div class="tl-item">
+                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
+                <div class="tl-time"><%= event.time_label %></div>
+                <div class="tl-info">
+                  <div class="tl-title"><%= event.title %></div>
+                  <div class="tl-dur"><%= event.duration_label %><%= " · #{event.starts_at.strftime('%a %b %-d')}" %></div>
+                </div>
+                <% badge = event_source_badge(event) %>
+                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
+              </div>
+            <% end %>
+          <% end %>
+
+          <% unless has_any_events %>
+            <div class="tl-empty">No events scheduled</div>
+          <% end %>
         </div>
       </div>
 

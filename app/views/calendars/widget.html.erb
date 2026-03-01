@@ -16,13 +16,7 @@
       <div class="cal-widget-section">
         <div class="cal-widget-section-label">Today</div>
         <% @today_events.each do |ev| %>
-          <div class="cal-widget-event">
-            <span class="cal-widget-event-dot" style="background-color: <%= ev.display_color %>;"></span>
-            <div class="cal-widget-event-body">
-              <div class="cal-widget-event-time"><%= ev.time_label %><% if ev.duration_label %> · <%= ev.duration_label %><% end %></div>
-              <div class="cal-widget-event-title"><%= ev.title %></div>
-            </div>
-          </div>
+          <%= render "calendars/widget_event", event: ev %>
         <% end %>
       </div>
     <% end %>
@@ -32,13 +26,7 @@
       <div class="cal-widget-section">
         <div class="cal-widget-section-label">Tomorrow</div>
         <% @tomorrow_events.each do |ev| %>
-          <div class="cal-widget-event">
-            <span class="cal-widget-event-dot" style="background-color: <%= ev.display_color %>;"></span>
-            <div class="cal-widget-event-body">
-              <div class="cal-widget-event-time"><%= ev.time_label %><% if ev.duration_label %> · <%= ev.duration_label %><% end %></div>
-              <div class="cal-widget-event-title"><%= ev.title %></div>
-            </div>
-          </div>
+          <%= render "calendars/widget_event", event: ev %>
         <% end %>
       </div>
     <% end %>
@@ -48,13 +36,7 @@
       <div class="cal-widget-section">
         <div class="cal-widget-section-label">This week</div>
         <% @week_events.each do |ev| %>
-          <div class="cal-widget-event">
-            <span class="cal-widget-event-dot" style="background-color: <%= ev.display_color %>;"></span>
-            <div class="cal-widget-event-body">
-              <div class="cal-widget-event-time"><%= ev.time_label %><% if ev.duration_label %> · <%= ev.duration_label %><% end %></div>
-              <div class="cal-widget-event-title"><%= ev.title %></div>
-            </div>
-          </div>
+          <%= render "calendars/widget_event", event: ev %>
         <% end %>
       </div>
     <% end %>

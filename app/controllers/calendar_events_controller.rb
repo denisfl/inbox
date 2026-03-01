@@ -17,17 +17,6 @@ class CalendarEventsController < ApplicationController
     @event.source = "manual"
     @event.status = "confirmed"
 
-    # Handle all-day events: set times to beginning/end of day
-    if @event.all_day?
-      @event.starts_at = @event.starts_at.beginning_of_day if @event.starts_at
-      @event.ends_at   = @event.starts_at.end_of_day       if @event.starts_at
-    end
-
-    # Ensure ends_at is at least 1 hour after starts_at
-    if @event.starts_at.present? && @event.ends_at.present? && !@event.all_day?
-      @event.ends_at = @event.starts_at + 1.hour if @event.ends_at <= @event.starts_at
-    end
-
     if @event.save
       redirect_to calendar_path(date: @event.starts_at.to_date), notice: "Event created"
     else
@@ -68,17 +57,6 @@ class CalendarEventsController < ApplicationController
     end
 
     @event.assign_attributes(event_params)
-
-    # Handle all-day events
-    if @event.all_day?
-      @event.starts_at = @event.starts_at.beginning_of_day if @event.starts_at
-      @event.ends_at   = @event.starts_at.end_of_day       if @event.starts_at
-    end
-
-    # Ensure ends_at is at least 1 hour after starts_at
-    if @event.starts_at.present? && @event.ends_at.present? && !@event.all_day?
-      @event.ends_at = @event.starts_at + 1.hour if @event.ends_at <= @event.starts_at
-    end
 
     if @event.save
       redirect_to calendar_path(date: @event.starts_at.to_date), notice: "Event updated"
