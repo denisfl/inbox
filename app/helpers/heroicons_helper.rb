@@ -1,16 +1,39 @@
 module HeroiconsHelper
+  # Render a Heroicon SVG.
+  #   heroicon(:plus)                        — outline (default)
+  #   heroicon(:check, variant: :solid)      — solid/filled 20×20
+  #
   def heroicon(name, **options)
+    variant = options.delete(:variant)&.to_sym || :outline
     options[:class] = "heroicon #{options[:class]}".strip
     options[:xmlns] ||= "http://www.w3.org/2000/svg"
-    options[:fill] ||= "none"
-    options[:viewBox] ||= "0 0 24 24"
-    options[:'stroke-width'] ||= "1.5"
-    options[:stroke] ||= "currentColor"
 
-    paths = HEROICONS[name.to_sym] || HEROICONS[:document]
+    icon_set = variant == :solid ? HEROICONS_SOLID : HEROICONS
+    icon_data = icon_set[name.to_sym] || HEROICONS[name.to_sym] || HEROICONS[:document]
 
-    content_tag :svg, **options do
-      paths.map { |path_data| tag.path(d: path_data, 'stroke-linecap': 'round', 'stroke-linejoin': 'round') }.join.html_safe
+    if variant == :solid
+      options[:fill] ||= "currentColor"
+      options[:viewBox] ||= "0 0 20 20"
+      options.delete(:'stroke-width')
+      options.delete(:stroke)
+
+      content_tag :svg, **options do
+        icon_data.map { |pd|
+          attrs = { d: pd[:d] }
+          attrs[:'fill-rule'] = pd[:fill_rule] if pd[:fill_rule]
+          attrs[:'clip-rule'] = pd[:clip_rule] if pd[:clip_rule]
+          tag.path(**attrs)
+        }.join.html_safe
+      end
+    else
+      options[:fill] ||= "none"
+      options[:viewBox] ||= "0 0 24 24"
+      options[:'stroke-width'] ||= "1.5"
+      options[:stroke] ||= "currentColor"
+
+      content_tag :svg, **options do
+        icon_data.map { |path_data| tag.path(d: path_data, 'stroke-linecap': 'round', 'stroke-linejoin': 'round') }.join.html_safe
+      end
     end
   end
 
@@ -112,6 +135,60 @@ module HeroiconsHelper
     ],
     musical_note: [
       "m9 9 10.5-3m0 6.553v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 1 1-.99-3.467l2.31-.66a2.25 2.25 0 0 0 1.632-2.163Zm0 0V4.846a2.25 2.25 0 0 0-1.632-2.163L10.5 1.806a1.803 1.803 0 1 0-.99 3.467l2.31.66A2.25 2.25 0 0 1 13.5 8.097Z"
+    ],
+    arrow_left: [
+      "M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+    ],
+    squares_2x2: [
+      "M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"
+    ],
+    bars_3_bottom_left: [
+      "M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"
+    ],
+    information_circle: [
+      "M11.25 11.25l.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"
+    ],
+    paint_brush: [
+      "M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072"
+    ],
+    arrow_top_right_on_square: [
+      "M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+    ],
+    funnel: [
+      "M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z"
+    ],
+    x_mark: [
+      "M6 18 18 6M6 6l12 12"
+    ],
+    arrow_up_tray: [
+      "M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
+    ],
+    arrow_down_tray: [
+      "M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+    ]
+  }.freeze
+
+  # Solid / filled variant icons (20×20 viewBox)
+  HEROICONS_SOLID = {
+    check: [
+      { d: "M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z",
+        fill_rule: "evenodd", clip_rule: "evenodd" }
+    ],
+    arrow_path: [
+      { d: "M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H4.598a.75.75 0 0 0-.75.75v3.634a.75.75 0 0 0 1.5 0v-2.134l.228.228a7 7 0 0 0 11.72-3.133.75.75 0 0 0-1.449-.39Zm-10.624-2.85a5.5 5.5 0 0 1 9.201-2.465l.312.31H11.77a.75.75 0 0 0 0 1.5h3.634a.75.75 0 0 0 .75-.75V3.535a.75.75 0 0 0-1.5 0v2.134l-.228-.228A7 7 0 0 0 2.706 8.574a.75.75 0 0 0 1.449.39l.533-1.39Z",
+        fill_rule: "evenodd", clip_rule: "evenodd" }
+    ],
+    document_text: [
+      { d: "M2 4.5A2.5 2.5 0 0 1 4.5 2h7A2.5 2.5 0 0 1 14 4.5v7a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 2 11.5v-7ZM4 5.75A.75.75 0 0 1 4.75 5h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 4 5.75ZM4.75 7.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5ZM4 10.75a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z" }
+    ],
+    play: [
+      { d: "M8 5v14l11-7z" }
+    ],
+    pause: [
+      { d: "M6 4h4v16H6V4zm8 0h4v16h-4V4z" }
+    ],
+    map_pin: [
+      { d: "M8.5 1.5a.5.5 0 0 0-1 0v4.146L4.354 8.793a.5.5 0 0 0 0 .707l2.146 2.146V15.5a.5.5 0 0 0 1 0v-3.854l2.146-2.146a.5.5 0 0 0 0-.707L6.5 5.646V1.5Z" }
     ]
   }.freeze
 end

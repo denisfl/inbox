@@ -24,9 +24,7 @@
 
       <%# Import .ical %>
       <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('ical-import-input').click()">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 1rem; height: 1rem;">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-        </svg>
+        <%= heroicon(:arrow_up_tray, style: 'width: 1rem; height: 1rem;') %>
         <span class="topbar-btn-label">Import</span>
       </button>
       <div style="display:none">
@@ -38,9 +36,7 @@
 
       <%# New Event %>
       <%= link_to new_calendar_event_path(date: @view_date), class: "btn btn-sm btn-primary" do %>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1rem; height: 1rem;">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
+        <%= heroicon(:plus, style: 'width: 1rem; height: 1rem;') %>
         <span class="topbar-btn-label">New Event</span>
       </button>
       <% end %>
@@ -269,9 +265,7 @@
           <% if @timeline.empty? %>
             <div class="agenda-empty">
               <div class="agenda-empty-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-                </svg>
+                <%= heroicon(:calendar, style: 'width: 48px; height: 48px;') %>
               </div>
               <div class="agenda-empty-text">No events in this period</div>
               <div class="agenda-empty-sub">Sync Google Calendar or create events to see them here</div>
@@ -360,9 +354,7 @@
                           class: "agenda-task-checkbox-btn" do %>
                       <span class="task-checkbox <%= 'task-checkbox--checked' if task.completed? %>">
                         <% if task.completed? %>
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width:12px;height:12px;">
-                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
-                          </svg>
+                          <%= heroicon(:check, variant: :solid, style: 'width:12px;height:12px;') %>
                         <% end %>
                       </span>
                     <% end %>

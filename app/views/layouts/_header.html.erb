@@ -41,9 +41,7 @@
       </div>
 
       <%= link_to new_note_path, class: "btn btn-success", data: { turbo: false } do %>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.25rem; height: 1.25rem;">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
+        <%= heroicon(:plus, style: 'width: 1.25rem; height: 1.25rem;') %>
         <span class="new-note-label">New Note</span>
       <% end %>
 
