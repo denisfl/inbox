@@ -118,13 +118,18 @@ class DocumentsController < ApplicationController
 
       doc = Document.create!(title: title, source: 'web')
 
+      # Create text block so the editor can work with this document
+      text_block = doc.blocks.new(block_type: 'text', position: 0)
+      text_block.content_hash = { text: '' }
+      text_block.save!
+
       if file.content_type.start_with?('image/')
-        block = doc.blocks.create!(block_type: 'image', position: 0, content: {}.to_json)
+        block = doc.blocks.create!(block_type: 'image', position: 1, content: {}.to_json)
         block.image.attach(file)
       else
         block = doc.blocks.create!(
           block_type: 'file',
-          position: 0,
+          position: 1,
           content: { filename: file.original_filename }.to_json
         )
         block.file.attach(file)

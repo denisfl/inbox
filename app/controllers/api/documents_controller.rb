@@ -127,25 +127,36 @@ class Api::DocumentsController < Api::BaseController
   end
 
   # POST /api/documents/:id/upload
-  # Attaches a file or image to the document via Active Storage.
-  # Returns { url, filename, is_image } on success.
-  def upload    file = params[:file]
+  # Attaches a file or image to the document via a new Block + Active Storage.
+  # Returns { url, filename, is_image, block_id, byte_size } on success.
+  def upload
+    file = params[:file]
     return render json: { error: "No file provided" }, status: :bad_request if file.blank?
 
     is_image = file.content_type.to_s.start_with?("image/")
 
     if is_image
-      @document.images.attach(file)
-      attachment = @document.images.last
+      block = @document.blocks.create!(
+        block_type: "image",
+        content: {}.to_json
+      )
+      block.image.attach(file)
+      attachment = block.image
     else
-      @document.files.attach(file)
-      attachment = @document.files.last
+      block = @document.blocks.create!(
+        block_type: "file",
+        content: { filename: file.original_filename }.to_json
+      )
+      block.file.attach(file)
+      attachment = block.file
     end
 
     render json: {
       url: url_for(attachment),
       filename: attachment.filename.to_s,
-      is_image: is_image
+      is_image: is_image,
+      block_id: block.id,
+      byte_size: attachment.byte_size
     }
   end
 
