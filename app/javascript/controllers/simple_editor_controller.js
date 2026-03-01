@@ -147,13 +147,19 @@ export default class extends Controller {
   }
 
   async handleImageChange(event) {
-    await this._uploadFile(event.target.files[0], true);
+    const files = Array.from(event.target.files);
     event.target.value = "";
+    for (const file of files) {
+      await this._uploadFile(file, true);
+    }
   }
 
   async handleFileChange(event) {
-    await this._uploadFile(event.target.files[0], false);
+    const files = Array.from(event.target.files);
     event.target.value = "";
+    for (const file of files) {
+      await this._uploadFile(file, false);
+    }
   }
 
   async _uploadFile(file, isImage) {

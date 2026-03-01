@@ -28,5 +28,8 @@ application.register("event-popup", EventPopupController);
 import QuickCaptureController from "./quick_capture_controller";
 application.register("quick-capture", QuickCaptureController);
 
+import FileUploadController from "./file_upload_controller";
+application.register("file-upload", FileUploadController);
+
 import SidebarController from "./sidebar_controller";
 application.register("sidebar", SidebarController);

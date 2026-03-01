@@ -48,7 +48,11 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Web UI routes
-  resources :documents, only: [:index, :show, :edit, :new, :destroy]
+  resources :documents, only: [:index, :show, :edit, :new, :destroy] do
+    collection do
+      post :bulk_upload
+    end
+  end
 
   # Calendar (Agenda + mini-month)
   get "/calendar",        to: "calendars#index",  as: :calendar

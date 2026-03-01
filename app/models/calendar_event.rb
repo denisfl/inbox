@@ -30,6 +30,7 @@ class CalendarEvent < ApplicationRecord
 
   # ── Callbacks ──────────────────────────────────────────────────────────────
   before_validation :assign_local_uid, unless: -> { source == "google" }
+  before_validation :normalize_event_times
 
   # ── Scopes ─────────────────────────────────────────────────────────────────
   scope :confirmed,   -> { where(status: "confirmed") }
@@ -91,5 +92,17 @@ class CalendarEvent < ApplicationRecord
 
   def assign_local_uid
     self.google_event_id ||= "#{source}-#{SecureRandom.uuid}"
+  end
+
+  # Normalize all-day event times and ensure ends_at > starts_at.
+  def normalize_event_times
+    return unless starts_at.present?
+
+    if all_day?
+      self.starts_at = starts_at.beginning_of_day
+      self.ends_at   = starts_at.end_of_day
+    elsif ends_at.present? && ends_at <= starts_at
+      self.ends_at = starts_at + 1.hour
+    end
   end
 end

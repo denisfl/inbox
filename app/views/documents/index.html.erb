@@ -40,6 +40,19 @@
         <%= heroicon(:plus, style: 'width: 1.5rem; height: 1.5rem;') %>
         <span>New Note</span>
       <% end %>
+
+      <%# ── Upload files card ── %>
+      <%= form_with url: bulk_upload_documents_path, method: :post, multipart: true, class: "upload-card", data: { controller: "file-upload", turbo: false } do %>
+        <label class="upload-card-label" data-file-upload-target="dropzone" data-action="dragover->file-upload#dragover dragenter->file-upload#dragenter dragleave->file-upload#dragleave drop->file-upload#drop">
+          <%= heroicon(:arrow_up_tray, style: 'width: 1.5rem; height: 1.5rem;') %>
+          <span data-file-upload-target="label">Upload Files</span>
+          <input type="file" name="files[]" multiple class="upload-input" data-file-upload-target="input" data-action="change->file-upload#change">
+        </label>
+        <button type="submit" class="upload-submit btn btn-primary btn-sm" data-file-upload-target="submit" style="display:none">
+          <%= heroicon(:arrow_up_tray, style: 'width: 0.875rem; height: 0.875rem;') %>
+          Upload
+        </button>
+      <% end %>
     </div>
   <% else %>
     <div class="empty-state">
@@ -178,6 +191,47 @@
   border-color: var(--color-primary);
   color: var(--color-primary);
   background: var(--color-bg-secondary);
+}
+
+/* ── Upload card ── */
+.upload-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 140px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+.upload-card.drag-over {
+  border-color: var(--color-primary);
+  background: var(--color-bg-secondary);
+}
+.upload-card-label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+  padding: var(--spacing-md);
+}
+.upload-card-label:hover {
+  color: var(--color-primary);
+}
+.upload-input {
+  display: none;
+}
+.upload-submit {
+  margin: 0 var(--spacing-sm) var(--spacing-sm);
+  gap: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {

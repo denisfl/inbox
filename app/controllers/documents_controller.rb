@@ -101,6 +101,41 @@ class DocumentsController < ApplicationController
     redirect_to documents_path, notice: "Note deleted", status: :see_other
   end
 
+  def bulk_upload
+    files = params[:files]
+
+    if files.blank?
+      redirect_to documents_path, alert: "No files selected"
+      return
+    end
+
+    created = 0
+
+    files.each do |file|
+      title = File.basename(file.original_filename, File.extname(file.original_filename))
+                  .gsub(/[_-]/, ' ')
+                  .truncate(50)
+
+      doc = Document.create!(title: title, source: 'web')
+
+      if file.content_type.start_with?('image/')
+        block = doc.blocks.create!(block_type: 'image', position: 0, content: {}.to_json)
+        block.image.attach(file)
+      else
+        block = doc.blocks.create!(
+          block_type: 'file',
+          position: 0,
+          content: { filename: file.original_filename }.to_json
+        )
+        block.file.attach(file)
+      end
+
+      created += 1
+    end
+
+    redirect_to documents_path, notice: "#{created} #{'document'.pluralize(created)} uploaded"
+  end
+
   private
 
   def set_document

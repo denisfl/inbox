@@ -23,26 +23,23 @@
   <%# ── Header ────────────────────────────────────────────────────── %>
   <header class="simple-editor-header">
     <div class="simple-editor-header-left">
-      <%= link_to documents_path, class: "back-link" do %>
-        <%= heroicon(:arrow_left, style: 'width: 16px; height: 16px;') %>
-        Back
-      <% end %>
+      <%= back_link(documents_path, "Back") %>
     </div>
 
     <div class="simple-editor-header-right">
       <span class="save-indicator" data-simple-editor-target="saveIndicator"></span>
 
       <%# Upload buttons %>
-      <label class="simple-editor-upload-btn" title="Attach image">
+      <label class="simple-editor-upload-btn" title="Attach images">
         <%= heroicon :photo, width: 16, height: 16 %>
-        <input type="file" accept="image/*" class="hidden"
+        <input type="file" accept="image/*" multiple class="hidden"
                data-simple-editor-target="imageInput"
                data-action="change->simple-editor#handleImageChange">
       </label>
 
-      <label class="simple-editor-upload-btn" title="Attach file">
+      <label class="simple-editor-upload-btn" title="Attach files">
         <%= heroicon :paper_clip, width: 16, height: 16 %>
-        <input type="file" class="hidden"
+        <input type="file" multiple class="hidden"
                data-simple-editor-target="fileInput"
                data-action="change->simple-editor#handleFileChange">
       </label>
