@@ -1,5 +1,7 @@
 class DocumentsController < ApplicationController
-  before_action :set_document, only: [:show, :edit, :destroy]
+  include ActionView::RecordIdentifier
+
+  before_action :set_document, only: [:show, :edit, :destroy, :toggle_pinned]
 
   def index
     documents_scope = Document.includes(:blocks, :tags)
@@ -38,7 +40,9 @@ class DocumentsController < ApplicationController
       documents_scope = documents_scope.joins(:tags).where(tags: {name: params[:tag]})
     end
 
-    # Sort
+    # Sort — pinned documents always appear first
+    documents_scope = documents_scope.pinned_first
+
     sort_by = params[:sort] || 'updated_desc'
     case sort_by
     when 'created_desc'
@@ -139,6 +143,23 @@ class DocumentsController < ApplicationController
     end
 
     redirect_to documents_path, notice: "#{created} #{'document'.pluralize(created)} uploaded"
+  end
+
+  # PATCH /documents/:id/toggle_pinned
+  def toggle_pinned
+    @document.toggle_pinned!
+
+    respond_to do |format|
+      format.html { redirect_back fallback_location: documents_path }
+      format.json { render json: { pinned: @document.pinned }, status: :ok }
+      format.turbo_stream {
+        render turbo_stream: turbo_stream.replace(
+          dom_id(@document),
+          partial: "documents/card",
+          locals: { document: @document }
+        )
+      }
+    end
   end
 
   private

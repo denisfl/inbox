@@ -49,6 +49,9 @@ Rails.application.routes.draw do
 
   # Web UI routes
   resources :documents, only: [:index, :show, :edit, :new, :destroy] do
+    member do
+      patch :toggle_pinned
+    end
     collection do
       post :bulk_upload
     end
