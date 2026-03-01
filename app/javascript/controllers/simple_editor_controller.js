@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus";
+import hljs from "highlight.js";
 
 // Simple document editor — one Markdown textarea for the whole document.
 //
@@ -126,6 +127,11 @@ export default class extends Controller {
       this.textareaTarget.classList.add("hidden");
       this.previewTarget.classList.remove("hidden");
       this.previewToggleBtnTarget.textContent = "Edit";
+
+      // Highlight code blocks
+      this.previewTarget.querySelectorAll("pre code").forEach((el) => {
+        hljs.highlightElement(el);
+      });
     } else {
       this.previewTarget.classList.add("hidden");
       this.textareaTarget.classList.remove("hidden");

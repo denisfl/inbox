@@ -258,6 +258,16 @@ body {
   background: var(--color-bg-secondary, #f9fafb);
 }
 
+.markdown-preview hr {
+  border-color: var(--color-border);
+  border-top: 0;
+  margin-top: var(--spacing-2xl);
+  margin-bottom: var(--spacing-2xl);
+  border-left: 0;
+  border-right: 0;
+  padding: 0;
+}
+
 /* Edit area */
 .markdown-edit-area {
   display: flex;
