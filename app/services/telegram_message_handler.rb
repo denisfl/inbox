@@ -52,7 +52,10 @@ class TelegramMessageHandler
     doc = IntentRouter.dispatch(result, message.chat.id)
 
     # Update telegram_message_id after creation (IntentRouter doesn't have access to it)
-    doc.update_columns(telegram_message_id: message.message_id) if doc&.persisted?
+    # Only for Document records — Tasks don't have telegram fields
+    if doc&.persisted? && doc.respond_to?(:telegram_message_id)
+      doc.update_columns(telegram_message_id: message.message_id)
+    end
 
     Rails.logger.info("Created #{result.intent} document: #{doc&.id} (confidence: #{result.confidence})")
   end

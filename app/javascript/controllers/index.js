@@ -30,6 +30,3 @@ application.register("quick-capture", QuickCaptureController);
 
 import SidebarController from "./sidebar_controller";
 application.register("sidebar", SidebarController);
-
-import TaskToggleController from "./task_toggle_controller";
-application.register("task-toggle", TaskToggleController);
