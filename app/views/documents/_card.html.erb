@@ -24,7 +24,7 @@
     <div class="card-badges">
       <% if document.pinned? %>
         <span class="source-badge source-badge--pinned" title="Pinned">
-          <%= heroicon(:map_pin, variant: :solid, style: 'width: 10px; height: 10px;') %>
+          <%= heroicon(:bookmark, variant: :solid, style: 'width: 10px; height: 10px;') %>
           Pinned
         </span>
       <% end %>
@@ -79,7 +79,7 @@
           class: "card-hover-btn #{document.pinned? ? 'card-hover-btn--pinned' : ''}",
           title: document.pinned? ? "Unpin" : "Pin",
           data: { turbo: true } do %>
-      <%= heroicon(:map_pin, variant: document.pinned? ? :solid : :outline, style: 'width: 1rem; height: 1rem;') %>
+      <%= heroicon(:bookmark, style: 'width: 1rem; height: 1rem;') %>
     <% end %>
     <%= button_to document_path(document), method: :delete,
           class: "card-hover-btn card-hover-btn--delete",
