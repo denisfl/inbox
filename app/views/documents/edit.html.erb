@@ -13,6 +13,13 @@
       (b.file.content_type.to_s.start_with?(audio_mime_prefix) ||
        audio_extensions.any? { |ext| b.file.filename.to_s.end_with?(ext) })
   end
+
+  image_blocks = @blocks.select { |b| b.block_type == "image" && b.image.attached? }
+  file_blocks  = @blocks.select do |b|
+    b.block_type == "file" && b.file.attached? &&
+      !b.file.content_type.to_s.start_with?(audio_mime_prefix) &&
+      audio_extensions.none? { |ext| b.file.filename.to_s.end_with?(ext) }
+  end
 %>
 
 <div class="simple-editor-container"
@@ -78,15 +85,69 @@
     <% if audio_blocks.any? %>
       <div class="simple-editor-audio-section">
         <% audio_blocks.each do |ab| %>
-          <div class="simple-editor-audio-player">
-            <audio controls preload="metadata"
-                   src="<%= url_for(ab.file) %>"
-                   style="width:100%">
-              Your browser does not support audio playback.
-            </audio>
-            <div class="simple-editor-audio-filename">
-              🎙 <%= ab.file.filename %>
+          <div class="simple-editor-attachment" data-block-id="<%= ab.id %>">
+            <div class="simple-editor-audio-player">
+              <audio controls preload="metadata"
+                     src="<%= url_for(ab.file) %>"
+                     style="width:100%">
+                Your browser does not support audio playback.
+              </audio>
+              <div class="simple-editor-audio-filename">
+                🎙 <%= ab.file.filename %>
+              </div>
             </div>
+            <button type="button" class="simple-editor-attachment-delete"
+                    title="Remove audio"
+                    data-action="click->simple-editor#deleteBlock"
+                    data-block-id="<%= ab.id %>">
+              <%= heroicon(:trash, style: "width:13px;height:13px") %>
+            </button>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# ── Image blocks ──────────────────────────────────────────────── %>
+    <% if image_blocks.any? %>
+      <div class="simple-editor-images-section">
+        <% image_blocks.each do |ib| %>
+          <div class="simple-editor-attachment" data-block-id="<%= ib.id %>">
+            <div class="simple-editor-image-wrapper">
+              <%= image_tag url_for(ib.image), alt: ib.image.filename.to_s,
+                    class: "simple-editor-image-preview" %>
+              <div class="simple-editor-image-filename">
+                📷 <%= ib.image.filename %> · <%= number_to_human_size(ib.image.byte_size) %>
+              </div>
+            </div>
+            <button type="button" class="simple-editor-attachment-delete"
+                    title="Remove image"
+                    data-action="click->simple-editor#deleteBlock"
+                    data-block-id="<%= ib.id %>">
+              <%= heroicon(:trash, style: "width:13px;height:13px") %>
+            </button>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# ── File blocks (non-audio) ──────────────────────────────────── %>
+    <% if file_blocks.any? %>
+      <div class="simple-editor-files-section">
+        <% file_blocks.each do |fb| %>
+          <div class="simple-editor-attachment" data-block-id="<%= fb.id %>">
+            <div class="simple-editor-file-info">
+              <%= heroicon(:document, style: "width:16px;height:16px;color:var(--color-text-tertiary);flex-shrink:0") %>
+              <a href="<%= url_for(fb.file) %>" target="_blank" class="simple-editor-file-link">
+                <%= fb.file.filename %>
+              </a>
+              <span class="simple-editor-file-size"><%= number_to_human_size(fb.file.byte_size) %></span>
+            </div>
+            <button type="button" class="simple-editor-attachment-delete"
+                    title="Remove file"
+                    data-action="click->simple-editor#deleteBlock"
+                    data-block-id="<%= fb.id %>">
+              <%= heroicon(:trash, style: "width:13px;height:13px") %>
+            </button>
           </div>
         <% end %>
       </div>
@@ -258,6 +319,107 @@
     font-size: var(--text-xs);
     color: var(--color-text-tertiary);
     margin-top: var(--spacing-xs);
+  }
+
+  /* Attachments (common wrapper with delete button) */
+  .simple-editor-attachment {
+    position: relative;
+  }
+
+  .simple-editor-attachment-delete {
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    background: var(--color-bg-secondary);
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+  }
+
+  .simple-editor-attachment:hover .simple-editor-attachment-delete {
+    opacity: 1;
+  }
+
+  .simple-editor-attachment-delete:hover {
+    color: var(--color-danger);
+    background: color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-primary));
+    border-color: color-mix(in srgb, var(--color-danger) 25%, var(--color-border));
+  }
+
+  /* Image blocks */
+  .simple-editor-images-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .simple-editor-image-wrapper {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-sm);
+    overflow: hidden;
+  }
+
+  .simple-editor-image-preview {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    border-radius: var(--radius-base);
+    display: block;
+  }
+
+  .simple-editor-image-filename {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin-top: var(--spacing-xs);
+  }
+
+  /* File blocks (non-audio) */
+  .simple-editor-files-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .simple-editor-file-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .simple-editor-file-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-size: var(--text-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .simple-editor-file-link:hover {
+    text-decoration: underline;
+  }
+
+  .simple-editor-file-size {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
+    margin-left: auto;
   }
 
   /* Save indicator */
