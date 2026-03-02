@@ -61,19 +61,24 @@ RSpec.describe "Api::Blocks", type: :request do
              headers: headers
 
         expect(response).to have_http_status(:created)
-        block = Block.last
-        block.file.attach(
+        created_block = Block.last
+
+        # Attach a file to the block
+        created_block.file.attach(
           io: StringIO.new("test data"),
           filename: "test.txt",
           content_type: "text/plain"
         )
 
-        # Re-fetch document to see serialize_block with file
-        get "/api/documents/#{document.id}", headers: headers
+        # Update the block to trigger blocks controller's serialize_block (which includes file data)
+        patch "/api/documents/#{document.id}/blocks/#{created_block.id}",
+              params: { block: { content: { text: "updated" } } }.to_json,
+              headers: headers
+
+        expect(response).to have_http_status(:success)
         json = JSON.parse(response.body)
-        file_block = json["blocks"].find { |b| b["id"] == block.id }
-        expect(file_block["file_url"]).to be_present
-        expect(file_block["file_filename"]).to eq("test.txt")
+        expect(json["file_url"]).to be_present
+        expect(json["file_filename"]).to eq("test.txt")
       end
 
       it "accepts explicit position" do
@@ -250,6 +255,28 @@ RSpec.describe "Api::Blocks", type: :request do
              headers: headers
 
         expect(response).to have_http_status(:success)
+      end
+
+      it "serializes blocks with file attachments during reorder" do
+        # Attach a file to one of the blocks
+        block1.update!(block_type: "file")
+        block1.file.attach(
+          io: StringIO.new("test file content"),
+          filename: "reorder_test.txt",
+          content_type: "text/plain"
+        )
+
+        new_order = [block1.id, block2.id, block3.id]
+
+        post "/api/documents/#{document.id}/blocks/reorder",
+             params: { block_ids: new_order }.to_json,
+             headers: headers
+
+        expect(response).to have_http_status(:success)
+        json = JSON.parse(response.body)
+        file_block = json["blocks"].find { |b| b["id"] == block1.id }
+        expect(file_block["file_url"]).to be_present
+        expect(file_block["file_filename"]).to eq("reorder_test.txt")
       end
     end
 

@@ -108,6 +108,13 @@ RSpec.describe "Tasks", type: :request do
       expect(response).to redirect_to(tasks_path(filter: "upcoming"))
     end
 
+    it "redirects to all filter for overdue tasks" do
+      # Create task with past due_date (not today, not pinned, not nil) → hits "all" branch
+      post tasks_path, params: { task: { title: "Overdue task", priority: "mid", due_date: 2.days.ago.to_date.to_s } }
+
+      expect(response).to redirect_to(tasks_path(filter: "all"))
+    end
+
     it "supports redirect_to param" do
       post tasks_path, params: { task: { title: "Quick task", priority: "mid" }, redirect_to: "/dashboard" }
 
@@ -133,6 +140,14 @@ RSpec.describe "Tasks", type: :request do
 
       expect(response).to have_http_status(:redirect)
       expect(task.reload.title).to eq("New title")
+    end
+
+    it "redirects to all filter when updating an overdue task" do
+      overdue_task = create(:task, title: "Overdue", due_date: 3.days.ago.to_date, priority: "mid")
+
+      patch task_path(overdue_task), params: { task: { title: "Still overdue" } }
+
+      expect(response).to redirect_to(tasks_path(filter: "all"))
     end
 
     it "renders edit on invalid params" do

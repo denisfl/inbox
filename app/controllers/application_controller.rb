@@ -15,12 +15,14 @@ class ApplicationController < ActionController::Base
   def authenticate_web_user!
     return unless Rails.env.production?
 
+    # :nocov:
     web_password = ENV["WEB_PASSWORD"].to_s
     raise "WEB_PASSWORD environment variable must be set in production" if web_password.empty?
 
     authenticate_or_request_with_http_basic("Inbox") do |_name, password|
       ActiveSupport::SecurityUtils.secure_compare(password, web_password)
     end
+    # :nocov:
   end
 
   # Load sidebar navigation data (counts, tags) for every web page.

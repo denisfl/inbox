@@ -182,6 +182,13 @@ RSpec.describe "Documents (web)", type: :request do
       expect(response).to have_http_status(:ok)
       expect(JSON.parse(response.body)["pinned"]).to be true
     end
+
+    it "returns turbo_stream for turbo requests" do
+      patch toggle_pinned_document_path(document), headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq("text/vnd.turbo-stream.html")
+    end
   end
 
   describe "POST /documents/bulk_upload" do

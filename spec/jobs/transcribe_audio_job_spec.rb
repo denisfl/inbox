@@ -120,6 +120,17 @@ RSpec.describe TranscribeAudioJob, type: :job do
       expect(JSON.parse(error_block.content)["text"]).to include("Transcription failed")
     end
 
+    it "creates error block on generic StandardError and re-raises" do
+      # Stub whisper to succeed but then cause a StandardError during processing
+      stub_whisper(text: "test", language: "en")
+      allow(Document).to receive(:find).and_call_original
+      allow(Document).to receive(:find).with(document.id).and_raise(StandardError, "DB connection lost")
+
+      expect {
+        described_class.new.perform(document.id, document.blocks.first.file.blob.key)
+      }.to raise_error(StandardError, "DB connection lost")
+    end
+
     it "raises on timeout for retry" do
       stub_request(:post, "#{whisper_url}/transcribe")
         .to_timeout

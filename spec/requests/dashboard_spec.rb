@@ -144,7 +144,8 @@ RSpec.describe "Dashboard", type: :request do
     end
 
     it "shows late night greeting" do
-      travel_to Time.current.change(hour: 23, min: 30) do
+      # Use a Wednesday (wday=3) at 23:30 to avoid day-of-week greetings firing first
+      travel_to Time.zone.parse("2026-03-11 23:30") do
         create(:task, :due_today)
 
         get dashboard_path
@@ -228,6 +229,17 @@ RSpec.describe "Dashboard", type: :request do
         get dashboard_path
 
         expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Clean slate")
+      end
+    end
+
+    it "shows Friday afternoon clear day greeting" do
+      travel_to Time.zone.parse("2026-03-13 17:00") do # Friday 5pm
+        # No tasks, no events — triggers wday==5 && hour>=16 clear day branch
+        get dashboard_path
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Friday-done")
       end
     end
 
@@ -240,6 +252,32 @@ RSpec.describe "Dashboard", type: :request do
         expect(response).to have_http_status(:ok)
         expect(response.body).to include("Weekend")
       end
+    end
+
+    it "builds activity feed with telegram-tagged document using icon_for_tags" do
+      travel_to 1.hour.ago do
+        doc = create(:document, title: "TG activity test")
+        tag = create(:tag, name: "telegram")
+        create(:document_tag, document: doc, tag: tag)
+      end
+
+      get dashboard_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Telegram")
+    end
+
+    it "builds activity feed with audio-tagged document using icon_for_tags" do
+      travel_to 1.hour.ago do
+        doc = create(:document, title: "Voice activity test")
+        tag = create(:tag, name: "audio")
+        create(:document_tag, document: doc, tag: tag)
+      end
+
+      get dashboard_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Voice note")
     end
   end
 

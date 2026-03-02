@@ -168,6 +168,22 @@ RSpec.describe GoogleCalendarService do
       expect(File.read(token_path).strip).to eq("fresh_token")
     end
 
+    it "re-raises non-410 ClientError during delta sync" do
+      # Write a sync token to trigger delta_sync path
+      token_path = Rails.root.join("tmp", "google_sync_token_primary.txt")
+      File.write(token_path, "valid_token")
+
+      # Delta sync raises a non-410 ClientError (e.g. 403 Forbidden)
+      error_403 = Google::Apis::ClientError.new("Forbidden", status_code: 403)
+      allow(google_service).to receive(:list_events)
+        .with("primary", sync_token: "valid_token", page_token: nil)
+        .and_raise(error_403)
+
+      # This should NOT be caught — it should propagate up to the per-calendar rescue
+      # which catches non-auth errors and logs them
+      expect { service.sync! }.not_to raise_error
+    end
+
     it "handles all-day events" do
       all_day_item = double("event",
         id: "google_allday_1",

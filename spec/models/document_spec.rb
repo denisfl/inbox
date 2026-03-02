@@ -127,11 +127,45 @@ RSpec.describe Document, type: :model do
     it 'returns empty relation for blank query' do
       expect(Document.search("")).to be_empty
     end
+
+    it 'returns documents with snippet methods when FTS5 returns results' do
+      doc = create(:document, title: "Searchable Document")
+
+      # Stub FTS5 SQL response since FTS5 virtual table may not exist in test
+      fts_row = {
+        "id" => doc.id,
+        "title_snippet" => "<mark>Searchable</mark> Document",
+        "content_snippet" => "Some <mark>searchable</mark> content",
+        "rank" => -1.5
+      }
+      fts_result = ActiveRecord::Result.new(
+        fts_row.keys,
+        [fts_row.values]
+      )
+      allow(Document.connection).to receive(:select_all).and_return(fts_result)
+
+      results = Document.search("Searchable")
+
+      expect(results.size).to eq(1)
+      expect(results.first.id).to eq(doc.id)
+      expect(results.first.title_snippet).to eq("<mark>Searchable</mark> Document")
+      expect(results.first.content_snippet).to eq("Some <mark>searchable</mark> content")
+      expect(results.first.rank).to eq(-1.5)
+    end
   end
 
   describe '.search_count' do
     it 'returns 0 for blank query' do
       expect(Document.search_count("")).to eq(0)
+    end
+
+    it 'returns count from FTS5 query' do
+      # Stub FTS5 count query
+      allow(Document.connection).to receive(:select_value).and_return(5)
+
+      result = Document.search_count("test query")
+
+      expect(result).to eq(5)
     end
   end
 

@@ -118,5 +118,23 @@ RSpec.describe "Api::Telegram", type: :request do
 
       expect(response).to have_http_status(:ok)
     end
+
+    it "handles send_telegram_reply failure gracefully for unauthorized user" do
+      # Unauthorized user triggers send_telegram_reply which may fail
+      unauthorized_params = text_message_params.deep_dup
+      unauthorized_params[:message][:from][:id] = 999999
+
+      # Make the Telegram API call fail
+      bot_instance = instance_double(Telegram::Bot::Client)
+      allow(Telegram::Bot::Client).to receive(:new).and_return(bot_instance)
+      bot_api = double("bot_api")
+      allow(bot_instance).to receive(:api).and_return(bot_api)
+      allow(bot_api).to receive(:send_message).and_raise(StandardError, "Network error")
+
+      post webhook_path, params: unauthorized_params, headers: valid_headers
+
+      # Should still return 200 (error is rescued)
+      expect(response).to have_http_status(:ok)
+    end
   end
 end

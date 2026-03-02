@@ -256,5 +256,28 @@ RSpec.describe TelegramMessageHandler do
         }.not_to raise_error
       end
     end
+
+    context "when file download fails" do
+      let(:photo) do
+        [
+          double("photo_small", file_id: "small_id", file_size: 1000),
+          double("photo_large", file_id: "large_id", file_size: 5000)
+        ]
+      end
+
+      it "raises download error with message" do
+        stub_bot_get_file(file_path: "photos/photo_large_id.jpg")
+
+        # Stub URI.parse to raise on the download URL
+        allow_any_instance_of(URI::HTTPS).to receive(:open).and_raise(StandardError, "Connection refused")
+
+        update = build_update(photo: photo)
+
+        # The handler rescues top-level errors, so it shouldn't propagate
+        expect {
+          described_class.new(update).handle
+        }.not_to raise_error
+      end
+    end
   end
 end

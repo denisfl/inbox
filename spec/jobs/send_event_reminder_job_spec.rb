@@ -29,6 +29,7 @@ RSpec.describe SendEventReminderJob, type: :job do
         html_link: "https://calendar.google.com/event/123")
 
       stub = stub_request(:post, "https://api.telegram.org/bot#{ENV['TELEGRAM_BOT_TOKEN']}/sendMessage")
+        .with(body: hash_including("text" => /Open in Calendar/))
         .to_return(status: 200, body: '{"ok":true}', headers: { "Content-Type" => "application/json" })
 
       described_class.new.perform

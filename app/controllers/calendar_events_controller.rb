@@ -96,7 +96,12 @@ class CalendarEventsController < ApplicationController
 
   def parse_default_date
     if params[:date].present?
-      Time.zone.parse(params[:date]) rescue Time.current
+      parsed = begin
+        Time.zone.parse(params[:date])
+      rescue ArgumentError
+        nil
+      end
+      parsed || Time.current
     else
       Time.current.change(min: 0) + 1.hour
     end
@@ -147,9 +152,9 @@ class CalendarEventsController < ApplicationController
 
     # Icalendar gem values inherit from DateTime/Date but handle via to_time
     if dt.respond_to?(:to_time)
-      dt.to_time.in_time_zone
+      dt.to_time&.in_time_zone
     elsif dt.respond_to?(:to_datetime)
-      dt.to_datetime.to_time.in_time_zone
+      dt.to_datetime.to_time&.in_time_zone
     else
       Time.zone.parse(dt.to_s) rescue nil
     end

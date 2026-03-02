@@ -24,12 +24,20 @@ RSpec.describe "Api::Documents", type: :request do
     end
 
     it "returns documents with summary data" do
+      doc = create(:document)
+      tag = create(:tag, name: "summary_test")
+      doc.tags << tag
+      doc.blocks.create!(block_type: "text", position: 0, content: { text: "block" }.to_json)
+
       get "/api/documents", headers: headers
 
       json = JSON.parse(response.body)
-      document = json['documents'].first
+      document = json['documents'].find { |d| d['id'] == doc.id }
 
       expect(document).to include('id', 'title', 'slug', 'blocks_count', 'tags', 'created_at', 'updated_at')
+      expect(document['blocks_count']).to eq(1)
+      expect(document['tags']).to include("summary_test")
+      expect(document['slug']).to be_present
     end
 
     it "supports pagination parameters" do
@@ -171,12 +179,42 @@ RSpec.describe "Api::Documents", type: :request do
       block.content_hash = { text: "body text" }
       block.save!
 
+      # Stub FTS5 since the virtual table doesn't exist in test
+      allow(Document).to receive(:search).and_return([doc])
+      allow(Document).to receive(:search_count).and_return(1)
+
       get "/api/documents/search?q=searchable", headers: headers
 
       expect(response).to have_http_status(:success)
       json = JSON.parse(response.body)
       expect(json).to include("results", "meta")
       expect(json["meta"]).to include("query", "total", "page", "per_page", "total_pages", "search_time_ms")
+    end
+
+    it "returns search results with snippets from FTS5" do
+      doc = create(:document, title: "FTS search result")
+      doc.blocks.create!(block_type: "text", position: 0, content: { text: "body" }.to_json)
+
+      # Stub FTS5 methods to return actual results with snippets
+      fts_doc = doc
+      fts_doc.define_singleton_method(:title_snippet) { "<mark>FTS</mark> search result" }
+      fts_doc.define_singleton_method(:content_snippet) { "matched <mark>body</mark>" }
+      fts_doc.define_singleton_method(:rank) { -2.5 }
+
+      allow(Document).to receive(:search).and_return([fts_doc])
+      allow(Document).to receive(:search_count).and_return(1)
+
+      get "/api/documents/search?q=FTS", headers: headers
+
+      expect(response).to have_http_status(:success)
+      json = JSON.parse(response.body)
+      expect(json["results"].size).to eq(1)
+      result = json["results"].first
+      expect(result["title_snippet"]).to include("FTS")
+      expect(result["content_snippet"]).to include("body")
+      expect(result["rank"]).to eq(-2.5)
+      expect(json["meta"]["total"]).to eq(1)
+      expect(json["meta"]["total_pages"]).to eq(1)
     end
   end
 

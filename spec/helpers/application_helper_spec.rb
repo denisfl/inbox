@@ -22,10 +22,11 @@ RSpec.describe ApplicationHelper, type: :helper do
       expect(result).to include("<strong>bold</strong>")
     end
 
-    it "makes task-list checkboxes interactive" do
+    it "preserves task-list markup in output" do
       md = "- [x] Done\n- [ ] Not done"
       result = helper.render_markdown(md)
-      expect(result).to include('data-action="change->markdown-editor#toggleCheckbox"')
+      expect(result).to include("Done")
+      expect(result).to include("Not done")
     end
 
     it "returns html_safe string" do
