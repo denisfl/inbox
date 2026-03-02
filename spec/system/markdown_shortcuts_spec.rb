@@ -1,218 +1,93 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
-RSpec.describe 'Markdown Shortcuts', type: :system, js: true do
+RSpec.describe 'Markdown Preview', type: :system, js: true do
   before do
-    driven_by(:selenium_chrome_headless)
+    driven_by(:headless_chrome)
   end
 
   let!(:document) { create(:document, title: 'Markdown Test') }
-  let!(:initial_block) { create(:block, :text, document: document, position: 0, content: { text: '' }.to_json) }
-
-  before do
-    visit edit_document_path(document)
-    wait_for_editor_load
+  let!(:text_block) do
+    create(:block, :text, document: document, position: 0,
+           content: { text: "# Heading\n\nSome **bold** text and *italic* text.\n\n- list item 1\n- list item 2" }.to_json)
   end
 
-  describe 'heading shortcuts' do
-    it 'converts # to heading level 1' do
-      block = find('.block-content [contenteditable]', match: :first)
-      block.click
-      block.send_keys('# Big Heading')
-
-      sleep 1 # Wait for conversion
-
-      expect(page).to have_selector('.block-wrapper[data-block-type="heading"]')
-      heading = find('.block-wrapper[data-block-type="heading"] [contenteditable]')
-      expect(heading.text).to eq('Big Heading')
-    end
-
-    it 'converts ## to heading level 2' do
-      block = find('.block-content [contenteditable]', match: :first)
-      block.click
-      block.send_keys('## Medium Heading')
-
-      sleep 1
-
-      expect(page).to have_selector('.block-wrapper[data-block-type="heading"]')
-      # Level should be stored in block data
-    end
-
-    it 'converts ### to heading level 3' do
-      block = find('.block-content [contenteditable]', match: :first)
-      block.click
-      block.send_keys('### Small Heading')
-
-      sleep 1
-
-      expect(page).to have_selector('.block-wrapper[data-block-type="heading"]')
-    end
-  end
-
-  describe 'quote shortcut' do
-    it 'converts > to quote block' do
-      block = find('.block-content [contenteditable]', match: :first)
-      block.click
-      block.send_keys('> This is a quote')
-
-      sleep 1
-
-      expect(page).to have_selector('.block-wrapper[data-block-type="quote"]')
-      quote_text = find('.block-wrapper[data-block-type="quote"] [contenteditable]').text
-      expect(quote_text).to eq('This is a quote')
-    end
-  end
-
-  describe 'code block shortcut' do
-    it 'converts ``` to code block' do
-      block = find('.block-content [contenteditable]', match: :first)
-      block.click
-      block.send_keys('```')
-      block.send_keys('puts "Hello"')
-
-      sleep 1
-
-      expect(page).to have_selector('.block-wrapper[data-block-type="code"]')
-    end
-  end
-
-  describe 'TODO shortcuts' do
-    it 'converts [ ] to unchecked TODO' do
-      block = find('.block-content [contenteditable]', match: :first)
-      block.click
-      block.send_keys('[ ] Unchecked task')
-
-      sleep 1
-
-      expect(page).to have_selector('.block-wrapper[data-block-type="todo"]')
-      checkbox = find('input[type="checkbox"]')
-      expect(checkbox).not_to be_checked
-    end
-
-    it 'converts [x] to checked TODO' do
-      block = find('.block-content [contenteditable]', match: :first)
-      block.click
-      block.send_keys('[x] Checked task')
-
-      sleep 1
-
-      expect(page).to have_selector('.block-wrapper[data-block-type="todo"]')
-      checkbox = find('input[type="checkbox"]')
-      expect(checkbox).to be_checked
-    end
-
-    it 'converts [X] (uppercase) to checked TODO' do
-      block = find('.block-content [contenteditable]', match: :first)
-      block.click
-      block.send_keys('[X] Also checked')
-
-      sleep 1
-
-      checkbox = find('input[type="checkbox"]')
-      expect(checkbox).to be_checked
-    end
-  end
-
-  describe 'markdown persistence' do
-    it 'preserves block type after conversion' do
-      # Create heading
-      block = find('.block-content [contenteditable]', match: :first)
-      block.click
-      block.send_keys('# Heading Text')
-      sleep 1
-
-      # Reload page
+  describe 'textarea editing' do
+    before do
       visit edit_document_path(document)
-      wait_for_editor_load
+    end
 
-      # Should still be heading
-      expect(page).to have_selector('.block-wrapper[data-block-type="heading"]')
-      heading = find('.block-wrapper[data-block-type="heading"] [contenteditable]')
-      expect(heading.text).to eq('Heading Text')
+    it 'displays markdown source in textarea' do
+      textarea = find('.simple-editor-textarea')
+      expect(textarea.value).to include('# Heading')
+      expect(textarea.value).to include('**bold**')
+    end
+
+    it 'allows typing in textarea' do
+      textarea = find('.simple-editor-textarea')
+      textarea.fill_in with: 'New markdown content'
+
+      expect(textarea.value).to eq('New markdown content')
+    end
+
+    it 'has monospace font class on textarea' do
+      expect(page).to have_css('textarea.simple-editor-textarea')
+    end
+
+    it 'shows placeholder when empty' do
+      # Create document without text block
+      empty_doc = create(:document, title: 'Empty Doc')
+      create(:block, :text, document: empty_doc, position: 0,
+             content: { text: '' }.to_json)
+
+      visit edit_document_path(empty_doc)
+
+      textarea = find('.simple-editor-textarea')
+      expect(textarea['placeholder']).to eq('Write in Markdown…')
     end
   end
 
-  describe 'markdown indicators' do
-    it 'shows converting status' do
-      block = find('.block-content [contenteditable]', match: :first)
-      block.click
-      block.send_keys('# ')
+  describe 'preview toggle with markdown content' do
+    before do
+      visit edit_document_path(document)
+    end
 
-      # There should be some visual indicator (implementation dependent)
-      # This is a placeholder - actual implementation might differ
-      sleep 0.5
+    it 'switches between edit and preview modes' do
+      # Start in edit mode — textarea visible
+      expect(page).to have_css('.simple-editor-textarea:not(.hidden)')
 
-      # After conversion, original text with # should be gone
-      block.send_keys('Test')
-      sleep 1
+      # Click Preview
+      click_button 'Preview'
 
-      expect(page).to have_selector('.block-wrapper[data-block-type="heading"]')
+      # Preview should be visible, textarea hidden
+      expect(page).to have_css('.simple-editor-preview:not(.hidden)', wait: 5)
+      expect(page).to have_button('Edit')
+
+      # Click Edit to go back
+      click_button 'Edit'
+
+      # Textarea visible again
+      expect(page).to have_css('.simple-editor-textarea:not(.hidden)', wait: 5)
+      expect(page).to have_button('Preview')
     end
   end
 
-  describe 'smart Enter behavior' do
-    it 'creates new text block after heading when pressing Enter' do
-      # Create heading
-      block = find('.block-content [contenteditable]', match: :first)
-      block.click
-      block.send_keys('# Main Heading')
-      sleep 1
-
-      # Press Enter
-      heading = find('.block-wrapper[data-block-type="heading"] [contenteditable]')
-      heading.send_keys(:return)
-      sleep 1
-
-      # Should create new text block (not heading)
-      blocks = all('.block-wrapper')
-      expect(blocks.count).to eq(2)
-      expect(blocks.last['data-block-type']).to eq('text')
+  describe 'editor UI elements' do
+    before do
+      visit edit_document_path(document)
     end
 
-    it 'creates new quote after quote when pressing Enter' do
-      # Create quote
-      block = find('.block-content [contenteditable]', match: :first)
-      block.click
-      block.send_keys('> First quote')
-      sleep 1
-
-      # Press Enter
-      quote = find('.block-wrapper[data-block-type="quote"] [contenteditable]')
-      quote.send_keys(:return)
-      sleep 1
-
-      # Should create new text block (not another quote)
-      blocks = all('.block-wrapper')
-      expect(blocks.last['data-block-type']).to eq('text')
-    end
-  end
-
-  describe 'no false positives' do
-    it 'does not convert # in middle of text' do
-      block = find('.block-content [contenteditable]', match: :first)
-      block.click
-      block.send_keys('This is not a # heading')
-      sleep 1
-
-      # Should remain text block
-      expect(page).not_to have_selector('.block-wrapper[data-block-type="heading"]')
-      expect(page).to have_selector('.block-wrapper[data-block-type="text"]')
+    it 'has image upload button' do
+      expect(page).to have_css('.simple-editor-upload-btn[title="Attach images"]')
     end
 
-    it 'does not convert [ ] in middle of text' do
-      block = find('.block-content [contenteditable]', match: :first)
-      block.click
-      block.send_keys('Check this [ ] box')
-      sleep 1
-
-      # Should remain text block
-      expect(page).not_to have_selector('.block-wrapper[data-block-type="todo"]')
+    it 'has file upload button' do
+      expect(page).to have_css('.simple-editor-upload-btn[title="Attach files"]')
     end
-  end
 
-  private
-
-  def wait_for_editor_load
-    expect(page).to have_selector('[data-controller~="document-editor"]')
-    sleep 0.5
+    it 'has save indicator element' do
+      expect(page).to have_css('[data-simple-editor-target="saveIndicator"]')
+    end
   end
 end

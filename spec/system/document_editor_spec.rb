@@ -2,13 +2,16 @@
 
 require 'rails_helper'
 
-RSpec.describe 'Document Editor', type: :system do
+RSpec.describe 'Document Editor', type: :system, js: true do
   before do
-    driven_by(:selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ])
+    driven_by(:headless_chrome)
   end
 
   let(:document) { create(:document, title: 'Test Document') }
-  let!(:text_block) { create(:block, document: document, block_type: 'text', content: { text: 'Initial text' }, position: 0) }
+  let!(:text_block) do
+    create(:block, document: document, block_type: 'text',
+           content: { text: 'Initial text content' }.to_json, position: 0)
+  end
 
   describe 'viewing the documents list' do
     let!(:document2) { create(:document, title: 'Another Document') }
@@ -27,159 +30,113 @@ RSpec.describe 'Document Editor', type: :system do
 
       expect(page).to have_content('No documents yet')
     end
+
+    it 'navigates to document editor on click' do
+      visit documents_path
+
+      click_link 'Test Document'
+
+      expect(page).to have_current_path(edit_document_path(document))
+    end
   end
 
-  describe 'editing a document' do
+  describe 'simple editor' do
     before do
       visit edit_document_path(document)
     end
 
-    it 'displays document title and blocks' do
-      expect(page).to have_content('Test Document')
-      expect(page).to have_content('Initial text')
+    it 'displays document title' do
+      expect(page).to have_css('h1.simple-editor-title', text: 'Test Document')
     end
 
-    it 'allows editing block content inline', js: true do
-      text_element = find('.text-block[contenteditable="true"]', text: 'Initial text')
-      text_element.click
-      text_element.set('Updated text content')
-
-      # Trigger blur to save
-      find('body').click
-
-      # Wait for save indicator
-      expect(page).to have_content('Saved', wait: 5)
-
-      # Verify block was updated
-      text_block.reload
-      expect(text_block.content['text']).to eq('Updated text content')
+    it 'displays text content in textarea' do
+      textarea = find('.simple-editor-textarea')
+      expect(textarea.value).to eq('Initial text content')
     end
 
-    it 'adds a new block with keyboard shortcut', js: true do
-      blocks_container = find('[data-document-editor-target="blocksContainer"]')
-      initial_count = blocks_container.all('.block-wrapper').count
-
-      # Send Cmd+Enter (Meta+Enter on Mac)
-      find('body').send_keys [ :meta, :enter ]
-
-      # Wait for new block to appear
-      expect(blocks_container).to have_css('.block-wrapper', count: initial_count + 1, wait: 5)
-
-      # Verify new block is text type
-      expect(blocks_container).to have_css('.text-block', count: 2)
+    it 'has Back link' do
+      expect(page).to have_link('Back')
     end
 
-    it 'deletes a block with delete button', js: true do
-      accept_confirm do
-        find('.block-delete').click
-      end
-
-      # Block should disappear
-      expect(page).not_to have_content('Initial text')
-
-      # Verify block was deleted
-      expect(document.blocks.count).to eq(0)
+    it 'has Preview button' do
+      expect(page).to have_button('Preview')
     end
 
-    it 'deletes a block with keyboard shortcut', js: true do
-      # Focus on the block
-      find('.text-block[contenteditable="true"]').click
+    it 'has delete button' do
+      expect(page).to have_css('.simple-editor-delete-btn')
+    end
 
-      accept_confirm do
-        find('body').send_keys [ :meta, :backspace ]
-      end
-
-      # Block should disappear
-      expect(page).not_to have_content('Initial text')
+    it 'connects simple-editor Stimulus controller' do
+      expect(page).to have_css('[data-controller~="simple-editor"]')
     end
   end
 
-  describe 'working with different block types', js: true do
+  describe 'title editing' do
     before do
       visit edit_document_path(document)
     end
 
-    it 'creates and edits heading block' do
-      create(:block, document: document, block_type: 'heading', content: { text: 'Heading Text', level: 2 }, position: 1)
-
-      visit edit_document_path(document)
-
-      expect(page).to have_css('h2.heading-block', text: 'Heading Text')
-    end
-
-    it 'creates and toggles todo block' do
-      create(:block, document: document, block_type: 'todo', content: { text: 'Todo item', checked: false }, position: 1)
-
-      visit edit_document_path(document)
-
-      checkbox = find('.todo-block input[type="checkbox"]')
-      expect(checkbox).not_to be_checked
-
-      checkbox.click
-
-      # Wait for save
-      expect(page).to have_content('Saved', wait: 5)
-    end
-
-    it 'creates code block' do
-      create(:block, document: document, block_type: 'code', content: { code: 'puts "Hello"', language: 'ruby' }, position: 1)
-
-      visit edit_document_path(document)
-
-      expect(page).to have_css('.code-block code', text: 'puts "Hello"')
-    end
-
-    it 'creates quote block' do
-      create(:block, document: document, block_type: 'quote', content: { text: 'Famous quote' }, position: 1)
-
-      visit edit_document_path(document)
-
-      expect(page).to have_css('.quote-block', text: 'Famous quote')
-    end
-
-    it 'creates link block' do
-      create(:block, document: document, block_type: 'link', content: { url: 'https://example.com', title: 'Example' }, position: 1)
-
-      visit edit_document_path(document)
-
-      expect(page).to have_css('.link-block input[value="https://example.com"]')
+    it 'has contenteditable title' do
+      title = find('h1.simple-editor-title')
+      expect(title['contenteditable']).to eq('true')
     end
   end
 
-  describe 'auto-save functionality', js: true do
+  describe 'preview toggle' do
     before do
       visit edit_document_path(document)
     end
 
-    it 'shows saving indicator when editing' do
-      text_element = find('.text-block[contenteditable="true"]', text: 'Initial text')
-      text_element.click
-      text_element.set('New text')
+    it 'toggles to preview mode' do
+      click_button 'Preview'
 
-      # Should show "Saving..." indicator
-      expect(page).to have_css('[data-document-editor-target="saveIndicator"]', text: /Saving/, wait: 2)
+      expect(page).to have_css('.simple-editor-preview:not(.hidden)', wait: 5)
+      expect(page).to have_button('Edit')
     end
 
-    it 'shows saved indicator after save completes' do
-      text_element = find('.text-block[contenteditable="true"]', text: 'Initial text')
-      text_element.click
-      text_element.set('New text')
+    it 'toggles back to edit mode' do
+      click_button 'Preview'
+      expect(page).to have_button('Edit', wait: 5)
 
-      find('body').click # Blur to trigger save
+      click_button 'Edit'
 
-      # Should show "✓ Saved" indicator
-      expect(page).to have_content('Saved', wait: 5)
+      expect(page).to have_css('.simple-editor-textarea:not(.hidden)', wait: 5)
+      expect(page).to have_button('Preview')
     end
   end
 
-  describe 'responsive design' do
-    it 'displays properly on mobile viewport' do
-      resize_window_to(390, 844) # iPhone 14 Pro
+  describe 'auto-save functionality' do
+    before do
+      visit edit_document_path(document)
+    end
 
+    it 'shows save indicator after editing' do
+      textarea = find('.simple-editor-textarea')
+      textarea.fill_in with: 'Updated text content'
+
+      # Should show save indicator (saving or saved)
+      expect(page).to have_css('.save-indicator', text: /sav/i, wait: 5)
+    end
+  end
+
+  describe 'navigation' do
+    it 'Back link returns to documents list' do
       visit edit_document_path(document)
 
-      expect(page).to have_content('Test Document')
-      expect(page).to have_css('.block-wrapper')
+      click_link 'Back'
+
+      expect(page).to have_current_path(documents_path)
+    end
+  end
+
+  describe 'tags section' do
+    before do
+      visit edit_document_path(document)
+    end
+
+    it 'shows tag input' do
+      expect(page).to have_css('[data-controller~="tag-input"]')
+      expect(page).to have_field(placeholder: 'Add tag…')
     end
   end
 end
