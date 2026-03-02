@@ -42,7 +42,7 @@ RSpec.describe Document, type: :model do
       let!(:new_doc) { create(:document, created_at: 1.day.ago) }
 
       it 'returns documents ordered by created_at desc' do
-        expect(Document.recent).to eq([new_doc, old_doc])
+        expect(Document.recent).to eq([ new_doc, old_doc ])
       end
     end
 

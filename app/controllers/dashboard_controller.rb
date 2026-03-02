@@ -49,9 +49,9 @@ class DashboardController < ApplicationController
     # ── Mini calendar ────────────────────────────────────────────────────────
     @cal_date = if params[:cal_month].present?
                   Date.strptime(params[:cal_month], "%Y-%m")
-                else
+    else
                   Date.current
-                end
+    end
     @cal_month_start = @cal_date.beginning_of_month
     @cal_month_end   = @cal_date.end_of_month
     @cal_event_days  = CalendarEvent
@@ -74,7 +74,7 @@ class DashboardController < ApplicationController
     when "note"
       doc = Document.create!(title: content.truncate(80))
       # Auto-tag as web-created
-      web_tag = Tag.find_or_create_by!(name: 'web')
+      web_tag = Tag.find_or_create_by!(name: "web")
       doc.tags << web_tag unless doc.tags.include?(web_tag)
       block = doc.blocks.new(block_type: "text", position: 0)
       block.content_hash = { text: content }
@@ -114,11 +114,11 @@ class DashboardController < ApplicationController
       tag_names = doc.tags.map(&:name)
       text = if tag_names.include?("telegram")
                "Telegram → <strong>#{title_esc}</strong>"
-             elsif tag_names.include?("audio")
+      elsif tag_names.include?("audio")
                "Voice note → <strong>#{title_esc}</strong>"
-             else
+      else
                "Note created: <strong>#{title_esc}</strong>"
-             end
+      end
       activities << { icon_type: icon_for_tags(tag_names), text: text, time: doc.created_at }
     end
 

@@ -1,7 +1,7 @@
 class DocumentsController < ApplicationController
   include ActionView::RecordIdentifier
 
-  before_action :set_document, only: [:show, :edit, :destroy, :toggle_pinned]
+  before_action :set_document, only: [ :show, :edit, :destroy, :toggle_pinned ]
 
   def index
     documents_scope = Document.includes(:blocks, :tags)
@@ -17,14 +17,14 @@ class DocumentsController < ApplicationController
     # Filter by type (voice, photo)
     if params[:type].present?
       case params[:type]
-      when 'voice'
+      when "voice"
         documents_scope = documents_scope.joins(:blocks)
-          .where(blocks: {block_type: 'file'})
+          .where(blocks: { block_type: "file" })
           .where("blocks.content LIKE ?", "%voice%")
           .distinct
-      when 'photo'
+      when "photo"
         documents_scope = documents_scope.joins(:blocks)
-          .where(blocks: {block_type: 'file'})
+          .where(blocks: { block_type: "file" })
           .where("blocks.content LIKE ? OR blocks.content LIKE ?", "%image%", "%photo%")
           .distinct
       end
@@ -41,15 +41,15 @@ class DocumentsController < ApplicationController
     # Sort — pinned documents always appear first
     documents_scope = documents_scope.pinned_first
 
-    sort_by = params[:sort] || 'updated_desc'
+    sort_by = params[:sort] || "updated_desc"
     case sort_by
-    when 'created_desc'
+    when "created_desc"
       documents_scope = documents_scope.order(created_at: :desc)
-    when 'created_asc'
+    when "created_asc"
       documents_scope = documents_scope.order(created_at: :asc)
-    when 'title_asc'
+    when "title_asc"
       documents_scope = documents_scope.order(title: :asc)
-    when 'title_desc'
+    when "title_desc"
       documents_scope = documents_scope.order(title: :desc)
     else # updated_desc (default)
       documents_scope = documents_scope.order(updated_at: :desc)
@@ -84,7 +84,7 @@ class DocumentsController < ApplicationController
     )
 
     # Auto-tag as web-created
-    web_tag = Tag.find_or_create_by!(name: 'web')
+    web_tag = Tag.find_or_create_by!(name: "web")
     @document.tags << web_tag unless @document.tags.include?(web_tag)
 
     # Create initial text block
@@ -118,26 +118,26 @@ class DocumentsController < ApplicationController
 
     files.each do |file|
       title = File.basename(file.original_filename, File.extname(file.original_filename))
-                  .gsub(/[_-]/, ' ')
+                  .gsub(/[_-]/, " ")
                   .truncate(50)
 
       doc = Document.create!(title: title)
 
       # Auto-tag as web-created
-      web_tag = Tag.find_or_create_by!(name: 'web')
+      web_tag = Tag.find_or_create_by!(name: "web")
       doc.tags << web_tag unless doc.tags.include?(web_tag)
 
       # Create text block so the editor can work with this document
-      text_block = doc.blocks.new(block_type: 'text', position: 0)
-      text_block.content_hash = { text: '' }
+      text_block = doc.blocks.new(block_type: "text", position: 0)
+      text_block.content_hash = { text: "" }
       text_block.save!
 
-      if file.content_type.start_with?('image/')
-        block = doc.blocks.create!(block_type: 'image', position: 1, content: {}.to_json)
+      if file.content_type.start_with?("image/")
+        block = doc.blocks.create!(block_type: "image", position: 1, content: {}.to_json)
         block.image.attach(file)
       else
         block = doc.blocks.create!(
-          block_type: 'file',
+          block_type: "file",
           position: 1,
           content: { filename: file.original_filename }.to_json
         )
@@ -145,11 +145,11 @@ class DocumentsController < ApplicationController
       end
 
       # Auto-tag based on content type
-      if file.content_type.start_with?('audio/')
-        auto_tag = Tag.find_or_create_by!(name: 'audio')
+      if file.content_type.start_with?("audio/")
+        auto_tag = Tag.find_or_create_by!(name: "audio")
         doc.tags << auto_tag unless doc.tags.include?(auto_tag)
-      elsif !file.content_type.start_with?('image/')
-        auto_tag = Tag.find_or_create_by!(name: 'file')
+      elsif !file.content_type.start_with?("image/")
+        auto_tag = Tag.find_or_create_by!(name: "file")
         doc.tags << auto_tag unless doc.tags.include?(auto_tag)
       end
 
@@ -187,7 +187,7 @@ class DocumentsController < ApplicationController
     if params[:tags].present?
       Array(params[:tags]).map { |t| t.to_s.strip.downcase }.reject(&:blank?)
     elsif params[:tag].present?
-      [params[:tag].to_s.strip.downcase]
+      [ params[:tag].to_s.strip.downcase ]
     else
       []
     end

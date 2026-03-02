@@ -179,7 +179,7 @@ RSpec.describe "Api::Blocks", type: :request do
     context "with valid block IDs" do
       it "reorders blocks according to the provided array" do
         # Reverse the order: 3, 2, 1
-        new_order = [block3.id, block2.id, block1.id]
+        new_order = [ block3.id, block2.id, block1.id ]
 
         post "/api/documents/#{document.id}/blocks/reorder",
              params: { block_ids: new_order }.to_json,
@@ -205,7 +205,7 @@ RSpec.describe "Api::Blocks", type: :request do
 
       it "handles partial reordering" do
         # Only reorder 2 blocks
-        new_order = [block2.id, block1.id]
+        new_order = [ block2.id, block1.id ]
 
         post "/api/documents/#{document.id}/blocks/reorder",
              params: { block_ids: new_order }.to_json,
@@ -217,7 +217,7 @@ RSpec.describe "Api::Blocks", type: :request do
 
     context "with invalid block IDs" do
       it "returns error for non-existent block" do
-        new_order = [block1.id, 99999, block3.id]
+        new_order = [ block1.id, 99999, block3.id ]
 
         post "/api/documents/#{document.id}/blocks/reorder",
              params: { block_ids: new_order }.to_json,
@@ -232,7 +232,7 @@ RSpec.describe "Api::Blocks", type: :request do
         other_document = create(:document)
         other_block = create(:block, document: other_document)
 
-        new_order = [block1.id, other_block.id]
+        new_order = [ block1.id, other_block.id ]
 
         post "/api/documents/#{document.id}/blocks/reorder",
              params: { block_ids: new_order }.to_json,

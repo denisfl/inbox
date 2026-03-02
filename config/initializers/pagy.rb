@@ -8,7 +8,7 @@ Pagy::DEFAULT[:limit] = 20
 Pagy::DEFAULT[:max_limit] = 100
 
 # Metadata for frontend (count, page, etc.)
-Pagy::DEFAULT[:metadata] = [:count, :page, :limit, :pages]
+Pagy::DEFAULT[:metadata] = [ :count, :page, :limit, :pages ]
 
 # Pagy items
 Pagy::DEFAULT[:size] = 7  # [1, gap, 4, 5, 6, gap, 10] total 7 items
@@ -24,7 +24,7 @@ Pagy::DEFAULT[:size] = 7  # [1, gap, 4, 5, 6, gap, 10] total 7 items
 Pagy::DEFAULT[:overflow] = :last_page
 
 # Enable Pagy trim (remove empty pages from nav)
-require 'pagy/extras/trim'
+require "pagy/extras/trim"
 
 # Enable Pagy standalone (for use without view helpers)
 # require 'pagy/extras/standalone'

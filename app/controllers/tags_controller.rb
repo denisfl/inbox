@@ -31,7 +31,7 @@ class TagsController < ApplicationController
     if params[:tags].present?
       Array(params[:tags]).map { |t| t.to_s.strip.downcase }.reject(&:blank?)
     elsif params[:tag].present?
-      [params[:tag].to_s.strip.downcase]
+      [ params[:tag].to_s.strip.downcase ]
     else
       []
     end

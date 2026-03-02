@@ -43,7 +43,7 @@ class CalendarEventsController < ApplicationController
 
     unless @event.local?
       redirect_to calendar_path, alert: "Google Calendar events cannot be edited here"
-      return
+      nil
     end
   end
 

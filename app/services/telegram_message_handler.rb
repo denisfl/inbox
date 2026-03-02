@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'telegram/bot'
+require "telegram/bot"
 
 class TelegramMessageHandler
   attr_reader :update, :message, :bot
@@ -8,7 +8,7 @@ class TelegramMessageHandler
   def initialize(update)
     @update = update
     @message = update.message
-    @bot = Telegram::Bot::Client.new(ENV['TELEGRAM_BOT_TOKEN'])
+    @bot = Telegram::Bot::Client.new(ENV["TELEGRAM_BOT_TOKEN"])
   end
 
   def handle
@@ -81,12 +81,12 @@ class TelegramMessageHandler
     )
 
     # Auto-tag as telegram
-    telegram_tag = Tag.find_or_create_by!(name: 'telegram')
+    telegram_tag = Tag.find_or_create_by!(name: "telegram")
     doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
 
     # Create image block
     image_block = doc.blocks.create!(
-      block_type: 'image',
+      block_type: "image",
       position: 0,
       content: {}.to_json
     )
@@ -95,17 +95,17 @@ class TelegramMessageHandler
     image_block.image.attach(
       io: downloaded_file,
       filename: "telegram_photo_#{photo.file_id}.jpg",
-      content_type: 'image/jpeg'
+      content_type: "image/jpeg"
     )
 
     # Auto-tag as file
-    file_tag = Tag.find_or_create_by!(name: 'file')
+    file_tag = Tag.find_or_create_by!(name: "file")
     doc.tags << file_tag unless doc.tags.include?(file_tag)
 
     # Add caption as text block if present
     if message.caption.present?
       doc.blocks.create!(
-        block_type: 'text',
+        block_type: "text",
         position: 1,
         content: { text: message.caption }.to_json
       )
@@ -133,12 +133,12 @@ class TelegramMessageHandler
     )
 
     # Auto-tag as telegram
-    telegram_tag = Tag.find_or_create_by!(name: 'telegram')
+    telegram_tag = Tag.find_or_create_by!(name: "telegram")
     doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
 
     # Create file block with voice attachment
     file_block = doc.blocks.create!(
-      block_type: 'file',
+      block_type: "file",
       position: 0,
       content: { filename: "voice_#{message.voice.file_id}.ogg" }.to_json
     )
@@ -146,11 +146,11 @@ class TelegramMessageHandler
     file_block.file.attach(
       io: downloaded_file,
       filename: "voice_#{message.voice.file_id}.ogg",
-      content_type: 'audio/ogg'
+      content_type: "audio/ogg"
     )
 
     # Auto-tag as audio
-    audio_tag = Tag.find_or_create_by!(name: 'audio')
+    audio_tag = Tag.find_or_create_by!(name: "audio")
     doc.tags << audio_tag unless doc.tags.include?(audio_tag)
 
     # Queue transcription job
@@ -179,12 +179,12 @@ class TelegramMessageHandler
     )
 
     # Auto-tag as telegram
-    telegram_tag = Tag.find_or_create_by!(name: 'telegram')
+    telegram_tag = Tag.find_or_create_by!(name: "telegram")
     doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
 
     # Create file block with audio attachment
     file_block = doc.blocks.create!(
-      block_type: 'file',
+      block_type: "file",
       position: 0,
       content: { filename: filename }.to_json
     )
@@ -192,11 +192,11 @@ class TelegramMessageHandler
     file_block.file.attach(
       io: downloaded_file,
       filename: filename,
-      content_type: message.audio.mime_type || 'audio/mpeg'
+      content_type: message.audio.mime_type || "audio/mpeg"
     )
 
     # Auto-tag as audio
-    audio_tag = Tag.find_or_create_by!(name: 'audio')
+    audio_tag = Tag.find_or_create_by!(name: "audio")
     doc.tags << audio_tag unless doc.tags.include?(audio_tag)
 
     send_reply("🎵 Audio file saved")
@@ -221,12 +221,12 @@ class TelegramMessageHandler
     )
 
     # Auto-tag as telegram
-    telegram_tag = Tag.find_or_create_by!(name: 'telegram')
+    telegram_tag = Tag.find_or_create_by!(name: "telegram")
     doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
 
     # Create file block
     file_block = doc.blocks.create!(
-      block_type: 'file',
+      block_type: "file",
       position: 0,
       content: { filename: filename }.to_json
     )
@@ -238,13 +238,13 @@ class TelegramMessageHandler
     )
 
     # Auto-tag as file
-    file_tag = Tag.find_or_create_by!(name: 'file')
+    file_tag = Tag.find_or_create_by!(name: "file")
     doc.tags << file_tag unless doc.tags.include?(file_tag)
 
     # Add caption as text block if present
     if message.caption.present?
       doc.blocks.create!(
-        block_type: 'text',
+        block_type: "text",
         position: 1,
         content: { text: message.caption }.to_json
       )
@@ -255,7 +255,7 @@ class TelegramMessageHandler
   end
 
   def download_file(url)
-    require 'open-uri'
+    require "open-uri"
 
     URI.parse(url).open
   rescue StandardError => e

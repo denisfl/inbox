@@ -1,5 +1,5 @@
 class Api::DocumentsController < Api::BaseController
-  before_action :set_document, only: [:show, :update, :destroy, :upload, :preview]
+  before_action :set_document, only: [ :show, :update, :destroy, :upload, :preview ]
 
   # GET /api/documents
   def index
@@ -21,7 +21,7 @@ class Api::DocumentsController < Api::BaseController
     per_page = params[:per_page]&.to_i || 20
 
     if query.blank?
-      return render json: { error: 'Query parameter is required' }, status: :bad_request
+      return render json: { error: "Query parameter is required" }, status: :bad_request
     end
 
     start_time = Time.now
@@ -220,7 +220,7 @@ class Api::DocumentsController < Api::BaseController
       title: doc.title,
       slug: doc.slug,
       title_snippet: doc.respond_to?(:title_snippet) ? doc.title_snippet : doc.title,
-      content_snippet: doc.respond_to?(:content_snippet) ? doc.content_snippet : '',
+      content_snippet: doc.respond_to?(:content_snippet) ? doc.content_snippet : "",
       rank: doc.respond_to?(:rank) ? doc.rank : 0,
       blocks_count: doc.blocks.count,
       created_at: doc.created_at,

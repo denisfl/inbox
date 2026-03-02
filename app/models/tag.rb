@@ -17,7 +17,7 @@ class Tag < ApplicationRecord
   scope :popular, -> {
     left_joins(:document_tags, :task_tags, :calendar_event_tags)
       .group(:id)
-      .order('COUNT(DISTINCT document_tags.id) + COUNT(DISTINCT task_tags.id) + COUNT(DISTINCT calendar_event_tags.id) DESC')
+      .order("COUNT(DISTINCT document_tags.id) + COUNT(DISTINCT task_tags.id) + COUNT(DISTINCT calendar_event_tags.id) DESC")
   }
   scope :alphabetical, -> { order(:name) }
 

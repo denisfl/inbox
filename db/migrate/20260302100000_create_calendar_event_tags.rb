@@ -7,6 +7,6 @@ class CreateCalendarEventTags < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
-    add_index :calendar_event_tags, [:calendar_event_id, :tag_id], unique: true
+    add_index :calendar_event_tags, [ :calendar_event_id, :tag_id ], unique: true
   end
 end

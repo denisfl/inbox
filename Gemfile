@@ -102,4 +102,7 @@ group :test do
 
   # Matchers for RSpec tests
   gem "shoulda-matchers", "~> 6.0"
+
+  # Stub external HTTP requests in tests
+  gem "webmock", "~> 3.23"
 end

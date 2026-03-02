@@ -36,7 +36,7 @@ RSpec.describe Tag, type: :model do
       let!(:tag_m) { create(:tag, name: 'mango') }
 
       it 'returns tags ordered alphabetically' do
-        expect(Tag.alphabetical).to eq([tag_a, tag_m, tag_z])
+        expect(Tag.alphabetical).to eq([ tag_a, tag_m, tag_z ])
       end
     end
 
