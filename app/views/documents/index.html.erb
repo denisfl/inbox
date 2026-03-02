@@ -115,7 +115,7 @@
     <%# Pagy pagination %>
     <% if @pagy.pages > 1 %>
       <div class="pagination-wrapper">
-        <%== pagy_nav(@pagy) %>
+        <%== @pagy.series_nav %>
       </div>
     <% end %>
   <% end %>

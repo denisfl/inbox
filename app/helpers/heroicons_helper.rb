@@ -32,7 +32,7 @@ module HeroiconsHelper
       options[:stroke] ||= "currentColor"
 
       content_tag :svg, **options do
-        icon_data.map { |path_data| tag.path(d: path_data, 'stroke-linecap': 'round', 'stroke-linejoin': 'round') }.join.html_safe
+        icon_data.map { |path_data| tag.path(d: path_data, 'stroke-linecap': "round", 'stroke-linejoin': "round") }.join.html_safe
       end
     end
   end

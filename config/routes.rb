@@ -14,20 +14,20 @@ Rails.application.routes.draw do
       end
 
       # Nested routes for blocks
-      resources :blocks, only: [:create, :update, :destroy] do
+      resources :blocks, only: [ :create, :update, :destroy ] do
         collection do
           post :reorder
         end
 
         # Upload routes for blocks
         member do
-          post :upload_image, controller: 'uploads'
-          post :upload_file, controller: 'uploads'
+          post :upload_image, controller: "uploads"
+          post :upload_file, controller: "uploads"
         end
       end
 
       # Document tag management
-      resources :tags, only: [:create, :destroy], param: :name, controller: 'document_tags'
+      resources :tags, only: [ :create, :destroy ], param: :name, controller: "document_tags"
 
       # Document-specific actions
       member do
@@ -35,28 +35,28 @@ Rails.application.routes.draw do
         post :extract_tags
         post :upload
         get  :preview
-        get 'export/:format', to: 'documents#export', as: :export
+        get "export/:format", to: "documents#export", as: :export
       end
     end
 
     # Task tag management
     resources :tasks, only: [] do
-      resources :tags, only: [:create, :destroy], param: :name, controller: 'task_tags'
+      resources :tags, only: [ :create, :destroy ], param: :name, controller: "task_tags"
     end
 
     # Calendar event tag management
     resources :calendar_events, only: [] do
-      resources :tags, only: [:create, :destroy], param: :name, controller: 'calendar_event_tags'
+      resources :tags, only: [ :create, :destroy ], param: :name, controller: "calendar_event_tags"
     end
 
     # Tag autocomplete
-    resources :tags, only: [:index]
+    resources :tags, only: [ :index ]
 
     # Search endpoint
-    get 'documents/search', to: 'documents#search', as: :search_documents
+    get "documents/search", to: "documents#search", as: :search_documents
 
     # Telegram webhook
-    post 'telegram/webhook', to: 'telegram#webhook'
+    post "telegram/webhook", to: "telegram#webhook"
   end
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
@@ -64,7 +64,7 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Web UI routes
-  resources :documents, only: [:index, :show, :edit, :new, :destroy] do
+  resources :documents, only: [ :index, :show, :edit, :new, :destroy ] do
     member do
       patch :toggle_pinned
     end
@@ -78,25 +78,25 @@ Rails.application.routes.draw do
   get "/calendar/widget", to: "calendars#widget", as: :calendar_widget
 
   # Calendar events (manual creation + iCal import)
-  resources :calendar_events, only: [:new, :create, :edit, :update, :destroy], path: "calendar/events"
+  resources :calendar_events, only: [ :new, :create, :edit, :update, :destroy ], path: "calendar/events"
   post "/calendar/import", to: "calendar_events#import_ical", as: :import_ical
 
   # Tasks
-  resources :tasks, only: [:index, :new, :create, :edit, :update, :destroy] do
+  resources :tasks, only: [ :index, :new, :create, :edit, :update, :destroy ] do
     member do
       patch :toggle
     end
   end
 
   # Tags
-  resources :tags, only: [:index, :show], param: :name
+  resources :tags, only: [ :index, :show ], param: :name
 
   # Shortcut for creating new document
-  get '/new', to: 'documents#new', as: :new_note
+  get "/new", to: "documents#new", as: :new_note
 
   # Dashboard
-  get '/dashboard', to: 'dashboard#index', as: :dashboard
-  post '/quick_capture', to: 'dashboard#quick_capture', as: :quick_capture
+  get "/dashboard", to: "dashboard#index", as: :dashboard
+  post "/quick_capture", to: "dashboard#quick_capture", as: :quick_capture
 
   # Root path — Dashboard
   root "dashboard#index"

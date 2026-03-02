@@ -8,21 +8,21 @@ class TranscribeAudioJob < ApplicationJob
     document = Document.find(document_id)
 
     # Find the audio file block
-    audio_block = document.blocks.find_by(block_type: 'file')
+    audio_block = document.blocks.find_by(block_type: "file")
     return unless audio_block&.file&.attached?
 
     # Download audio file from ActiveStorage
     audio_file = audio_block.file.download
 
     # Create temporary file for Whisper API
-    temp_file = Tempfile.new(['voice', '.ogg'])
+    temp_file = Tempfile.new([ "voice", ".ogg" ])
     begin
       temp_file.binmode
       temp_file.write(audio_file)
       temp_file.rewind
 
       # Call Whisper API
-      whisper_language = ENV['WHISPER_LANGUAGE'].presence
+      whisper_language = ENV["WHISPER_LANGUAGE"].presence
       form_data = { audio: HTTP::FormData::File.new(temp_file.path) }
       form_data[:language] = whisper_language if whisper_language
 
@@ -37,8 +37,8 @@ class TranscribeAudioJob < ApplicationJob
       end
 
       data = JSON.parse(response.body)
-      raw_transcription = data['text']
-      detected_language = data['language'].presence
+      raw_transcription = data["text"]
+      detected_language = data["language"].presence
 
       # LLM correction pass (best-effort — falls back to raw on any error)
       transcription = correct_transcription(raw_transcription, detected_language)
@@ -58,7 +58,7 @@ class TranscribeAudioJob < ApplicationJob
 
       # Add transcription text block before audio file
       document.blocks.create!(
-        block_type: 'text',
+        block_type: "text",
         position: 0,
         content: block_content.to_json
       )
@@ -89,7 +89,7 @@ class TranscribeAudioJob < ApplicationJob
     # Update document with error message
     document = Document.find(document_id)
     document.blocks.create!(
-      block_type: 'text',
+      block_type: "text",
       position: 0,
       content: { text: "Transcription failed: #{e.message}" }.to_json
     )
@@ -100,14 +100,14 @@ class TranscribeAudioJob < ApplicationJob
   private
 
   def correct_transcription(raw_text, detected_language = nil)
-    model = ENV.fetch('OLLAMA_CORRECTION_MODEL', 'gemma3:4b')
+    model = ENV.fetch("OLLAMA_CORRECTION_MODEL", "gemma3:4b")
 
     # Determine language context for the prompt.
     # Default/priority is Russian; fall back to Russian when language is unknown.
     lang_label = case detected_language
-                 when 'en' then 'English'
-                 else 'Russian'
-                 end
+    when "en" then "English"
+    else "Russian"
+    end
 
     prompt = <<~PROMPT
       TASK: Fix obvious speech recognition errors in the #{lang_label} text below.
@@ -128,7 +128,7 @@ class TranscribeAudioJob < ApplicationJob
       #{raw_text}
     PROMPT
 
-    timeout_seconds = ENV.fetch('OLLAMA_CORRECTION_TIMEOUT', '3600').to_i
+    timeout_seconds = ENV.fetch("OLLAMA_CORRECTION_TIMEOUT", "3600").to_i
     response = HTTP.timeout(timeout_seconds).post(
       "#{ENV.fetch('OLLAMA_BASE_URL', 'http://ollama:11434')}/api/generate",
       json: { model: model, prompt: prompt, stream: false }
@@ -140,7 +140,7 @@ class TranscribeAudioJob < ApplicationJob
     end
 
     data = JSON.parse(response.body)
-    corrected = data['response']&.strip.presence
+    corrected = data["response"]&.strip.presence
 
     # Safety check: if response is suspiciously long vs input, it's likely chatty — discard
     if corrected && corrected.length > raw_text.length * 1.5
@@ -155,7 +155,7 @@ class TranscribeAudioJob < ApplicationJob
   end
 
   def correction_examples(detected_language)
-    if detected_language == 'en'
+    if detected_language == "en"
       <<~EXAMPLES
         Input:  "i went to the stor to buy bred and milke"
         Output: "i went to the stor to buy bred and milke"
@@ -198,7 +198,7 @@ class TranscribeAudioJob < ApplicationJob
     IntentClassifierService.classify(text)
   rescue StandardError => e
     Rails.logger.warn("Intent classification failed (using note): #{e.message}")
-    IntentClassifierService::Result.new(intent: 'note', confidence: 0.0, title: text.truncate(80), due_at: nil, body: text)
+    IntentClassifierService::Result.new(intent: "note", confidence: 0.0, title: text.truncate(80), due_at: nil, body: text)
   end
 
   def apply_intent_tags(document, intent_result)
@@ -211,18 +211,18 @@ class TranscribeAudioJob < ApplicationJob
   end
 
   def notify_telegram_user(document, transcription, intent_result = nil)
-    bot = Telegram::Bot::Client.new(ENV['TELEGRAM_BOT_TOKEN'])
+    bot = Telegram::Bot::Client.new(ENV["TELEGRAM_BOT_TOKEN"])
     preview = transcription.truncate(100)
 
     message = case intent_result&.intent
-              when 'todo'
+    when "todo"
                 "✅ Задача добавлена: #{intent_result.title.truncate(80)}\n\n#{preview}"
-              when 'event'
-                time_str = intent_result.due_at ? intent_result.due_at.strftime('%d.%m %H:%M') : '??'
+    when "event"
+                time_str = intent_result.due_at ? intent_result.due_at.strftime("%d.%m %H:%M") : "??"
                 "📅 Событие сохранено: #{intent_result.title.truncate(60)} на #{time_str}\n\n#{preview}"
-              else
+    else
                 "📝 Заметка сохранена\n\n#{preview}"
-              end
+    end
 
     bot.api.send_message(
       chat_id: document.telegram_chat_id,

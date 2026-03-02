@@ -1,6 +1,6 @@
 class Api::BlocksController < Api::BaseController
   before_action :set_document
-  before_action :set_block, only: [:update, :destroy]
+  before_action :set_block, only: [ :update, :destroy ]
 
   # POST /api/documents/:document_id/blocks
   def create
@@ -33,7 +33,7 @@ class Api::BlocksController < Api::BaseController
     @block.destroy!
 
     # Reorder remaining blocks
-    @document.blocks.where('position > ?', position).order(:position).each_with_index do |block, index|
+    @document.blocks.where("position > ?", position).order(:position).each_with_index do |block, index|
       block.update_column(:position, position + index)
     end
 
@@ -47,7 +47,7 @@ class Api::BlocksController < Api::BaseController
     # Validate all blocks belong to this document
     blocks = @document.blocks.where(id: block_ids)
     if blocks.size != block_ids.size
-      return render json: { error: 'Invalid block IDs' }, status: :unprocessable_entity
+      return render json: { error: "Invalid block IDs" }, status: :unprocessable_entity
     end
 
     # Update positions

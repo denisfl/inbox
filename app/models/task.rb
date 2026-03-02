@@ -105,11 +105,11 @@ class Task < ApplicationRecord
 
   def spawn_next_recurrence!
     next_date = case recurrence_rule
-                when "daily"   then due_date + 1.day
-                when "weekly"  then due_date + 1.week
-                when "monthly" then due_date + 1.month
-                when "yearly"  then due_date + 1.year
-                end
+    when "daily"   then due_date + 1.day
+    when "weekly"  then due_date + 1.week
+    when "monthly" then due_date + 1.month
+    when "yearly"  then due_date + 1.year
+    end
 
     return unless next_date
 

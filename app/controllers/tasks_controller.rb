@@ -3,20 +3,20 @@
 class TasksController < ApplicationController
   include ActionView::RecordIdentifier
 
-  before_action :set_task, only: [:edit, :update, :destroy, :toggle]
+  before_action :set_task, only: [ :edit, :update, :destroy, :toggle ]
 
   # GET /tasks
   def index
     @filter = %w[today upcoming inbox all completed overdue].include?(params[:filter]) ? params[:filter] : "today"
 
     @tasks = case @filter
-             when "today"     then Task.today.ordered
-             when "upcoming"  then Task.upcoming.ordered
-             when "inbox"     then Task.inbox.ordered
-             when "all"       then Task.active.ordered
-             when "completed" then Task.completed.order(completed_at: :desc)
-             when "overdue"   then Task.overdue.ordered
-             end
+    when "today"     then Task.today.ordered
+    when "upcoming"  then Task.upcoming.ordered
+    when "inbox"     then Task.inbox.ordered
+    when "all"       then Task.active.ordered
+    when "completed" then Task.completed.order(completed_at: :desc)
+    when "overdue"   then Task.overdue.ordered
+    end
 
     # Multi-tag AND filter
     tag_names = normalize_tag_params
@@ -106,7 +106,7 @@ class TasksController < ApplicationController
     if params[:tags].present?
       Array(params[:tags]).map { |t| t.to_s.strip.downcase }.reject(&:blank?)
     elsif params[:tag].present?
-      [params[:tag].to_s.strip.downcase]
+      [ params[:tag].to_s.strip.downcase ]
     else
       []
     end

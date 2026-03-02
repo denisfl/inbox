@@ -7,12 +7,12 @@ module Api
 
     # POST /api/documents/:document_id/blocks/:block_id/upload_image
     def upload_image
-      if @block.block_type != 'image'
-        return render json: { error: 'Block must be of type image' }, status: :unprocessable_entity
+      if @block.block_type != "image"
+        return render json: { error: "Block must be of type image" }, status: :unprocessable_entity
       end
 
       if params[:image].blank?
-        return render json: { error: 'No image file provided' }, status: :unprocessable_entity
+        return render json: { error: "No image file provided" }, status: :unprocessable_entity
       end
 
       @block.image.attach(params[:image])
@@ -34,12 +34,12 @@ module Api
 
     # POST /api/documents/:document_id/blocks/:block_id/upload_file
     def upload_file
-      if @block.block_type != 'file'
-        return render json: { error: 'Block must be of type file' }, status: :unprocessable_entity
+      if @block.block_type != "file"
+        return render json: { error: "Block must be of type file" }, status: :unprocessable_entity
       end
 
       if params[:file].blank?
-        return render json: { error: 'No file provided' }, status: :unprocessable_entity
+        return render json: { error: "No file provided" }, status: :unprocessable_entity
       end
 
       @block.file.attach(params[:file])
@@ -64,13 +64,13 @@ module Api
     def set_document
       @document = Document.find(params[:document_id])
     rescue ActiveRecord::RecordNotFound
-      render json: { error: 'Document not found' }, status: :not_found
+      render json: { error: "Document not found" }, status: :not_found
     end
 
     def set_block
       @block = @document.blocks.find(params[:id])
     rescue ActiveRecord::RecordNotFound
-      render json: { error: 'Block not found' }, status: :not_found
+      render json: { error: "Block not found" }, status: :not_found
     end
   end
 end
