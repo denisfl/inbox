@@ -167,7 +167,7 @@ class Api::DocumentsController < Api::BaseController
   end
 
   def document_params
-    params.require(:document).permit(:title, :slug, :source, tag_ids: [])
+    params.require(:document).permit(:title, :slug, tag_ids: [])
   end
 
   def document_summary(doc)
@@ -175,7 +175,6 @@ class Api::DocumentsController < Api::BaseController
       id: doc.id,
       title: doc.title,
       slug: doc.slug,
-      source: doc.source,
       blocks_count: doc.blocks.size,
       tags: doc.tags.map(&:name),
       created_at: doc.created_at,
@@ -188,7 +187,6 @@ class Api::DocumentsController < Api::BaseController
       id: doc.id,
       title: doc.title,
       slug: doc.slug,
-      source: doc.source,
       blocks: doc.blocks.ordered.map { |block| serialize_block(block) },
       tags: doc.tags.map { |tag| { id: tag.id, name: tag.name } },
       created_at: doc.created_at,
@@ -221,7 +219,6 @@ class Api::DocumentsController < Api::BaseController
       id: doc.id,
       title: doc.title,
       slug: doc.slug,
-      source: doc.source,
       title_snippet: doc.respond_to?(:title_snippet) ? doc.title_snippet : doc.title,
       content_snippet: doc.respond_to?(:content_snippet) ? doc.content_snippet : '',
       rank: doc.respond_to?(:rank) ? doc.rank : 0,

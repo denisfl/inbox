@@ -28,6 +28,10 @@ class CalendarEvent < ApplicationRecord
   validates :status,          inclusion: { in: STATUSES }
   validates :source,          inclusion: { in: SOURCES }
 
+  # ── Associations ───────────────────────────────────────────────────────────
+  has_many :calendar_event_tags, dependent: :destroy
+  has_many :tags, through: :calendar_event_tags
+
   # ── Callbacks ──────────────────────────────────────────────────────────────
   before_validation :assign_local_uid, unless: -> { source == "google" }
   before_validation :normalize_event_times

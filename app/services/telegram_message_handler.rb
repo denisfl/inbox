@@ -76,10 +76,13 @@ class TelegramMessageHandler
 
     doc = Document.create!(
       title: title_with_timestamp.truncate(50),
-      source: 'telegram',
       telegram_chat_id: message.chat.id,
       telegram_message_id: message.message_id
     )
+
+    # Auto-tag as telegram
+    telegram_tag = Tag.find_or_create_by!(name: 'telegram')
+    doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
 
     # Create image block
     image_block = doc.blocks.create!(
@@ -125,10 +128,13 @@ class TelegramMessageHandler
 
     doc = Document.create!(
       title: title,
-      source: 'telegram',
       telegram_chat_id: message.chat.id,
       telegram_message_id: message.message_id
     )
+
+    # Auto-tag as telegram
+    telegram_tag = Tag.find_or_create_by!(name: 'telegram')
+    doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
 
     # Create file block with voice attachment
     file_block = doc.blocks.create!(
@@ -168,10 +174,13 @@ class TelegramMessageHandler
 
     doc = Document.create!(
       title: title.truncate(50),
-      source: 'telegram',
       telegram_chat_id: message.chat.id,
       telegram_message_id: message.message_id
     )
+
+    # Auto-tag as telegram
+    telegram_tag = Tag.find_or_create_by!(name: 'telegram')
+    doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
 
     # Create file block with audio attachment
     file_block = doc.blocks.create!(
@@ -207,10 +216,13 @@ class TelegramMessageHandler
 
     doc = Document.create!(
       title: caption.truncate(50),
-      source: 'telegram',
       telegram_chat_id: message.chat.id,
       telegram_message_id: message.message_id
     )
+
+    # Auto-tag as telegram
+    telegram_tag = Tag.find_or_create_by!(name: 'telegram')
+    doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
 
     # Create file block
     file_block = doc.blocks.create!(

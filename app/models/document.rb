@@ -21,7 +21,6 @@ class Document < ApplicationRecord
 
   # Scopes
   scope :recent, -> { order(created_at: :desc) }
-  scope :by_source, ->(source) { where(source: source) }
   scope :todos, -> { where(document_type: 'todo') }
   scope :notes, -> { where(document_type: 'note') }
   scope :pinned, -> { where(pinned: true) }

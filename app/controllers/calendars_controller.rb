@@ -33,7 +33,7 @@ class CalendarsController < ApplicationController
 
     # Calendar events in range (confirmed only)
     cal_events = %w[notes tasks].include?(@filter) ? CalendarEvent.none :
-      CalendarEvent.in_range(@range_start.beginning_of_day, @range_end.end_of_day)
+      CalendarEvent.includes(:tags).in_range(@range_start.beginning_of_day, @range_end.end_of_day)
 
     # Inbox documents created in range (for unified timeline)
     inbox_docs = %w[events tasks].include?(@filter) ? Document.none :

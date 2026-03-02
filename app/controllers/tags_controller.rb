@@ -22,6 +22,7 @@ class TagsController < ApplicationController
     @tag = Tag.find_by!(name: params[:name].downcase)
     @documents = @tag.documents.includes(:blocks, :tags).order(updated_at: :desc)
     @tasks = @tag.tasks.includes(:tags).order(completed: :asc, priority: :desc, position: :asc)
+    @calendar_events = @tag.calendar_events.includes(:tags).order(starts_at: :desc)
   end
 
   private

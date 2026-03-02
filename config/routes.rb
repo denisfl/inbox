@@ -44,6 +44,11 @@ Rails.application.routes.draw do
       resources :tags, only: [:create, :destroy], param: :name, controller: 'task_tags'
     end
 
+    # Calendar event tag management
+    resources :calendar_events, only: [] do
+      resources :tags, only: [:create, :destroy], param: :name, controller: 'calendar_event_tags'
+    end
+
     # Tag autocomplete
     resources :tags, only: [:index]
 

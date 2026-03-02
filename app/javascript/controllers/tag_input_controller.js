@@ -9,7 +9,7 @@ import { Controller } from "@hotwired/stimulus"
  *        data-tag-input-entity-id-value="123">
  *
  * Values:
- *   entityType — "document" or "task"
+ *   entityType — "document", "task", or "calendar_event"
  *   entityId   — the record id
  *
  * Targets:
@@ -137,8 +137,9 @@ export default class extends Controller {
   _tagsUrl() {
     const type = this.entityTypeValue
     const id   = this.entityIdValue
-    if (type === "document") return `/api/documents/${id}/tags`
-    if (type === "task")     return `/api/tasks/${id}/tags`
+    if (type === "document")       return `/api/documents/${id}/tags`
+    if (type === "task")           return `/api/tasks/${id}/tags`
+    if (type === "calendar_event") return `/api/calendar_events/${id}/tags`
     throw new Error(`Unknown entity type: ${type}`)
   }
 

@@ -29,7 +29,34 @@
     </section>
   <% end %>
 
-  <% if @documents.empty? && @tasks.empty? %>
+  <% if @calendar_events.any? %>
+    <section class="tag-section">
+      <h2 class="tag-section-title">Events (<%= @calendar_events.count %>)</h2>
+      <div class="tag-events-list">
+        <% @calendar_events.each do |ev| %>
+          <div class="tag-event-item">
+            <div class="tag-event-color" style="background: <%= ev.display_color %>;"></div>
+            <div class="tag-event-info">
+              <div class="tag-event-title"><%= ev.title %></div>
+              <div class="tag-event-time">
+                <%= ev.starts_at.strftime("%-d %b %Y") %>
+                <% unless ev.all_day? %>
+                  · <%= ev.starts_at.strftime("%-H:%M") %>
+                <% end %>
+              </div>
+            </div>
+            <% if ev.local? %>
+              <%= link_to edit_calendar_event_path(ev), class: "tag-event-edit" do %>
+                <%= heroicon(:pencil, style: 'width: 12px; height: 12px;') %>
+              <% end %>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @documents.empty? && @tasks.empty? && @calendar_events.empty? %>
     <div class="empty-state">
       <%= heroicon(:tag, class: 'empty-state-icon') %>
       <h2 class="empty-state-title">No items with this tag</h2>
