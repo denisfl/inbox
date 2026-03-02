@@ -284,7 +284,7 @@ RSpec.describe "Api::Blocks", type: :request do
           content_type: "text/plain"
         )
 
-        new_order = [block1.id, block2.id, block3.id]
+        new_order = [ block1.id, block2.id, block3.id ]
 
         post "/api/documents/#{document.id}/blocks/reorder",
              params: { block_ids: new_order }.to_json,

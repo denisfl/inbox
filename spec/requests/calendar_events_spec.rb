@@ -148,7 +148,7 @@ RSpec.describe "CalendarEvents", type: :request do
       ICS
 
       # Create a real temp file for upload
-      temp_file = Tempfile.new(["test", ".ics"])
+      temp_file = Tempfile.new([ "test", ".ics" ])
       temp_file.write(ics_content)
       temp_file.rewind
 
@@ -182,7 +182,7 @@ RSpec.describe "CalendarEvents", type: :request do
     end
 
     it "handles invalid ICS content gracefully" do
-      temp_file = Tempfile.new(["bad", ".ics"])
+      temp_file = Tempfile.new([ "bad", ".ics" ])
       temp_file.write("not valid ical content")
       temp_file.rewind
 
@@ -210,7 +210,7 @@ RSpec.describe "CalendarEvents", type: :request do
         END:VCALENDAR
       ICS
 
-      temp_file = Tempfile.new(["allday", ".ics"])
+      temp_file = Tempfile.new([ "allday", ".ics" ])
       temp_file.write(ics_content)
       temp_file.rewind
 
@@ -245,7 +245,7 @@ RSpec.describe "CalendarEvents", type: :request do
         END:VCALENDAR
       ICS
 
-      temp_file = Tempfile.new(["dup", ".ics"])
+      temp_file = Tempfile.new([ "dup", ".ics" ])
       temp_file.write(ics_content)
       temp_file.rewind
 
@@ -277,7 +277,7 @@ RSpec.describe "CalendarEvents", type: :request do
         END:VCALENDAR
       ICS
 
-      temp_file = Tempfile.new(["strtime", ".ics"])
+      temp_file = Tempfile.new([ "strtime", ".ics" ])
       temp_file.write(ics_content)
       temp_file.rewind
 

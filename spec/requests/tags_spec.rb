@@ -30,7 +30,7 @@ RSpec.describe "Tags", type: :request do
       doc = create(:document, title: "Test doc")
       create(:document_tag, document: doc, tag: tag1)
 
-      get tags_path(tags: ["alpha"])
+      get tags_path(tags: [ "alpha" ])
 
       expect(response).to have_http_status(:ok)
     end

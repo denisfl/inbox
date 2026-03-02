@@ -180,7 +180,7 @@ RSpec.describe "Api::Documents", type: :request do
       block.save!
 
       # Stub FTS5 since the virtual table doesn't exist in test
-      allow(Document).to receive(:search).and_return([doc])
+      allow(Document).to receive(:search).and_return([ doc ])
       allow(Document).to receive(:search_count).and_return(1)
 
       get "/api/documents/search?q=searchable", headers: headers
@@ -201,7 +201,7 @@ RSpec.describe "Api::Documents", type: :request do
       fts_doc.define_singleton_method(:content_snippet) { "matched <mark>body</mark>" }
       fts_doc.define_singleton_method(:rank) { -2.5 }
 
-      allow(Document).to receive(:search).and_return([fts_doc])
+      allow(Document).to receive(:search).and_return([ fts_doc ])
       allow(Document).to receive(:search_count).and_return(1)
 
       get "/api/documents/search?q=FTS", headers: headers

@@ -95,11 +95,11 @@ RSpec.describe Document, type: :model do
       end
 
       it 'returns documents matching a single tag' do
-        expect(Document.tagged_with(["alpha"])).to contain_exactly(doc_ab, doc_a)
+        expect(Document.tagged_with([ "alpha" ])).to contain_exactly(doc_ab, doc_a)
       end
 
       it 'returns documents matching all tags (AND)' do
-        expect(Document.tagged_with(["alpha", "beta"])).to contain_exactly(doc_ab)
+        expect(Document.tagged_with([ "alpha", "beta" ])).to contain_exactly(doc_ab)
       end
 
       it 'returns all documents when tags are blank' do
@@ -140,7 +140,7 @@ RSpec.describe Document, type: :model do
       }
       fts_result = ActiveRecord::Result.new(
         fts_row.keys,
-        [fts_row.values]
+        [ fts_row.values ]
       )
       allow(Document.connection).to receive(:select_all).and_return(fts_result)
 

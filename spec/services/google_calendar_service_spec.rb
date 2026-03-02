@@ -84,7 +84,7 @@ RSpec.describe GoogleCalendarService do
       )
 
       result = double("result",
-        items: [event_item],
+        items: [ event_item ],
         next_sync_token: "sync_token_abc",
         next_page_token: nil
       )
@@ -110,7 +110,7 @@ RSpec.describe GoogleCalendarService do
       )
 
       result = double("result",
-        items: [cancelled_item],
+        items: [ cancelled_item ],
         next_sync_token: "sync_token_def",
         next_page_token: nil
       )
@@ -197,7 +197,7 @@ RSpec.describe GoogleCalendarService do
       )
 
       result = double("result",
-        items: [all_day_item],
+        items: [ all_day_item ],
         next_sync_token: "sync_allday",
         next_page_token: nil
       )
@@ -240,7 +240,7 @@ RSpec.describe GoogleCalendarService do
       )
 
       result = double("result",
-        items: [bad_item],
+        items: [ bad_item ],
         next_sync_token: "sync_bad",
         next_page_token: nil
       )
@@ -276,7 +276,7 @@ RSpec.describe GoogleCalendarService do
       )
 
       result = double("result",
-        items: [updated_item],
+        items: [ updated_item ],
         next_sync_token: "sync_upd",
         next_page_token: nil
       )

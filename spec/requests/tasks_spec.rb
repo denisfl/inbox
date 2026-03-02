@@ -61,7 +61,7 @@ RSpec.describe "Tasks", type: :request do
       tag = create(:tag, name: "urgent")
       create(:task_tag, task: today_task, tag: tag)
 
-      get tasks_path(tags: ["urgent"])
+      get tasks_path(tags: [ "urgent" ])
 
       expect(response).to have_http_status(:ok)
     end

@@ -33,7 +33,7 @@ RSpec.describe "Documents (web)", type: :request do
       tag = create(:tag, name: "important")
       create(:document_tag, document: doc, tag: tag)
 
-      get documents_path(tags: ["important"])
+      get documents_path(tags: [ "important" ])
 
       expect(response).to have_http_status(:ok)
     end
@@ -199,7 +199,7 @@ RSpec.describe "Documents (web)", type: :request do
       )
 
       expect {
-        post bulk_upload_documents_path, params: { files: [file] }
+        post bulk_upload_documents_path, params: { files: [ file ] }
       }.to change(Document, :count).by(1)
 
       expect(response).to redirect_to(documents_path)
@@ -214,7 +214,7 @@ RSpec.describe "Documents (web)", type: :request do
       )
 
       expect {
-        post bulk_upload_documents_path, params: { files: [file] }
+        post bulk_upload_documents_path, params: { files: [ file ] }
       }.to change(Document, :count).by(1)
 
       doc = Document.last
@@ -238,7 +238,7 @@ RSpec.describe "Documents (web)", type: :request do
       )
 
       expect {
-        post bulk_upload_documents_path, params: { files: [file1, file2] }
+        post bulk_upload_documents_path, params: { files: [ file1, file2 ] }
       }.to change(Document, :count).by(2)
     end
 
@@ -248,7 +248,7 @@ RSpec.describe "Documents (web)", type: :request do
         "audio/mpeg"
       )
 
-      post bulk_upload_documents_path, params: { files: [audio_file] }
+      post bulk_upload_documents_path, params: { files: [ audio_file ] }
 
       doc = Document.last
       expect(doc.tags.map(&:name)).to include("audio")
