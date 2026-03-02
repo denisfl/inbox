@@ -72,7 +72,10 @@ class DashboardController < ApplicationController
 
     case params[:capture_type]
     when "note"
-      doc = Document.create!(title: content.truncate(80), source: "web")
+      doc = Document.create!(title: content.truncate(80))
+      # Auto-tag as web-created
+      web_tag = Tag.find_or_create_by!(name: 'web')
+      doc.tags << web_tag unless doc.tags.include?(web_tag)
       block = doc.blocks.new(block_type: "text", position: 0)
       block.content_hash = { text: content }
       block.save!
@@ -105,14 +108,18 @@ class DashboardController < ApplicationController
 
     # Recent documents (last 14 days)
     Document.where("created_at > ?", 14.days.ago)
+            .includes(:tags)
             .order(created_at: :desc).limit(10).each do |doc|
       title_esc = ERB::Util.html_escape(doc.title.truncate(40))
-      text = case doc.source
-             when "telegram" then "Telegram → <strong>#{title_esc}</strong>"
-             when "voice"    then "Voice note → <strong>#{title_esc}</strong>"
-             else "Note created: <strong>#{title_esc}</strong>"
+      tag_names = doc.tags.map(&:name)
+      text = if tag_names.include?("telegram")
+               "Telegram → <strong>#{title_esc}</strong>"
+             elsif tag_names.include?("audio")
+               "Voice note → <strong>#{title_esc}</strong>"
+             else
+               "Note created: <strong>#{title_esc}</strong>"
              end
-      activities << { icon_type: icon_for_source(doc.source), text: text, time: doc.created_at }
+      activities << { icon_type: icon_for_tags(tag_names), text: text, time: doc.created_at }
     end
 
     # Recently created tasks (last 14 days)
@@ -176,11 +183,13 @@ class DashboardController < ApplicationController
     activities.sort_by { |a| -(a[:time] || Time.at(0)).to_i }.first(15)
   end
 
-  def icon_for_source(source)
-    case source
-    when "telegram" then :telegram
-    when "voice"    then :voice
-    else :note
+  def icon_for_tags(tag_names)
+    if tag_names.include?("telegram")
+      :telegram
+    elsif tag_names.include?("audio")
+      :voice
+    else
+      :note
     end
   end
 

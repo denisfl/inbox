@@ -80,9 +80,12 @@ class DocumentsController < ApplicationController
   def new
     # Create a new document with initial empty text block
     @document = Document.create!(
-      title: "Untitled",
-      source: "web"
+      title: "Untitled"
     )
+
+    # Auto-tag as web-created
+    web_tag = Tag.find_or_create_by!(name: 'web')
+    @document.tags << web_tag unless @document.tags.include?(web_tag)
 
     # Create initial text block
     block = @document.blocks.new(
@@ -118,7 +121,11 @@ class DocumentsController < ApplicationController
                   .gsub(/[_-]/, ' ')
                   .truncate(50)
 
-      doc = Document.create!(title: title, source: 'web')
+      doc = Document.create!(title: title)
+
+      # Auto-tag as web-created
+      web_tag = Tag.find_or_create_by!(name: 'web')
+      doc.tags << web_tag unless doc.tags.include?(web_tag)
 
       # Create text block so the editor can work with this document
       text_block = doc.blocks.new(block_type: 'text', position: 0)

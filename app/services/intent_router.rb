@@ -35,7 +35,6 @@ class IntentRouter
     document = Document.create!(
       title: result.title,
       document_type: "note",
-      source: "telegram",
       telegram_chat_id: telegram_chat_id
     )
     document.blocks.create!(
@@ -43,6 +42,9 @@ class IntentRouter
       position: 0,
       content: { text: result.body, due_at: result.due_at&.iso8601 }.compact.to_json
     )
+    # Auto-tag as telegram + event
+    telegram_tag = Tag.find_or_create_by!(name: "telegram")
+    document.tags << telegram_tag unless document.tags.include?(telegram_tag)
     tag = Tag.find_or_create_by!(name: "event")
     document.tags << tag unless document.tags.include?(tag)
 
@@ -59,7 +61,6 @@ class IntentRouter
     document = Document.create!(
       title: result.title,
       document_type: "note",
-      source: "telegram",
       telegram_chat_id: telegram_chat_id
     )
     document.blocks.create!(
@@ -67,6 +68,9 @@ class IntentRouter
       position: 0,
       content: { text: result.body }.to_json
     )
+    # Auto-tag as telegram
+    telegram_tag = Tag.find_or_create_by!(name: "telegram")
+    document.tags << telegram_tag unless document.tags.include?(telegram_tag)
     reply(telegram_chat_id, "📝 Note saved")
     Rails.logger.info("IntentRouter: created note document #{document.id}")
     document

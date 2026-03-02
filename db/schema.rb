@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_02_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_02_100000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -48,6 +48,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_02_000000) do
     t.datetime "updated_at", null: false
     t.index ["document_id", "position"], name: "index_blocks_on_document_id_and_position"
     t.index ["document_id"], name: "index_blocks_on_document_id"
+  end
+
+  create_table "calendar_event_tags", force: :cascade do |t|
+    t.integer "calendar_event_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "tag_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["calendar_event_id", "tag_id"], name: "index_calendar_event_tags_on_calendar_event_id_and_tag_id", unique: true
+    t.index ["calendar_event_id"], name: "index_calendar_event_tags_on_calendar_event_id"
+    t.index ["tag_id"], name: "index_calendar_event_tags_on_tag_id"
   end
 
   create_table "calendar_events", force: :cascade do |t|
@@ -140,6 +150,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_02_000000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "blocks", "documents"
+  add_foreign_key "calendar_event_tags", "calendar_events"
+  add_foreign_key "calendar_event_tags", "tags"
   add_foreign_key "document_tags", "documents"
   add_foreign_key "document_tags", "tags"
   add_foreign_key "task_tags", "tags"

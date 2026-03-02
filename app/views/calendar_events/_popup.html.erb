@@ -69,6 +69,21 @@
     </div>
   <% end %>
 
+  <%# Tags %>
+  <% if ev.tags.any? %>
+    <div class="event-popup-row">
+      <%= heroicon(:tag, class: 'event-popup-icon-svg', style: 'width: 14px; height: 14px;') %>
+      <div class="event-popup-tags">
+        <% ev.tags.each do |t| %>
+          <%= link_to tag_path(t.name), class: "tag-pill" do %>
+            <span class="tag-pill-dot" style="background:<%= tag_dot_color(t) %>"></span>
+            #<%= t.name %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
   <%# Synced timestamp %>
   <% if ev.synced_at.present? %>
     <div class="event-popup-row event-popup-row--muted">
