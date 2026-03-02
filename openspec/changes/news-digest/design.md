@@ -7,6 +7,7 @@ The tech stack already has everything needed: SolidQueue with recurring jobs (`c
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Fetch news from user-configured RSS/Atom feed URLs on a nightly schedule
 - Deduplicate articles by URL so re-fetched feeds don't create duplicates
 - Store each article as a Document (`source: 'news'`) tagged with the feed name
@@ -15,6 +16,7 @@ The tech stack already has everything needed: SolidQueue with recurring jobs (`c
 - News sources configured in a YAML file (no DB admin UI needed for v1)
 
 **Non-Goals:**
+
 - Full-text web scraping beyond RSS description fields
 - Per-feed read/unread tracking
 - User-facing news feed UI (Telegram digest is the primary delivery; documents are browsable as a fallback)

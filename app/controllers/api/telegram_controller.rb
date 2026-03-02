@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'telegram/bot'
+require "telegram/bot"
 
 module Api
   class TelegramController < ApplicationController
@@ -28,10 +28,10 @@ module Api
     private
 
     def validate_telegram_secret
-      configured = ENV['TELEGRAM_WEBHOOK_SECRET_TOKEN'].to_s
+      configured = ENV["TELEGRAM_WEBHOOK_SECRET_TOKEN"].to_s
       return true if configured.empty?
 
-      header = request.headers['X-Telegram-Bot-Api-Secret-Token'] || request.headers['HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN']
+      header = request.headers["X-Telegram-Bot-Api-Secret-Token"] || request.headers["HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN"]
 
       unless ActiveSupport::SecurityUtils.secure_compare(header.to_s, configured)
         Rails.logger.warn("Invalid Telegram webhook secret token: #{header}")
@@ -46,7 +46,7 @@ module Api
       # Extract user_id from the update
       user_id = extract_user_id
 
-      unless user_id.to_s == ENV['TELEGRAM_ALLOWED_USER_ID']
+      unless user_id.to_s == ENV["TELEGRAM_ALLOWED_USER_ID"]
         Rails.logger.warn("Unauthorized Telegram user: #{user_id}")
         send_telegram_reply("You are not authorized to use this bot.")
         head :ok
@@ -74,7 +74,7 @@ module Api
 
       return unless chat_id
 
-      bot = Telegram::Bot::Client.new(ENV['TELEGRAM_BOT_TOKEN'])
+      bot = Telegram::Bot::Client.new(ENV["TELEGRAM_BOT_TOKEN"])
       bot.api.send_message(chat_id: chat_id, text: text)
     rescue StandardError => e
       Rails.logger.error("Failed to send Telegram reply: #{e.message}")

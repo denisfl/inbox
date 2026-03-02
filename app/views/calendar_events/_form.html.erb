@@ -1,0 +1,89 @@
+<%= form_with model: event, url: url, method: method, class: "event-form" do |f| %>
+  <% if event.errors.any? %>
+    <div class="event-form-errors">
+      <p><strong><%= pluralize(event.errors.count, "error") %></strong> prevented this event from being saved:</p>
+      <ul>
+        <% event.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%# Title %>
+  <div class="event-field">
+    <%= f.label :title, class: "event-field-label" %>
+    <%= f.text_field :title, class: "input", placeholder: "Event title", autofocus: true, required: true %>
+  </div>
+
+  <%# All day toggle %>
+  <div class="event-field event-field--inline">
+    <%= f.check_box :all_day, class: "event-checkbox", id: "event_all_day",
+          data: { action: "change->calendar-event-form#toggleAllDay" } %>
+    <%= f.label :all_day, "All-day event", class: "event-field-label event-field-label--inline" %>
+  </div>
+
+  <%# Date / time fields %>
+  <div class="event-field-group">
+    <div class="event-field">
+      <%= f.label :starts_at, "Start", class: "event-field-label" %>
+      <%= f.datetime_local_field :starts_at, class: "input", required: true,
+            value: event.starts_at&.strftime("%Y-%m-%dT%H:%M") %>
+    </div>
+    <div class="event-field" data-target="endTimeField">
+      <%= f.label :ends_at, "End", class: "event-field-label" %>
+      <%= f.datetime_local_field :ends_at, class: "input",
+            value: event.ends_at&.strftime("%Y-%m-%dT%H:%M") %>
+    </div>
+  </div>
+
+  <%# Description %>
+  <div class="event-field">
+    <%= f.label :description, class: "event-field-label" %>
+    <%= f.text_area :description, class: "input", rows: 3, placeholder: "Optional description..." %>
+  </div>
+
+  <%# Color %>
+  <div class="event-field">
+    <%= f.label :color, "Color", class: "event-field-label" %>
+    <div class="event-color-picker">
+      <% CalendarEvent::GOOGLE_COLOR_MAP.each do |id, hex| %>
+        <label class="event-color-swatch" style="background: <%= hex %>;" title="Color <%= id %>">
+          <%= f.radio_button :color, id, class: "event-color-radio" %>
+          <span class="event-color-check">✓</span>
+        </label>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Tags (only for saved events) %>
+  <% if event.persisted? %>
+    <div class="event-field" data-controller="tag-input"
+         data-tag-input-entity-type-value="calendar_event"
+         data-tag-input-entity-id-value="<%= event.id %>">
+      <label class="event-field-label">Tags</label>
+      <div class="tag-input-pills" data-tag-input-target="pills">
+        <% event.tags.each do |t| %>
+          <span class="tag-pill" data-tag-name="<%= t.name %>">
+            <span class="tag-pill-dot" style="background:<%= tag_dot_color(t) %>"></span>
+            #<%= t.name %>
+            <button type="button" class="tag-pill-remove" data-action="click->tag-input#removeTag">&times;</button>
+          </span>
+        <% end %>
+      </div>
+      <div class="tag-input-wrapper">
+        <input type="text" class="tag-input-field" placeholder="Add tag..."
+               data-tag-input-target="input"
+               data-action="input->tag-input#onInput keydown->tag-input#onKeydown"
+               autocomplete="off">
+        <div class="tag-dropdown hidden" data-tag-input-target="dropdown"></div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Actions %>
+  <div class="event-form-actions">
+    <%= f.submit submit_label, class: "btn btn-primary" %>
+    <%= link_to "Cancel", calendar_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>

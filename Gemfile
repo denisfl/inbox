@@ -26,7 +26,7 @@ gem "jbuilder"
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
 # Background jobs
-gem "sidekiq", "~> 7.0"
+gem "sidekiq", "~> 8.1"
 gem "redis", "~> 5.0"
 
 # Telegram bot integration
@@ -42,7 +42,7 @@ gem "icalendar", "~> 2.10"
 gem "http", "~> 5.0"
 
 # Pagination
-gem "pagy", "~> 9.0"
+gem "pagy", "~> 43.3"
 
 # Markdown rendering
 gem "redcarpet"
@@ -81,7 +81,7 @@ group :development, :test do
   gem "rubocop-rails-omakase", require: false
 
   # RSpec testing framework
-  gem "rspec-rails", "~> 7.0"
+  gem "rspec-rails", "~> 8.0"
   gem "factory_bot_rails", "~> 6.4"
   gem "faker", "~> 3.2"
 end
@@ -101,5 +101,8 @@ group :test do
   gem "database_cleaner-active_record", "~> 2.2"
 
   # Matchers for RSpec tests
-  gem "shoulda-matchers", "~> 6.0"
+  gem "shoulda-matchers", "~> 7.0"
+
+  # Stub external HTTP requests in tests
+  gem "webmock", "~> 3.23"
 end

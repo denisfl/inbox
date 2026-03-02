@@ -7,12 +7,14 @@ The system is single-user. There is no soft-delete requirement — a hard destro
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Allow the user to delete any document from the documents index or show/edit view
 - Destroy all associated records (blocks, tags via join table, ActiveStorage blobs)
 - Confirm deletion before executing (browser `confirm` dialog or Turbo confirm)
 - No pagination/routing side effects after deletion
 
 **Non-Goals:**
+
 - Soft delete / trash bin / undo
 - Bulk delete from index (can be added later)
 - API endpoint for deletion (only web UI for now)

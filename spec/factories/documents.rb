@@ -4,7 +4,7 @@ FactoryBot.define do
     slug { title.parameterize }
     source { %w[web telegram email].sample }
     # Document doesn't have body field - content is in blocks
-    
+
     # Optional: create with initial text block
     trait :with_initial_block do
       after(:create) do |document|

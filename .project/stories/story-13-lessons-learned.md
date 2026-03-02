@@ -1,6 +1,6 @@
 # Story 13: UI/UX Improvements - Lessons Learned
 
-**Date:** 2026-02-22  
+**Date:** 2026-02-22
 **Status:** Phase 1 In Progress
 
 ---
@@ -8,27 +8,33 @@
 ## Critical Issue: Emoji Usage in UI
 
 ### ❌ Problem:
+
 Using emojis (📥, 🎤, 📷, etc.) in Rails views causes rendering issues:
+
 - Emojis display inconsistently across browsers/OS
 - Mixed with inline CSS causes text to render as plain code on page
 - Not screen-reader friendly
 - Unprofessional appearance
 
 ### ✅ Solution:
+
 **Use Heroicons (or similar SVG icon library) instead**
 
 ### Implementation:
+
 1. Created `app/helpers/heroicons_helper.rb` with common icons
 2. Replace all emoji usage:
+
    ```ruby
    # ❌ Bad:
    <span class="nav-icon">📥</span>
-   
+
    # ✅ Good:
    <%= heroicon(:inbox, class: "nav-icon", style: "width: 1.25rem; height: 1.25rem;") %>
    ```
 
 ### Available Icons:
+
 - `:inbox` — For inbox/documents
 - `:clipboard` — For clipboard/notes
 - `:device_phone_mobile` — For Telegram/mobile
@@ -45,32 +51,35 @@ Using emojis (📥, 🎤, 📷, etc.) in Rails views causes rendering issues:
 ## Design System: Basecamp-Inspired
 
 ### Color Palette:
+
 ```css
 :root {
   /* Primary colors (blue) */
   --color-primary: #2563eb;
   --color-primary-hover: #1d4ed8;
-  
+
   /* Background (neutral) */
   --color-bg-primary: #ffffff;
   --color-bg-secondary: #f9fafb;
   --color-bg-tertiary: #f3f4f6;
-  
+
   /* Text (gray scale) */
   --color-text-primary: #111827;
   --color-text-secondary: #6b7280;
-  
+
   /* Borders (subtle) */
   --color-border: #e5e7eb;
 }
 ```
 
 ### Typography:
+
 - **Font**: System font stack (`-apple-system, BlinkMacSystemFont, ...`)
 - **Sizes**: 12px (xs), 14px (sm), 16px (base), 18px (lg), 20px (xl), 24px (2xl)
 - **Weights**: Normal (400), Medium (500), Semibold (600), Bold (700)
 
 ### Spacing System (4px base):
+
 - `--spacing-xs`: 4px
 - `--spacing-sm`: 8px
 - `--spacing-md`: 16px
@@ -78,6 +87,7 @@ Using emojis (📥, 🎤, 📷, etc.) in Rails views causes rendering issues:
 - `--spacing-xl`: 32px
 
 ### Border Radius:
+
 - `--radius-base`: 6px (buttons, inputs)
 - `--radius-lg`: 12px (cards)
 - `--radius-full`: 9999px (badges, pills)
@@ -87,6 +97,7 @@ Using emojis (📥, 🎤, 📷, etc.) in Rails views causes rendering issues:
 ## Common Patterns
 
 ### Card Component:
+
 ```erb
 <article class="card">
   <div class="card-header">
@@ -96,21 +107,21 @@ Using emojis (📥, 🎤, 📷, etc.) in Rails views causes rendering issues:
     </span>
     <time class="card-time">2 hours ago</time>
   </div>
-  
+
   <h3 class="card-title">
     <%= link_to document.title, document_path(document) %>
   </h3>
-  
+
   <p class="card-preview">
     <%= document.preview_text.truncate(150) %>
   </p>
-  
+
   <div class="card-meta">
     <span class="meta-item">
       <%= heroicon(:clipboard, style: "width: 1rem; height: 1rem;") %>
       3 blocks
     </span>
-    
+
     <div class="card-tags">
       <%= render document.tags.limit(3) %>
     </div>
@@ -119,6 +130,7 @@ Using emojis (📥, 🎤, 📷, etc.) in Rails views causes rendering issues:
 ```
 
 ### Button Variants:
+
 ```erb
 <%# Primary action %>
 <button class="btn btn-primary">
@@ -142,6 +154,7 @@ Using emojis (📥, 🎤, 📷, etc.) in Rails views causes rendering issues:
 ## Don'ts (Anti-Patterns)
 
 ### ❌ Don't use emojis in UI:
+
 ```ruby
 # Bad:
 <span>📥 Inbox</span>
@@ -149,6 +162,7 @@ Using emojis (📥, 🎤, 📷, etc.) in Rails views causes rendering issues:
 ```
 
 ### ❌ Don't use inline styles for layout:
+
 ```erb
 # Bad:
 <div style="display: flex; gap: 16px;">
@@ -162,6 +176,7 @@ Using emojis (📥, 🎤, 📷, etc.) in Rails views causes rendering issues:
 ```
 
 ### ❌ Don't duplicate CSS in views:
+
 ```erb
 # Bad:
 <style>
@@ -172,6 +187,7 @@ Using emojis (📥, 🎤, 📷, etc.) in Rails views causes rendering issues:
 ```
 
 ### ❌ Don't hardcode colors:
+
 ```erb
 # Bad:
 <span style="color: #666;">Updated 2h ago</span>
@@ -208,6 +224,7 @@ app/
 ## Testing Checklist
 
 ### Before committing UI changes:
+
 - [ ] No emojis in views (use Heroicons instead)
 - [ ] No duplicate CSS in `<style>` tags
 - [ ] All colors use CSS variables (no `#hex` in views)
@@ -237,5 +254,5 @@ app/
 
 ---
 
-**Last updated:** 2026-02-22  
+**Last updated:** 2026-02-22
 **Author:** Relief Pilot

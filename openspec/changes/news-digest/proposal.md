@@ -12,10 +12,12 @@ Inbox is the user's single attention center, but currently it only stores what t
 ## Capabilities
 
 ### New Capabilities
+
 - `news-source-fetching`: Recurring job (via SolidQueue recurring tasks) fetches content from configured RSS feeds and web sources. Each item saved as a document with source: `news`, tagged by feed name. Deduplicated by URL.
 - `evening-digest`: At a scheduled time (e.g., 20:00), a digest job assembles all news documents from the current day, generates a summary via Ollama, and sends it to the user's Telegram chat as a structured message.
 
 ### New Components
+
 - `FetchNewsJob` — fetches RSS/Atom feeds, parses items, saves as documents
 - `SendNewsDigestJob` — triggered by recurring schedule; aggregates today's news docs, calls Ollama for summarization, sends Telegram message
 - `config/news_sources.yml` — list of RSS URLs and labels

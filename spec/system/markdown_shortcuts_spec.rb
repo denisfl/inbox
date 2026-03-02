@@ -18,9 +18,9 @@ RSpec.describe 'Markdown Shortcuts', type: :system, js: true do
       block = find('.block-content [contenteditable]', match: :first)
       block.click
       block.send_keys('# Big Heading')
-      
+
       sleep 1 # Wait for conversion
-      
+
       expect(page).to have_selector('.block-wrapper[data-block-type="heading"]')
       heading = find('.block-wrapper[data-block-type="heading"] [contenteditable]')
       expect(heading.text).to eq('Big Heading')
@@ -30,9 +30,9 @@ RSpec.describe 'Markdown Shortcuts', type: :system, js: true do
       block = find('.block-content [contenteditable]', match: :first)
       block.click
       block.send_keys('## Medium Heading')
-      
+
       sleep 1
-      
+
       expect(page).to have_selector('.block-wrapper[data-block-type="heading"]')
       # Level should be stored in block data
     end
@@ -41,9 +41,9 @@ RSpec.describe 'Markdown Shortcuts', type: :system, js: true do
       block = find('.block-content [contenteditable]', match: :first)
       block.click
       block.send_keys('### Small Heading')
-      
+
       sleep 1
-      
+
       expect(page).to have_selector('.block-wrapper[data-block-type="heading"]')
     end
   end
@@ -53,9 +53,9 @@ RSpec.describe 'Markdown Shortcuts', type: :system, js: true do
       block = find('.block-content [contenteditable]', match: :first)
       block.click
       block.send_keys('> This is a quote')
-      
+
       sleep 1
-      
+
       expect(page).to have_selector('.block-wrapper[data-block-type="quote"]')
       quote_text = find('.block-wrapper[data-block-type="quote"] [contenteditable]').text
       expect(quote_text).to eq('This is a quote')
@@ -68,9 +68,9 @@ RSpec.describe 'Markdown Shortcuts', type: :system, js: true do
       block.click
       block.send_keys('```')
       block.send_keys('puts "Hello"')
-      
+
       sleep 1
-      
+
       expect(page).to have_selector('.block-wrapper[data-block-type="code"]')
     end
   end
@@ -80,9 +80,9 @@ RSpec.describe 'Markdown Shortcuts', type: :system, js: true do
       block = find('.block-content [contenteditable]', match: :first)
       block.click
       block.send_keys('[ ] Unchecked task')
-      
+
       sleep 1
-      
+
       expect(page).to have_selector('.block-wrapper[data-block-type="todo"]')
       checkbox = find('input[type="checkbox"]')
       expect(checkbox).not_to be_checked
@@ -92,9 +92,9 @@ RSpec.describe 'Markdown Shortcuts', type: :system, js: true do
       block = find('.block-content [contenteditable]', match: :first)
       block.click
       block.send_keys('[x] Checked task')
-      
+
       sleep 1
-      
+
       expect(page).to have_selector('.block-wrapper[data-block-type="todo"]')
       checkbox = find('input[type="checkbox"]')
       expect(checkbox).to be_checked
@@ -104,9 +104,9 @@ RSpec.describe 'Markdown Shortcuts', type: :system, js: true do
       block = find('.block-content [contenteditable]', match: :first)
       block.click
       block.send_keys('[X] Also checked')
-      
+
       sleep 1
-      
+
       checkbox = find('input[type="checkbox"]')
       expect(checkbox).to be_checked
     end
@@ -136,15 +136,15 @@ RSpec.describe 'Markdown Shortcuts', type: :system, js: true do
       block = find('.block-content [contenteditable]', match: :first)
       block.click
       block.send_keys('# ')
-      
+
       # There should be some visual indicator (implementation dependent)
       # This is a placeholder - actual implementation might differ
       sleep 0.5
-      
+
       # After conversion, original text with # should be gone
       block.send_keys('Test')
       sleep 1
-      
+
       expect(page).to have_selector('.block-wrapper[data-block-type="heading"]')
     end
   end

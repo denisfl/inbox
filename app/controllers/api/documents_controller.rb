@@ -1,5 +1,5 @@
 class Api::DocumentsController < Api::BaseController
-  before_action :set_document, only: [:show, :update, :destroy, :upload, :preview]
+  before_action :set_document, only: [ :show, :update, :destroy, :upload, :preview ]
 
   # GET /api/documents
   def index
@@ -21,7 +21,7 @@ class Api::DocumentsController < Api::BaseController
     per_page = params[:per_page]&.to_i || 20
 
     if query.blank?
-      return render json: { error: 'Query parameter is required' }, status: :bad_request
+      return render json: { error: "Query parameter is required" }, status: :bad_request
     end
 
     start_time = Time.now
@@ -127,25 +127,36 @@ class Api::DocumentsController < Api::BaseController
   end
 
   # POST /api/documents/:id/upload
-  # Attaches a file or image to the document via Active Storage.
-  # Returns { url, filename, is_image } on success.
-  def upload    file = params[:file]
+  # Attaches a file or image to the document via a new Block + Active Storage.
+  # Returns { url, filename, is_image, block_id, byte_size } on success.
+  def upload
+    file = params[:file]
     return render json: { error: "No file provided" }, status: :bad_request if file.blank?
 
     is_image = file.content_type.to_s.start_with?("image/")
 
     if is_image
-      @document.images.attach(file)
-      attachment = @document.images.last
+      block = @document.blocks.create!(
+        block_type: "image",
+        content: {}.to_json
+      )
+      block.image.attach(file)
+      attachment = block.image
     else
-      @document.files.attach(file)
-      attachment = @document.files.last
+      block = @document.blocks.create!(
+        block_type: "file",
+        content: { filename: file.original_filename }.to_json
+      )
+      block.file.attach(file)
+      attachment = block.file
     end
 
     render json: {
       url: url_for(attachment),
       filename: attachment.filename.to_s,
-      is_image: is_image
+      is_image: is_image,
+      block_id: block.id,
+      byte_size: attachment.byte_size
     }
   end
 
@@ -156,7 +167,7 @@ class Api::DocumentsController < Api::BaseController
   end
 
   def document_params
-    params.require(:document).permit(:title, :slug, :source, tag_ids: [])
+    params.require(:document).permit(:title, :slug, tag_ids: [])
   end
 
   def document_summary(doc)
@@ -164,7 +175,6 @@ class Api::DocumentsController < Api::BaseController
       id: doc.id,
       title: doc.title,
       slug: doc.slug,
-      source: doc.source,
       blocks_count: doc.blocks.size,
       tags: doc.tags.map(&:name),
       created_at: doc.created_at,
@@ -177,7 +187,6 @@ class Api::DocumentsController < Api::BaseController
       id: doc.id,
       title: doc.title,
       slug: doc.slug,
-      source: doc.source,
       blocks: doc.blocks.ordered.map { |block| serialize_block(block) },
       tags: doc.tags.map { |tag| { id: tag.id, name: tag.name } },
       created_at: doc.created_at,
@@ -210,9 +219,8 @@ class Api::DocumentsController < Api::BaseController
       id: doc.id,
       title: doc.title,
       slug: doc.slug,
-      source: doc.source,
       title_snippet: doc.respond_to?(:title_snippet) ? doc.title_snippet : doc.title,
-      content_snippet: doc.respond_to?(:content_snippet) ? doc.content_snippet : '',
+      content_snippet: doc.respond_to?(:content_snippet) ? doc.content_snippet : "",
       rank: doc.respond_to?(:rank) ? doc.rank : 0,
       blocks_count: doc.blocks.count,
       created_at: doc.created_at,

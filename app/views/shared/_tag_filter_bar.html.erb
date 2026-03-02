@@ -1,0 +1,53 @@
+<%#
+  Tag Filter Bar — reusable partial for multi-tag filtering
+  Locals:
+    selected_tags — Array of Tag objects currently active (required)
+    base_path     — URL path for navigation, e.g. documents_path (required)
+    preserve      — Hash of extra params to keep in URL (optional, e.g. { filter: "today", sort: "updated_desc" })
+%>
+<% selected_tags ||= [] %>
+<% preserve ||= {} %>
+
+<div class="tag-filter-bar"
+     data-controller="tag-filter"
+     data-tag-filter-base-path-value="<%= base_path %>"
+     data-tag-filter-tags-value="<%= selected_tags.map(&:name).to_json %>"
+     data-tag-filter-preserve-value="<%= preserve.to_json %>">
+
+  <div class="tag-filter-label">
+    <%= heroicon(:funnel, style: 'width: 12px; height: 12px;') %>
+    Tags:
+  </div>
+
+  <div class="tag-filter-pills" data-tag-filter-target="pills">
+    <% selected_tags.each do |tag| %>
+      <span class="tag-filter-pill">
+        <span class="tag-color-dot" style="background:<%= tag_dot_color(tag) %>"></span>
+        #<%= tag.name %>
+        <button type="button" class="tag-filter-pill-remove"
+                data-action="click->tag-filter#removeTag"
+                data-tag-name="<%= tag.name %>"
+                title="Remove tag">×</button>
+      </span>
+    <% end %>
+  </div>
+
+  <button type="button" class="tag-filter-add-btn"
+          data-tag-filter-target="trigger"
+          data-action="click->tag-filter#showInput">
+    + Add tag
+  </button>
+
+  <div class="tag-filter-input-wrap" data-tag-filter-target="inputWrap" style="display:none;">
+    <input type="text" class="tag-filter-input"
+           data-tag-filter-target="input"
+           data-action="input->tag-filter#onInput keydown->tag-filter#onKeydown"
+           placeholder="Type tag name..."
+           autocomplete="off">
+    <div class="tag-filter-dropdown" data-tag-filter-target="dropdown" style="display:none;"></div>
+  </div>
+
+  <% if selected_tags.any? %>
+    <a href="<%= base_path %>" class="tag-filter-clear" title="Clear all tags">Clear</a>
+  <% end %>
+</div>
