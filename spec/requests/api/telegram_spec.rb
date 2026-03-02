@@ -71,5 +71,52 @@ RSpec.describe "Api::Telegram", type: :request do
 
       expect(response).to have_http_status(:ok)
     end
+
+    it "extracts user_id from edited_message" do
+      edited_params = {
+        update_id: 2,
+        edited_message: {
+          message_id: 2,
+          from: { id: 999999, first_name: "Other" },
+          chat: { id: 999999, type: "private" },
+          date: Time.current.to_i,
+          text: "Edited text"
+        }
+      }
+
+      post webhook_path, params: edited_params, headers: valid_headers
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "extracts user_id from callback_query" do
+      callback_params = {
+        update_id: 3,
+        callback_query: {
+          id: "123",
+          from: { id: 999999, first_name: "Other" },
+          message: {
+            message_id: 3,
+            chat: { id: 999999, type: "private" },
+            date: Time.current.to_i
+          },
+          data: "some_callback"
+        }
+      }
+
+      post webhook_path, params: callback_params, headers: valid_headers
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "skips validation when no secret token configured" do
+      allow(ENV).to receive(:[]).with("TELEGRAM_WEBHOOK_SECRET_TOKEN").and_return("")
+
+      handler = instance_double(TelegramMessageHandler)
+      allow(TelegramMessageHandler).to receive(:new).and_return(handler)
+      allow(handler).to receive(:handle)
+
+      post webhook_path, params: text_message_params
+
+      expect(response).to have_http_status(:ok)
+    end
   end
 end

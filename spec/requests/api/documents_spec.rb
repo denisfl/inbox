@@ -155,4 +155,115 @@ RSpec.describe "Api::Documents", type: :request do
       expect(response).to have_http_status(:no_content)
     end
   end
+
+  describe "GET /api/documents/search" do
+    it "returns 400 when query is blank" do
+      get "/api/documents/search", headers: headers
+
+      expect(response).to have_http_status(:bad_request)
+      json = JSON.parse(response.body)
+      expect(json["error"]).to eq("Query parameter is required")
+    end
+
+    it "returns search results for a valid query" do
+      doc = create(:document, title: "Unique searchable title xyz")
+      block = doc.blocks.create!(block_type: "text", position: 0)
+      block.content_hash = { text: "body text" }
+      block.save!
+
+      get "/api/documents/search?q=searchable", headers: headers
+
+      expect(response).to have_http_status(:success)
+      json = JSON.parse(response.body)
+      expect(json).to include("results", "meta")
+      expect(json["meta"]).to include("query", "total", "page", "per_page", "total_pages", "search_time_ms")
+    end
+  end
+
+  describe "GET /api/documents/:id/preview" do
+    let(:document) { create(:document) }
+
+    it "returns rendered HTML for text block" do
+      block = document.blocks.create!(block_type: "text", position: 0)
+      block.content_hash = { text: "Hello **world**" }
+      block.save!
+
+      get "/api/documents/#{document.id}/preview", headers: headers
+
+      expect(response).to have_http_status(:success)
+      json = JSON.parse(response.body)
+      expect(json["html"]).to include("Hello")
+    end
+
+    it "returns empty html when no blocks exist" do
+      get "/api/documents/#{document.id}/preview", headers: headers
+
+      expect(response).to have_http_status(:success)
+      json = JSON.parse(response.body)
+      expect(json["html"]).to eq("")
+    end
+
+    it "renders audio player for audio file blocks" do
+      block = document.blocks.create!(block_type: "file", position: 0)
+      block.content_hash = { filename: "voice.ogg" }
+      block.save!
+      block.file.attach(
+        io: StringIO.new("fake audio"),
+        filename: "voice.ogg",
+        content_type: "audio/ogg"
+      )
+
+      get "/api/documents/#{document.id}/preview", headers: headers
+
+      expect(response).to have_http_status(:success)
+      json = JSON.parse(response.body)
+      expect(json["html"]).to include("<audio")
+      expect(json["html"]).to include("voice.ogg")
+    end
+  end
+
+  describe "POST /api/documents/:id/upload" do
+    let(:document) { create(:document) }
+
+    it "returns error when no file provided" do
+      post "/api/documents/#{document.id}/upload", headers: headers.except("Content-Type")
+
+      expect(response).to have_http_status(:bad_request)
+      json = JSON.parse(response.body)
+      expect(json["error"]).to eq("No file provided")
+    end
+
+    it "uploads an image file and creates an image block" do
+      image = Rack::Test::UploadedFile.new(
+        Rails.root.join("spec/fixtures/files/test_image.png"),
+        "image/png"
+      )
+
+      post "/api/documents/#{document.id}/upload",
+           params: { file: image },
+           headers: { "Authorization" => "Token token=#{token}" }
+
+      expect(response).to have_http_status(:success)
+      json = JSON.parse(response.body)
+      expect(json["is_image"]).to be true
+      expect(json["filename"]).to eq("test_image.png")
+      expect(json).to include("url", "block_id", "byte_size")
+    end
+
+    it "uploads a non-image file and creates a file block" do
+      file = Rack::Test::UploadedFile.new(
+        Rails.root.join("spec/fixtures/files/test_upload.txt"),
+        "text/plain"
+      )
+
+      post "/api/documents/#{document.id}/upload",
+           params: { file: file },
+           headers: { "Authorization" => "Token token=#{token}" }
+
+      expect(response).to have_http_status(:success)
+      json = JSON.parse(response.body)
+      expect(json["is_image"]).to be false
+      expect(json["filename"]).to eq("test_upload.txt")
+    end
+  end
 end

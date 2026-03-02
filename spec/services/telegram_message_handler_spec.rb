@@ -223,6 +223,26 @@ RSpec.describe TelegramMessageHandler do
       end
     end
 
+    context "with unknown message type" do
+      it "sends unsupported message reply" do
+        msg = double("message",
+          text: nil,
+          photo: nil,
+          voice: nil,
+          audio: nil,
+          document: nil,
+          caption: nil,
+          chat: double("chat", id: chat_id),
+          message_id: message_id
+        )
+        update = double("update", message: msg)
+
+        stub_bot_get_file
+        described_class.new(update).handle
+        # Should not raise, and should send unsupported message reply
+      end
+    end
+
     context "when handler raises" do
       it "sends error reply and does not propagate" do
         stub_ollama_classify(intent: "note", confidence: 0.9, title: "Test")

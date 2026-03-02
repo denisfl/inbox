@@ -44,8 +44,20 @@ RSpec.describe "Documents (web)", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
+    it "sorts by created_desc" do
+      get documents_path(sort: "created_desc")
+
+      expect(response).to have_http_status(:ok)
+    end
+
     it "sorts by title_asc" do
       get documents_path(sort: "title_asc")
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "sorts by title_desc" do
+      get documents_path(sort: "title_desc")
 
       expect(response).to have_http_status(:ok)
     end
@@ -58,6 +70,24 @@ RSpec.describe "Documents (web)", type: :request do
 
     it "filters by photo type" do
       get documents_path(type: "photo")
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "paginates results" do
+      25.times { create(:document) }
+
+      get documents_path
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "supports single tag param" do
+      doc = create(:document, title: "Single param doc")
+      tag = create(:tag, name: "solo")
+      create(:document_tag, document: doc, tag: tag)
+
+      get documents_path(tag: "solo")
 
       expect(response).to have_http_status(:ok)
     end
@@ -203,6 +233,18 @@ RSpec.describe "Documents (web)", type: :request do
       expect {
         post bulk_upload_documents_path, params: { files: [file1, file2] }
       }.to change(Document, :count).by(2)
+    end
+
+    it "auto-tags audio files" do
+      audio_file = fixture_file_upload(
+        Rails.root.join("spec", "fixtures", "files", "test_upload.txt"),
+        "audio/mpeg"
+      )
+
+      post bulk_upload_documents_path, params: { files: [audio_file] }
+
+      doc = Document.last
+      expect(doc.tags.map(&:name)).to include("audio")
     end
   end
 end

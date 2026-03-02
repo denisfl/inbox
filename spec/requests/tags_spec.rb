@@ -34,6 +34,15 @@ RSpec.describe "Tags", type: :request do
 
       expect(response).to have_http_status(:ok)
     end
+
+    it "renders filtered view with single tag param" do
+      doc = create(:document, title: "Single tag doc")
+      create(:document_tag, document: doc, tag: tag1)
+
+      get tags_path(tag: "alpha")
+
+      expect(response).to have_http_status(:ok)
+    end
   end
 
   describe "GET /tags/:name" do

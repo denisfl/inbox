@@ -210,6 +210,68 @@ RSpec.describe GoogleCalendarService do
 
       expect { service.sync! }.to raise_error(Google::Apis::AuthorizationError)
     end
+
+    it "skips events with unparseable times" do
+      bad_item = double("event",
+        id: "google_badtime_1",
+        summary: "Bad time event",
+        description: nil,
+        status: "confirmed",
+        color_id: nil,
+        html_link: nil,
+        start: double("start", date: nil, date_time: "not-a-time"),
+        end: double("end", date: nil, date_time: nil)
+      )
+
+      result = double("result",
+        items: [bad_item],
+        next_sync_token: "sync_bad",
+        next_page_token: nil
+      )
+
+      allow(google_service).to receive(:list_events).and_return(result)
+
+      expect {
+        service.sync!
+      }.not_to change(CalendarEvent, :count)
+    end
+
+    it "handles unexpected errors on individual calendars" do
+      error = RuntimeError.new("Something weird")
+      allow(google_service).to receive(:list_events).and_raise(error)
+
+      expect { service.sync! }.not_to raise_error
+    end
+
+    it "updates existing event on re-sync" do
+      existing = create(:calendar_event, :google,
+        google_event_id: "google_update_1",
+        title: "Old title")
+
+      updated_item = double("event",
+        id: "google_update_1",
+        summary: "Updated title",
+        description: "New description",
+        status: "confirmed",
+        color_id: "1",
+        html_link: "https://calendar.google.com/event/u1",
+        start: double("start", date: nil, date_time: 1.hour.from_now.iso8601),
+        end: double("end", date: nil, date_time: 2.hours.from_now.iso8601)
+      )
+
+      result = double("result",
+        items: [updated_item],
+        next_sync_token: "sync_upd",
+        next_page_token: nil
+      )
+
+      allow(google_service).to receive(:list_events).and_return(result)
+
+      service.sync!
+
+      existing.reload
+      expect(existing.title).to eq("Updated title")
+    end
   end
 
   describe ".upcoming_events" do

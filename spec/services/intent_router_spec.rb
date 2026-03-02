@@ -70,6 +70,25 @@ RSpec.describe IntentRouter do
         doc = Document.last
         expect(doc.tags.map(&:name)).to include("telegram")
       end
+
+      it "falls back to note on event creation error" do
+        allow(Document).to receive(:create!).and_call_original
+
+        # First call (event) raises, second call (note fallback) succeeds
+        call_count = 0
+        allow(Document).to receive(:create!) do |**attrs|
+          call_count += 1
+          if call_count == 1
+            raise StandardError, "test error"
+          else
+            Document.new(**attrs).tap(&:save!)
+          end
+        end
+
+        expect {
+          described_class.dispatch(result, chat_id)
+        }.to change(Document, :count).by(1)
+      end
     end
 
     context "when intent is note" do

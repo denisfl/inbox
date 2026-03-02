@@ -95,6 +95,24 @@ RSpec.describe "Tasks", type: :request do
 
       expect(response).to have_http_status(:unprocessable_entity)
     end
+
+    it "redirects to today filter for today tasks" do
+      post tasks_path, params: { task: { title: "Today task", priority: "mid", due_date: Date.current.to_s } }
+
+      expect(response).to redirect_to(tasks_path(filter: "today"))
+    end
+
+    it "redirects to upcoming filter for future tasks" do
+      post tasks_path, params: { task: { title: "Future task", priority: "mid", due_date: 3.days.from_now.to_date.to_s } }
+
+      expect(response).to redirect_to(tasks_path(filter: "upcoming"))
+    end
+
+    it "supports redirect_to param" do
+      post tasks_path, params: { task: { title: "Quick task", priority: "mid" }, redirect_to: "/dashboard" }
+
+      expect(response).to redirect_to("/dashboard")
+    end
   end
 
   describe "GET /tasks/:id/edit" do
@@ -155,6 +173,13 @@ RSpec.describe "Tasks", type: :request do
       patch toggle_task_path(task), headers: { "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
+    end
+
+    it "responds with turbo_stream for turbo requests" do
+      patch toggle_task_path(task), headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq("text/vnd.turbo-stream.html")
     end
   end
 end

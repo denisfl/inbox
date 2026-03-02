@@ -48,6 +48,34 @@ RSpec.describe "Api::Blocks", type: :request do
         expect(json['position']).to eq(2)
       end
 
+      it "includes file_url when file is attached" do
+        file_attrs = {
+          block: {
+            block_type: 'file',
+            content: { text: 'attachment' }
+          }
+        }
+
+        post "/api/documents/#{document.id}/blocks",
+             params: file_attrs.to_json,
+             headers: headers
+
+        expect(response).to have_http_status(:created)
+        block = Block.last
+        block.file.attach(
+          io: StringIO.new("test data"),
+          filename: "test.txt",
+          content_type: "text/plain"
+        )
+
+        # Re-fetch document to see serialize_block with file
+        get "/api/documents/#{document.id}", headers: headers
+        json = JSON.parse(response.body)
+        file_block = json["blocks"].find { |b| b["id"] == block.id }
+        expect(file_block["file_url"]).to be_present
+        expect(file_block["file_filename"]).to eq("test.txt")
+      end
+
       it "accepts explicit position" do
         valid_attributes[:block][:position] = 5
 
@@ -79,6 +107,16 @@ RSpec.describe "Api::Blocks", type: :request do
              headers: headers
 
         expect(response).to have_http_status(:not_found)
+      end
+
+      it "returns bad request when block param is missing" do
+        post "/api/documents/#{document.id}/blocks",
+             params: {}.to_json,
+             headers: headers
+
+        expect(response).to have_http_status(:bad_request)
+        json = JSON.parse(response.body)
+        expect(json['error']).to eq('Parameter missing')
       end
     end
   end

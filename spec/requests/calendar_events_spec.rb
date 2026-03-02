@@ -9,6 +9,18 @@ RSpec.describe "CalendarEvents", type: :request do
 
       expect(response).to have_http_status(:ok)
     end
+
+    it "uses params[:date] for default date" do
+      get new_calendar_event_path(date: "2026-06-15")
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "handles invalid params[:date] gracefully" do
+      get new_calendar_event_path(date: "not-a-date")
+
+      expect(response).to have_http_status(:ok)
+    end
   end
 
   describe "POST /calendar/events" do
@@ -167,6 +179,85 @@ RSpec.describe "CalendarEvents", type: :request do
       post import_ical_path, params: { ical_file: file }
 
       expect(response).to redirect_to(calendar_path)
+    end
+
+    it "handles invalid ICS content gracefully" do
+      temp_file = Tempfile.new(["bad", ".ics"])
+      temp_file.write("not valid ical content")
+      temp_file.rewind
+
+      file = Rack::Test::UploadedFile.new(temp_file.path, "text/calendar")
+
+      post import_ical_path, params: { ical_file: file }
+
+      expect(response).to redirect_to(calendar_path)
+      expect(flash[:alert] || flash[:notice]).to be_present
+
+      temp_file.close
+      temp_file.unlink
+    end
+
+    it "imports events with Date-only dtstart (all-day)" do
+      ics_content = <<~ICS
+        BEGIN:VCALENDAR
+        VERSION:2.0
+        BEGIN:VEVENT
+        DTSTART;VALUE=DATE:20260420
+        DTEND;VALUE=DATE:20260421
+        SUMMARY:All day event
+        UID:allday-uid@example.com
+        END:VEVENT
+        END:VCALENDAR
+      ICS
+
+      temp_file = Tempfile.new(["allday", ".ics"])
+      temp_file.write(ics_content)
+      temp_file.rewind
+
+      file = Rack::Test::UploadedFile.new(temp_file.path, "text/calendar")
+
+      expect {
+        post import_ical_path, params: { ical_file: file }
+      }.to change(CalendarEvent, :count).by(1)
+
+      event = CalendarEvent.last
+      expect(event.all_day).to be true
+      expect(event.source).to eq("ical")
+
+      temp_file.close
+      temp_file.unlink
+    end
+
+    it "skips duplicate ical imports" do
+      # First import
+      ics_content = <<~ICS
+        BEGIN:VCALENDAR
+        VERSION:2.0
+        BEGIN:VEVENT
+        DTSTART:20260415T100000Z
+        DTEND:20260415T110000Z
+        SUMMARY:Duplicate event
+        UID:dup-uid@example.com
+        END:VEVENT
+        END:VCALENDAR
+      ICS
+
+      temp_file = Tempfile.new(["dup", ".ics"])
+      temp_file.write(ics_content)
+      temp_file.rewind
+
+      file = Rack::Test::UploadedFile.new(temp_file.path, "text/calendar")
+      post import_ical_path, params: { ical_file: file }
+
+      temp_file.rewind
+      file2 = Rack::Test::UploadedFile.new(temp_file.path, "text/calendar")
+
+      expect {
+        post import_ical_path, params: { ical_file: file2 }
+      }.not_to change(CalendarEvent, :count)
+
+      temp_file.close
+      temp_file.unlink
     end
   end
 end

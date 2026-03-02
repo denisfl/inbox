@@ -161,6 +161,63 @@ RSpec.describe TranscribeAudioJob, type: :job do
       doc_no_chat.reload
       expect(doc_no_chat.blocks.where(block_type: "text").count).to eq(1)
     end
+
+    it "notifies Telegram for event intent with due_at" do
+      stub_whisper(text: "meeting tomorrow", language: "en")
+      stub_ollama_two_calls(
+        corrected: "meeting tomorrow",
+        intent: "event",
+        confidence: 0.9,
+        title: "Meeting tomorrow"
+      )
+
+      described_class.new.perform(document.id, document.blocks.first.file.blob.key)
+
+      document.reload
+      expect(document.document_type).to eq("event")
+      expect(document.tags.map(&:name)).to include("event")
+    end
+
+    it "handles classification failure gracefully" do
+      stub_whisper(text: "test text", language: "en")
+
+      # First call (correction) succeeds, second call (classification) fails
+      stub_request(:post, "#{ollama_url}/api/generate")
+        .to_return(
+          { status: 200, body: { response: "test text" }.to_json, headers: { "Content-Type" => "application/json" } },
+          { status: 500, body: "Internal Server Error" }
+        )
+
+      described_class.new.perform(document.id, document.blocks.first.file.blob.key)
+
+      document.reload
+      # Falls back to note intent
+      expect(document.document_type).to eq("note")
+    end
+
+    it "does not apply tags for note intent" do
+      stub_whisper(text: "just a thought", language: "en")
+      stub_ollama_two_calls(corrected: "just a thought", intent: "note", confidence: 0.9, title: "Just a thought")
+
+      described_class.new.perform(document.id, document.blocks.first.file.blob.key)
+
+      document.reload
+      expect(document.tags.map(&:name)).not_to include("todo", "event")
+    end
+
+    it "handles WHISPER_LANGUAGE env variable" do
+      ENV["WHISPER_LANGUAGE"] = "ru"
+
+      stub_whisper(text: "Привет", language: "ru")
+      stub_ollama_two_calls(corrected: "Привет")
+
+      described_class.new.perform(document.id, document.blocks.first.file.blob.key)
+
+      document.reload
+      expect(document.blocks.where(block_type: "text").count).to eq(1)
+
+      ENV.delete("WHISPER_LANGUAGE")
+    end
   end
 
   describe "queue" do

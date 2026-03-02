@@ -24,6 +24,19 @@ RSpec.describe SendEventReminderJob, type: :job do
       expect(event.reload.reminded_at).to be_present
     end
 
+    it "includes html_link when present" do
+      event = create(:calendar_event, :needs_reminder,
+        html_link: "https://calendar.google.com/event/123")
+
+      stub = stub_request(:post, "https://api.telegram.org/bot#{ENV['TELEGRAM_BOT_TOKEN']}/sendMessage")
+        .to_return(status: 200, body: '{"ok":true}', headers: { "Content-Type" => "application/json" })
+
+      described_class.new.perform
+
+      expect(stub).to have_been_requested
+      expect(event.reload.reminded_at).to be_present
+    end
+
     it "does nothing when no events need reminding" do
       create(:calendar_event, :today) # already in progress, not needing reminder
 

@@ -67,5 +67,21 @@ RSpec.describe IntentClassifierService do
 
       expect(result.body).to eq("my important message")
     end
+
+    it "handles invalid due_at gracefully" do
+      stub_ollama_classify(intent: "event", confidence: 0.85, title: "Meeting", due_at: "not-a-date")
+
+      result = described_class.classify("meeting sometime")
+
+      expect(result.due_at).to be_nil
+    end
+
+    it "handles null due_at string" do
+      stub_ollama_classify(intent: "note", confidence: 0.9, title: "Note", due_at: "null")
+
+      result = described_class.classify("some note")
+
+      expect(result.due_at).to be_nil
+    end
   end
 end
