@@ -1,7 +1,4 @@
 module ApplicationHelper
-  # Include Pagy frontend
-  include Pagy::Frontend
-
   # Render a back-link with arrow_left icon.
   #   back_link(tasks_path, "Tasks")
   def back_link(path, label)

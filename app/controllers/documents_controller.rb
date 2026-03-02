@@ -56,7 +56,7 @@ class DocumentsController < ApplicationController
     end
 
     # Pagy pagination (20 items per page)
-    @pagy, @documents = pagy(documents_scope, limit: 20)
+    @pagy, @documents = pagy(:offset, documents_scope, limit: 20)
 
     # Calendar widget: always show, with events if available
     @show_calendar_widget = true

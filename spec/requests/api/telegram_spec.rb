@@ -38,7 +38,7 @@ RSpec.describe "Api::Telegram", type: :request do
       # Use allow_any_instance_of to ensure the handler intercepts in-controller instantiation
       allow_any_instance_of(TelegramMessageHandler).to receive(:handle)
 
-      post webhook_path, params: text_message_params, headers: valid_headers
+      post webhook_path, params: text_message_params, headers: valid_headers, as: :json
 
       expect(response).to have_http_status(:ok)
     end
@@ -46,7 +46,8 @@ RSpec.describe "Api::Telegram", type: :request do
     it "returns 403 for invalid secret token" do
       post webhook_path,
            params: text_message_params,
-           headers: { "X-Telegram-Bot-Api-Secret-Token" => "wrong" }
+           headers: { "X-Telegram-Bot-Api-Secret-Token" => "wrong" },
+           as: :json
 
       expect(response).to have_http_status(:forbidden)
     end
@@ -55,7 +56,7 @@ RSpec.describe "Api::Telegram", type: :request do
       unauthorized_params = text_message_params.deep_dup
       unauthorized_params[:message][:from][:id] = 999999
 
-      post webhook_path, params: unauthorized_params, headers: valid_headers
+      post webhook_path, params: unauthorized_params, headers: valid_headers, as: :json
 
       expect(response).to have_http_status(:ok)
     end
@@ -65,7 +66,7 @@ RSpec.describe "Api::Telegram", type: :request do
       allow(TelegramMessageHandler).to receive(:new).and_return(handler)
       allow(handler).to receive(:handle).and_raise(StandardError, "boom")
 
-      post webhook_path, params: text_message_params, headers: valid_headers
+      post webhook_path, params: text_message_params, headers: valid_headers, as: :json
 
       expect(response).to have_http_status(:ok)
     end
@@ -82,7 +83,7 @@ RSpec.describe "Api::Telegram", type: :request do
         }
       }
 
-      post webhook_path, params: edited_params, headers: valid_headers
+      post webhook_path, params: edited_params, headers: valid_headers, as: :json
       expect(response).to have_http_status(:ok)
     end
 
@@ -101,7 +102,7 @@ RSpec.describe "Api::Telegram", type: :request do
         }
       }
 
-      post webhook_path, params: callback_params, headers: valid_headers
+      post webhook_path, params: callback_params, headers: valid_headers, as: :json
       expect(response).to have_http_status(:ok)
     end
 
@@ -112,7 +113,7 @@ RSpec.describe "Api::Telegram", type: :request do
       allow(TelegramMessageHandler).to receive(:new).and_return(handler)
       allow(handler).to receive(:handle)
 
-      post webhook_path, params: text_message_params
+      post webhook_path, params: text_message_params, as: :json
 
       expect(response).to have_http_status(:ok)
     end
@@ -129,7 +130,7 @@ RSpec.describe "Api::Telegram", type: :request do
       allow(bot_instance).to receive(:api).and_return(bot_api)
       allow(bot_api).to receive(:send_message).and_raise(StandardError, "Network error")
 
-      post webhook_path, params: unauthorized_params, headers: valid_headers
+      post webhook_path, params: unauthorized_params, headers: valid_headers, as: :json
 
       # Should still return 200 (error is rescued)
       expect(response).to have_http_status(:ok)

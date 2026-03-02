@@ -12,7 +12,9 @@ module Api
     def webhook
       Rails.logger.info("Telegram webhook received: #{params.inspect}")
 
-      update = Telegram::Bot::Types::Update.new(params.permit!.to_h)
+      # Parse raw JSON body directly to avoid params.permit! mass assignment warning
+      update_hash = request.raw_post.present? ? JSON.parse(request.raw_post) : {}
+      update = Telegram::Bot::Types::Update.new(update_hash)
 
       # Process message asynchronously to respond within 60s requirement
       TelegramMessageHandler.new(update).handle

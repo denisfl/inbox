@@ -3,7 +3,7 @@ class ApplicationController < ActionController::Base
   # allow_browser versions: :modern
 
   # Include Pagy backend
-  include Pagy::Backend
+  include Pagy::Method
 
   # Single-user password authentication for web UI.
   # Named method so subcontrollers can skip it with: skip_before_action :authenticate_web_user!
