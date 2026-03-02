@@ -1,0 +1,13 @@
+<% content_for :title, "New Task — Inbox" %>
+
+<div class="task-form-page">
+  <div class="task-form-container">
+    <header class="task-form-header">
+      <%= back_link(tasks_path, "Tasks") %>
+      <h1 class="task-form-title">New Task</h1>
+    </header>
+
+    <%= render "form", task: @task, url: tasks_path, method: :post, submit_label: "Create" %>
+  </div>
+</div>
+

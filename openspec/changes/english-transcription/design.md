@@ -7,12 +7,14 @@ Telegram's `message.from.language_code` provides the user's Telegram UI language
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Enable correct transcription of English voice notes
 - Enable automatic language detection for all voice/audio messages
 - Store the detected language in the block metadata
 - Display detected language in the UI (optional, minimal)
 
 **Non-Goals:**
+
 - Per-message language selection by the user (no commands or captions)
 - Translation of transcribed text
 - Supporting languages beyond what Whisper already supports
@@ -25,6 +27,7 @@ Telegram's `message.from.language_code` provides the user's Telegram UI language
 **Chosen:** Omit the `language` parameter from the Whisper API call (or pass `language: nil`). Whisper's default behavior is automatic language detection.
 
 **Rationale:**
+
 - Simplest possible change — one line removed
 - Whisper's auto-detection is accurate for distinct languages (Russian, English)
 - No user-facing complexity
@@ -36,6 +39,7 @@ Telegram's `message.from.language_code` provides the user's Telegram UI language
 Add `WHISPER_LANGUAGE` ENV var. If set, it overrides auto-detection. Useful for users who exclusively speak one language and want slightly better accuracy.
 
 **Behavior:**
+
 - `WHISPER_LANGUAGE` not set → Whisper auto-detects (recommended)
 - `WHISPER_LANGUAGE=ru` → force Russian (original behavior)
 - `WHISPER_LANGUAGE=en` → force English
@@ -43,6 +47,7 @@ Add `WHISPER_LANGUAGE` ENV var. If set, it overrides auto-detection. Useful for 
 ### Decision: Store detected language in text block content
 
 Whisper's API response includes a `language` field. Store it in the text block's content JSON:
+
 ```json
 { "text": "...", "raw_text": "...", "language": "en" }
 ```

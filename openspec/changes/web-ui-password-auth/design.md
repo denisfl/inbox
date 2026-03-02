@@ -7,6 +7,7 @@ The system has a single user. Authentication is needed only to prevent unauthori
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Enable web UI access at `https://inbox.fedosov.me` with password protection
 - Single factor: password only (no username, no OTP)
 - Works across all standard browsers on any device
@@ -14,6 +15,7 @@ The system has a single user. Authentication is needed only to prevent unauthori
 - Minimal code changes, no new dependencies
 
 **Non-Goals:**
+
 - Multi-user support
 - Session management / logout
 - OAuth or social login
@@ -27,6 +29,7 @@ The system has a single user. Authentication is needed only to prevent unauthori
 **Chosen:** `http_basic_authenticate_with` in `ApplicationController`
 
 **Rationale:**
+
 - Rails built-in — zero new dependencies
 - Password stored as ENV var (`WEB_PASSWORD`), loaded via Docker secret or `.env.production`
 - Easier to exclude specific routes (API controllers use `skip_before_action`)
@@ -34,6 +37,7 @@ The system has a single user. Authentication is needed only to prevent unauthori
 - Password change = ENV var update + container restart
 
 **Alternatives considered:**
+
 - nginx `auth_basic` with htpasswd — requires managing a file on DO server, harder to rotate
 - Devise/other gems — overkill for single-user, no login form needed
 

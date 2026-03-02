@@ -1,0 +1,66 @@
+<%= tag.div id: dom_id(task), class: "task-item #{'task-item--completed' if task.completed?} #{'task-item--overdue' if task.overdue?} task-item--priority-#{task.priority}" do %>
+  <div class="task-item-left">
+    <%= button_to toggle_task_path(task), method: :patch, class: "task-checkbox-btn", data: { turbo: true } do %>
+      <span class="task-checkbox <%= 'task-checkbox--checked' if task.completed? %>">
+        <% if task.completed? %>
+          <%= heroicon(:check, variant: :solid, class: 'task-check-icon') %>
+        <% end %>
+      </span>
+    <% end %>
+    <% if task.priority == "pinned" %>
+      <span class="task-pin-icon" title="Pinned">
+        <%= heroicon(:bookmark, variant: :solid, style: 'width: 12px; height: 12px;') %>
+      </span>
+    <% end %>
+  </div>
+
+  <div class="task-item-content">
+    <div class="task-item-row">
+      <span class="task-item-title"><%= task.title %></span>
+      <% if task.recurring? %>
+        <span class="task-recurrence-badge" title="<%= task.recurrence_rule %>">
+          <%= heroicon(:arrow_path, variant: :solid, style: 'width: 12px; height: 12px;') %>
+        </span>
+      <% end %>
+    </div>
+
+    <% if task.due_date.present? || task.description.present? %>
+      <div class="task-item-meta">
+        <% if task.due_date.present? %>
+          <span class="task-due-badge <%= 'task-due-badge--overdue' if task.overdue? %> <%= 'task-due-badge--today' if task.due_today? %>">
+            <%= task.due_date.strftime("%d.%m") %>
+            <% if task.due_time.present? %>
+              <span class="task-due-time"><%= task.due_time.strftime("%H:%M") %></span>
+            <% end %>
+          </span>
+        <% end %>
+        <% if task.description.present? %>
+          <span class="task-has-desc" title="Has description">
+            <%= heroicon(:document_text, variant: :solid, style: 'width: 12px; height: 12px;') %>
+          </span>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if task.tags.any? %>
+      <div class="task-item-tags">
+        <% task.tags.limit(3).each do |t| %>
+          <%= link_to tag_path(t.name), class: "task-tag-link" do %>
+            <span class="tag-color-dot" style="background:<%= tag_dot_color(t) %>; width:5px; height:5px;"></span>
+            #<%= t.name %>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="task-item-actions">
+    <%= link_to edit_task_path(task), class: "task-action-btn", title: "Edit" do %>
+      <%= heroicon(:pencil, style: 'width: 1rem; height: 1rem;') %>
+    <% end %>
+    <%= button_to task_path(task), method: :delete, class: "task-action-btn task-action-btn--danger", title: "Delete",
+        data: { turbo_confirm: "Delete task \"#{task.title}\"?" } do %>
+      <%= heroicon(:trash, style: 'width: 1rem; height: 1rem;') %>
+    <% end %>
+  </div>
+<% end %>

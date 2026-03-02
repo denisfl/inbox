@@ -82,9 +82,11 @@
 
 /* Base Styles */
 body {
+  margin: 0;
+  padding: 0;
   font-family: var(--font-sans);
   font-size: var(--text-base);
-  line-height: 1.6; /* More generous, Basecamp-style */
+  line-height: 1.6;
   color: var(--color-text-primary);
   background-color: var(--color-bg-secondary);
 }
@@ -221,7 +223,6 @@ body {
 }
 
 .card:hover {
-  /* No lift effect - keep grounded, Basecamp-style */
   box-shadow: var(--shadow-base);
   border-color: var(--color-border-hover);
 }

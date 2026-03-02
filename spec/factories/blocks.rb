@@ -17,7 +17,7 @@ FactoryBot.define do
 
     trait :todo do
       block_type { 'todo' }
-      content { { text: Faker::Lorem.sentence, checked: [true, false].sample }.to_json }
+      content { { text: Faker::Lorem.sentence, checked: [ true, false ].sample }.to_json }
     end
 
     trait :code do

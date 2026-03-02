@@ -1,0 +1,276 @@
+<%# Global sidebar — navigation, sources, tags %>
+<aside class="sidebar" data-sidebar-target="panel">
+  <%# ── Brand ── %>
+  <div class="sidebar-brand">
+    <%= link_to root_path, class: "sidebar-logo" do %>
+      <%= heroicon(:inbox, style: 'width: 1.5rem; height: 1.5rem;') %>
+      <span>Inbox</span>
+    <% end %>
+  </div>
+
+  <%# ── Search ── %>
+  <div class="sidebar-search">
+    <%= form_tag documents_path, method: :get, class: "sidebar-search-form" do %>
+      <%= heroicon(:magnifying_glass, class: 'sidebar-search-icon', style: 'width: 14px; height: 14px;') %>
+      <input type="text" name="q" placeholder="Search..." value="<%= params[:q] %>"
+             class="sidebar-search-input" autocomplete="off">
+    <% end %>
+  </div>
+
+  <%# ── Navigation ── %>
+  <div class="nav-group-label">Navigation</div>
+
+  <%= link_to root_path, class: "nav-item #{'active' if controller_name == 'dashboard'}" do %>
+    <div class="nav-icon"><%= heroicon(:squares_2x2, style: 'width: 14px; height: 14px;') %></div>
+    Dashboard
+  <% end %>
+
+  <%= link_to documents_path, class: "nav-item #{'active' if controller_name == 'documents'}" do %>
+    <div class="nav-icon"><%= heroicon(:document_text, style: 'width: 14px; height: 14px;') %></div>
+    Documents
+    <% if @sidebar_counts[:documents] > 0 %>
+      <span class="count"><%= @sidebar_counts[:documents] %></span>
+    <% end %>
+  <% end %>
+
+  <%= link_to calendar_path, class: "nav-item #{'active' if controller_name.in?(%w[calendars calendar_events])}" do %>
+    <div class="nav-icon"><%= heroicon(:calendar, style: 'width: 14px; height: 14px;') %></div>
+    Calendar
+  <% end %>
+
+  <%= link_to tasks_path, class: "nav-item #{'active' if controller_name == 'tasks'}" do %>
+    <div class="nav-icon"><%= heroicon(:clipboard, style: 'width: 14px; height: 14px;') %></div>
+    Tasks
+    <% if @sidebar_counts[:tasks] > 0 %>
+      <span class="count"><%= @sidebar_counts[:tasks] %></span>
+    <% end %>
+  <% end %>
+
+  <%= link_to tags_path, class: "nav-item #{'active' if controller_name == 'tags'}" do %>
+    <div class="nav-icon"><%= heroicon(:tag, style: 'width: 14px; height: 14px;') %></div>
+    Tags
+  <% end %>
+
+  <%# ── Tags ── %>
+  <% if @sidebar_tags.present? %>
+    <div class="nav-group-label">Tags</div>
+    <% @sidebar_tags.each do |tag| %>
+      <%= link_to tag_path(tag.name), class: "nav-item" do %>
+        <div class="nav-dot" style="background:<%= tag_dot_color(tag) %>"></div>
+        #<%= tag.name %>
+        <span class="count"><%= tag.docs_count %></span>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <%# ── New Note button at bottom ── %>
+  <div class="sidebar-bottom">
+    <%= link_to new_note_path, class: "sidebar-new-note", data: { turbo: false } do %>
+      <%= heroicon(:plus, style: 'width: 12px; height: 12px;') %>
+      New Note
+    <% end %>
+  </div>
+</aside>
+
+<style>
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+.sidebar {
+  width: 220px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  background: var(--color-bg-primary);
+  border-right: 1px solid var(--color-border);
+  padding: var(--spacing-md) 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-fixed);
+}
+
+/* Brand */
+.sidebar-brand {
+  padding: var(--spacing-xs) var(--spacing-md) var(--spacing-md);
+}
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  text-decoration: none;
+  color: var(--color-text-primary);
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  transition: opacity var(--transition-fast);
+}
+.sidebar-logo:hover { opacity: 0.7; }
+
+/* Search */
+.sidebar-search {
+  padding: 0 var(--spacing-md) var(--spacing-md);
+}
+.sidebar-search-form {
+  position: relative;
+}
+.sidebar-search-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+.sidebar-search-input {
+  width: 100%;
+  padding: 5px 8px 5px 28px;
+  font-size: var(--text-xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+.sidebar-search-input:focus {
+  border-color: var(--color-primary);
+  background: var(--color-bg-primary);
+}
+
+/* Group labels */
+.nav-group-label {
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-xs);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+/* Nav items */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 6px var(--spacing-md);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  border-left: 3px solid transparent;
+}
+.nav-item:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+.nav-item.active {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border-left-color: var(--color-primary);
+  font-weight: var(--font-semibold);
+}
+
+.nav-icon {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+}
+.nav-item.active .nav-icon { color: var(--color-primary); }
+
+.nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.count {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-tertiary);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  min-width: 18px;
+  text-align: center;
+}
+
+/* Bottom section */
+.sidebar-bottom {
+  margin-top: auto;
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+}
+.sidebar-new-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: 6px var(--spacing-md);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: white;
+  background: var(--color-secondary);
+  border: none;
+  border-radius: var(--radius-base);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.sidebar-new-note:hover {
+  background: #5ea06c;
+}
+
+/* ── Mobile sidebar ───────────────────────────────────────────────────────── */
+.mobile-topbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-bg-primary);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: calc(var(--z-fixed) - 1);
+}
+.mobile-topbar .sidebar-logo { font-size: var(--text-base); }
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: calc(var(--z-fixed) - 1);
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: -240px;
+    top: 0;
+    width: 240px;
+    transition: left var(--transition-base);
+    box-shadow: none;
+  }
+  .sidebar.open {
+    left: 0;
+    box-shadow: var(--shadow-lg);
+  }
+  .mobile-topbar {
+    display: flex;
+  }
+  .sidebar-overlay.open {
+    display: block;
+  }
+}
+</style>

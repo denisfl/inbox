@@ -81,7 +81,7 @@ group :development, :test do
   gem "rubocop-rails-omakase", require: false
 
   # RSpec testing framework
-  gem "rspec-rails", "~> 7.0"
+  gem "rspec-rails", "~> 8.0"
   gem "factory_bot_rails", "~> 6.4"
   gem "faker", "~> 3.2"
 end
@@ -101,5 +101,8 @@ group :test do
   gem "database_cleaner-active_record", "~> 2.2"
 
   # Matchers for RSpec tests
-  gem "shoulda-matchers", "~> 6.0"
+  gem "shoulda-matchers", "~> 7.0"
+
+  # Stub external HTTP requests in tests
+  gem "webmock", "~> 3.23"
 end

@@ -7,9 +7,7 @@
       <span class="cal-widget-title">Upcoming</span>
       <%= link_to calendar_path, class: "cal-widget-link", title: "Open Calendar",
             "aria-label": "Open Calendar", data: { turbo_frame: "_top" } do %>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="cal-widget-icon">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 2.994v2.25m10.5-2.25v2.25m-14.252 13.5V7.491a2.25 2.25 0 0 1 2.25-2.25h13.5a2.25 2.25 0 0 1 2.25 2.25v11.251m-18 0a2.25 2.25 0 0 0 2.25 2.25h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5a2.25 2.25 0 0 1 2.25-2.25h13.5a2.25 2.25 0 0 1 2.25 2.25v7.5m-6.75-6h2.25m-9 2.25h4.5m.002-2.25h.005v.006H12v-.006Zm-.001 4.5h.006v.006h-.006v-.005Zm-2.25.001h.005v.006H9.75v-.006Zm-2.25 0h.005v.005h-.006v-.005Zm6.75-2.247h.005v.005h-.005v-.005Zm0 2.247h.006v.006h-.006v-.006Zm2.25-2.248h.006V15H16.5v-.005Z"/>
-        </svg>
+        <%= heroicon(:calendar, class: 'cal-widget-icon') %>
       <% end %>
     </div>
 
@@ -18,13 +16,7 @@
       <div class="cal-widget-section">
         <div class="cal-widget-section-label">Today</div>
         <% @today_events.each do |ev| %>
-          <div class="cal-widget-event">
-            <span class="cal-widget-event-dot" style="background-color: <%= ev.display_color %>;"></span>
-            <div class="cal-widget-event-body">
-              <div class="cal-widget-event-time"><%= ev.time_label %><% if ev.duration_label %> · <%= ev.duration_label %><% end %></div>
-              <div class="cal-widget-event-title"><%= ev.title %></div>
-            </div>
-          </div>
+          <%= render "calendars/widget_event", event: ev %>
         <% end %>
       </div>
     <% end %>
@@ -34,13 +26,7 @@
       <div class="cal-widget-section">
         <div class="cal-widget-section-label">Tomorrow</div>
         <% @tomorrow_events.each do |ev| %>
-          <div class="cal-widget-event">
-            <span class="cal-widget-event-dot" style="background-color: <%= ev.display_color %>;"></span>
-            <div class="cal-widget-event-body">
-              <div class="cal-widget-event-time"><%= ev.time_label %><% if ev.duration_label %> · <%= ev.duration_label %><% end %></div>
-              <div class="cal-widget-event-title"><%= ev.title %></div>
-            </div>
-          </div>
+          <%= render "calendars/widget_event", event: ev %>
         <% end %>
       </div>
     <% end %>
@@ -50,20 +36,29 @@
       <div class="cal-widget-section">
         <div class="cal-widget-section-label">This week</div>
         <% @week_events.each do |ev| %>
-          <div class="cal-widget-event">
-            <span class="cal-widget-event-dot" style="background-color: <%= ev.display_color %>;"></span>
-            <div class="cal-widget-event-body">
-              <div class="cal-widget-event-time"><%= ev.time_label %><% if ev.duration_label %> · <%= ev.duration_label %><% end %></div>
-              <div class="cal-widget-event-title"><%= ev.title %></div>
-            </div>
-          </div>
+          <%= render "calendars/widget_event", event: ev %>
         <% end %>
       </div>
     <% end %>
 
-    <%# Empty state %>
+    <%# Empty state — show mini week calendar %>
     <% if @today_events.none? && @tomorrow_events.none? && @week_events.none? %>
-      <div class="cal-widget-empty">No upcoming events</div>
+      <div class="cal-widget-mini-week">
+        <% today = Date.today %>
+        <% week_start = today.beginning_of_week(:monday) %>
+        <% 7.times do |i| %>
+          <% day = week_start + i %>
+          <div class="cal-mini-day<%= ' cal-mini-day--today' if day == today %><%= ' cal-mini-day--past' if day < today %>">
+            <span class="cal-mini-day-name"><%= day.strftime('%a') %></span>
+            <span class="cal-mini-day-num"><%= day.day %></span>
+          </div>
+        <% end %>
+      </div>
+      <div class="cal-widget-empty">
+        No events this week ·
+        <%= link_to "Open Calendar", calendar_path, class: "cal-widget-empty-link",
+              data: { turbo_frame: "_top" } %>
+      </div>
     <% end %>
   </div>
 <% end %>

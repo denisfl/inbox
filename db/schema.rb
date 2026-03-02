@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_28_110249) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_02_100000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -50,6 +50,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_28_110249) do
     t.index ["document_id"], name: "index_blocks_on_document_id"
   end
 
+  create_table "calendar_event_tags", force: :cascade do |t|
+    t.integer "calendar_event_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "tag_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["calendar_event_id", "tag_id"], name: "index_calendar_event_tags_on_calendar_event_id_and_tag_id", unique: true
+    t.index ["calendar_event_id"], name: "index_calendar_event_tags_on_calendar_event_id"
+    t.index ["tag_id"], name: "index_calendar_event_tags_on_tag_id"
+  end
+
   create_table "calendar_events", force: :cascade do |t|
     t.boolean "all_day", default: false, null: false
     t.string "color"
@@ -57,15 +67,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_28_110249) do
     t.text "description"
     t.datetime "ends_at"
     t.string "google_calendar_id", default: "primary", null: false
-    t.string "google_event_id", null: false
+    t.string "google_event_id"
     t.string "html_link"
     t.datetime "reminded_at"
+    t.string "source", default: "google", null: false
     t.datetime "starts_at", null: false
     t.string "status", default: "confirmed", null: false
     t.datetime "synced_at"
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["google_event_id"], name: "index_calendar_events_on_google_event_id", unique: true
+    t.index ["source"], name: "index_calendar_events_on_source"
     t.index ["starts_at"], name: "index_calendar_events_on_starts_at"
     t.index ["status", "starts_at"], name: "index_calendar_events_on_status_and_starts_at"
     t.index ["status"], name: "index_calendar_events_on_status"
@@ -84,6 +96,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_28_110249) do
     t.text "content"
     t.datetime "created_at", null: false
     t.string "document_type", default: "note", null: false
+    t.boolean "pinned", default: false, null: false
     t.string "slug"
     t.string "source"
     t.integer "telegram_chat_id", limit: 8
@@ -91,6 +104,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_28_110249) do
     t.string "title"
     t.datetime "updated_at", null: false
     t.index ["document_type"], name: "index_documents_on_document_type"
+    t.index ["pinned"], name: "index_documents_on_pinned"
     t.index ["slug"], name: "index_documents_on_slug", unique: true
     t.index ["source"], name: "index_documents_on_source"
     t.index ["telegram_chat_id", "telegram_message_id"], name: "index_documents_on_telegram_chat_id_and_telegram_message_id"
@@ -104,9 +118,43 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_28_110249) do
     t.index ["name"], name: "index_tags_on_name"
   end
 
+  create_table "task_tags", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "tag_id", null: false
+    t.integer "task_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tag_id"], name: "index_task_tags_on_tag_id"
+    t.index ["task_id", "tag_id"], name: "index_task_tags_on_task_id_and_tag_id", unique: true
+    t.index ["task_id"], name: "index_task_tags_on_task_id"
+  end
+
+  create_table "tasks", force: :cascade do |t|
+    t.boolean "completed", default: false, null: false
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.integer "document_id"
+    t.date "due_date"
+    t.time "due_time"
+    t.integer "position", default: 0, null: false
+    t.string "priority", default: "mid", null: false
+    t.string "recurrence_rule"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["completed", "due_date"], name: "index_tasks_on_completed_and_due_date"
+    t.index ["completed", "priority", "position"], name: "index_tasks_on_completed_and_priority_and_position"
+    t.index ["document_id"], name: "index_tasks_on_document_id"
+    t.index ["due_date"], name: "index_tasks_on_due_date"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "blocks", "documents"
+  add_foreign_key "calendar_event_tags", "calendar_events"
+  add_foreign_key "calendar_event_tags", "tags"
   add_foreign_key "document_tags", "documents"
   add_foreign_key "document_tags", "tags"
+  add_foreign_key "task_tags", "tags"
+  add_foreign_key "task_tags", "tasks"
+  add_foreign_key "tasks", "documents"
 end

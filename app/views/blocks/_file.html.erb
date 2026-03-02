@@ -17,12 +17,8 @@
                     data-action="click->audio-player#togglePlay"
                     data-audio-player-target="playButton"
                     title="Play/Pause">
-              <svg class="icon-play" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-              <svg class="icon-pause" style="display: none;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-              </svg>
+              <%= heroicon(:play, variant: :solid, class: 'icon-play', style: 'width: 20px; height: 20px;') %>
+              <%= heroicon(:pause, variant: :solid, class: 'icon-pause', style: 'width: 20px; height: 20px; display: none;') %>
             </button>
             
             <div class="audio-progress-bar" 
@@ -58,9 +54,7 @@
                       class: "btn btn-sm btn-secondary", 
                       title: "Download audio", 
                       download: block.file.filename do %>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
+            <%= heroicon(:arrow_down_tray, style: 'width: 16px; height: 16px;') %>
             Download
           <% end %>
         </div>

@@ -1,0 +1,47 @@
+<% content_for :title, "Tags — Inbox" %>
+
+<div class="tags-page">
+  <header class="tags-header">
+    <h1 class="tags-title">Tags</h1>
+    <div class="tags-search">
+      <%= form_tag tags_path, method: :get, class: "tags-search-form" do %>
+        <%= heroicon(:magnifying_glass, style: 'width: 14px; height: 14px;', class: 'tags-search-icon') %>
+        <input type="text" name="q" placeholder="Search tags..." value="<%= params[:q] %>"
+               class="tags-search-input" autocomplete="off">
+      <% end %>
+    </div>
+  </header>
+
+  <%# Tag filter bar — shown when there are tags to filter by %>
+  <% if Tag.count > 1 %>
+    <%= render partial: "shared/tag_filter_bar", locals: {
+      selected_tags: @selected_tags || [],
+      base_path: tags_path,
+      preserve: { q: params[:q] }.compact_blank
+    } %>
+  <% end %>
+
+  <% if @tags.any? %>
+    <div class="tags-grid">
+      <% @tags.each do |tag| %>
+        <%= link_to tag_path(tag.name), class: "tag-card" do %>
+          <div class="tag-card-header">
+            <span class="tag-color-dot" style="background:<%= tag_dot_color(tag) %>"></span>
+            <span class="tag-name">#<%= tag.name %></span>
+          </div>
+          <div class="tag-card-count">
+            <%= tag.documents.count %> docs · <%= tag.tasks.count %> tasks · <%= tag.calendar_events.count %> events
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="empty-state">
+      <%= heroicon(:tag, class: 'empty-state-icon') %>
+      <h2 class="empty-state-title">No tags yet</h2>
+      <p class="empty-state-description">
+        Tags will appear here when you add them to documents or tasks.
+      </p>
+    </div>
+  <% end %>
+</div>

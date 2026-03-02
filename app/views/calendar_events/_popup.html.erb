@@ -1,0 +1,121 @@
+<%# Event detail popup content — rendered inside data-event-popup-target="popup" %>
+<% ev = event %>
+
+<div class="event-popup-header">
+  <div class="event-popup-color" style="background: <%= ev.display_color %>;"></div>
+  <div class="event-popup-title"><%= ev.title %></div>
+  <button class="event-popup-close" data-action="click->event-popup#close" aria-label="Close">&times;</button>
+</div>
+
+<div class="event-popup-body">
+  <%# Date & time %>
+  <div class="event-popup-row">
+    <%= heroicon(:clock, class: 'event-popup-icon-svg', style: 'width: 14px; height: 14px;') %>
+    <div>
+      <% if ev.all_day? %>
+        <div class="event-popup-detail"><%= ev.starts_at.strftime("%A, %-d %B %Y") %></div>
+        <div class="event-popup-detail-sub">All day</div>
+      <% else %>
+        <div class="event-popup-detail"><%= ev.starts_at.strftime("%A, %-d %B %Y") %></div>
+        <div class="event-popup-detail-sub">
+          <%= ev.starts_at.strftime("%-H:%M") %><% if ev.ends_at %> — <%= ev.ends_at.strftime("%-H:%M") %><% end %>
+          <% if ev.duration_label.present? %>
+            <span class="event-popup-duration">(<%= ev.duration_label %>)</span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Description %>
+  <% if ev.description.present? %>
+    <div class="event-popup-row">
+      <%= heroicon(:bars_3_bottom_left, class: 'event-popup-icon-svg', style: 'width: 14px; height: 14px;') %>
+      <div class="event-popup-description"><%= simple_format(ev.description.truncate(500)) %></div>
+    </div>
+  <% end %>
+
+  <%# Calendar / Source %>
+  <div class="event-popup-row">
+    <%= heroicon(:calendar, class: 'event-popup-icon-svg', style: 'width: 14px; height: 14px;') %>
+    <div>
+      <span class="agenda-entry-source agenda-entry-source--<%= ev.source == 'google' ? 'gcal' : ev.source %>">
+        <%= case ev.source
+            when 'google' then 'Google Calendar'
+            when 'manual'  then 'Manual'
+            when 'ical'    then 'iCal Import'
+            end %>
+      </span>
+      <% if ev.google_calendar_id.present? && ev.source == 'google' %>
+        <span class="event-popup-calendar-name"><%= ev.google_calendar_id %></span>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Status %>
+  <% if ev.status != "confirmed" %>
+    <div class="event-popup-row">
+      <%= heroicon(:information_circle, class: 'event-popup-icon-svg', style: 'width: 14px; height: 14px;') %>
+      <span class="event-popup-status event-popup-status--<%= ev.status %>"><%= ev.status.capitalize %></span>
+    </div>
+  <% end %>
+
+  <%# Color name %>
+  <% color_names = { "1" => "Lavender", "2" => "Sage", "3" => "Grape", "4" => "Flamingo", "5" => "Banana", "6" => "Tangerine", "7" => "Peacock", "8" => "Graphite", "9" => "Blueberry", "10" => "Basil", "11" => "Tomato" } %>
+  <% if ev.color.present? && color_names[ev.color.to_s] %>
+    <div class="event-popup-row">
+      <%= heroicon(:paint_brush, class: 'event-popup-icon-svg', style: 'width: 14px; height: 14px;') %>
+      <span><%= color_names[ev.color.to_s] %></span>
+    </div>
+  <% end %>
+
+  <%# Tags %>
+  <% if ev.tags.any? %>
+    <div class="event-popup-row">
+      <%= heroicon(:tag, class: 'event-popup-icon-svg', style: 'width: 14px; height: 14px;') %>
+      <div class="event-popup-tags">
+        <% ev.tags.each do |t| %>
+          <%= link_to tag_path(t.name), class: "tag-pill" do %>
+            <span class="tag-pill-dot" style="background:<%= tag_dot_color(t) %>"></span>
+            #<%= t.name %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Synced timestamp %>
+  <% if ev.synced_at.present? %>
+    <div class="event-popup-row event-popup-row--muted">
+      <%= heroicon(:arrow_path, class: 'event-popup-icon-svg', style: 'width: 14px; height: 14px;') %>
+      <span>Synced <%= time_ago_in_words(ev.synced_at) %> ago</span>
+    </div>
+  <% end %>
+
+  <%# Created timestamp %>
+  <div class="event-popup-row event-popup-row--muted">
+    <%= heroicon(:clock, class: 'event-popup-icon-svg', style: 'width: 14px; height: 14px;') %>
+    <span>Created <%= ev.created_at.strftime("%-d %b %Y, %-H:%M") %></span>
+  </div>
+</div>
+
+<div class="event-popup-actions">
+  <% if ev.html_link.present? %>
+    <%= link_to ev.html_link, target: "_blank", rel: "noopener noreferrer", class: "event-popup-btn" do %>
+      <%= heroicon(:arrow_top_right_on_square, style: 'width: 12px; height: 12px;') %>
+      Open in Google
+    <% end %>
+  <% end %>
+  <% if ev.local? %>
+    <%= link_to edit_calendar_event_path(ev), class: "event-popup-btn" do %>
+      <%= heroicon(:pencil, style: 'width: 12px; height: 12px;') %>
+      Edit
+    <% end %>
+    <%= button_to calendar_event_path(ev), method: :delete,
+          class: "event-popup-btn event-popup-btn--danger",
+          form: { data: { turbo_confirm: "Delete \"#{j ev.title.truncate(40)}\"?" } } do %>
+      <%= heroicon(:trash, style: 'width: 12px; height: 12px;') %>
+      Delete
+    <% end %>
+  <% end %>
+</div>
