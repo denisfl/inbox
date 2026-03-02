@@ -460,14 +460,15 @@ GEM
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 4.0)
       websocket (~> 1.0)
+    sidekiq (8.1.1)
+      base64
+      connection_pool (>= 3.0.0)
+      json (>= 2.16.0)
+      logger (>= 1.7.0)
+      rack (>= 3.2.0)
+      redis-client (>= 0.26.0)
     shoulda-matchers (7.0.1)
       activesupport (>= 7.1)
-    sidekiq (7.3.9)
-      base64
-      connection_pool (>= 2.3.0)
-      logger
-      rack (>= 2.2.4)
-      redis-client (>= 0.22.2)
     signet (0.21.0)
       addressable (~> 2.8)
       faraday (>= 0.17.5, < 3.a)
@@ -594,8 +595,8 @@ DEPENDENCIES
   rspec-rails (~> 8.0)
   rubocop-rails-omakase
   selenium-webdriver
+  sidekiq (~> 8.1)
   shoulda-matchers (~> 7.0)
-  sidekiq (~> 7.0)
   simplecov
   solid_cable
   solid_cache

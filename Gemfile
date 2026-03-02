@@ -26,7 +26,7 @@ gem "jbuilder"
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
 # Background jobs
-gem "sidekiq", "~> 7.0"
+gem "sidekiq", "~> 8.1"
 gem "redis", "~> 5.0"
 
 # Telegram bot integration
