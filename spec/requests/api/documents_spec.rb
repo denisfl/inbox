@@ -29,7 +29,7 @@ RSpec.describe "Api::Documents", type: :request do
       json = JSON.parse(response.body)
       document = json['documents'].first
 
-      expect(document).to include('id', 'title', 'slug', 'source', 'blocks_count', 'tags', 'created_at', 'updated_at')
+      expect(document).to include('id', 'title', 'slug', 'blocks_count', 'tags', 'created_at', 'updated_at')
     end
 
     it "supports pagination parameters" do

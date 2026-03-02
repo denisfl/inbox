@@ -46,14 +46,6 @@ RSpec.describe Document, type: :model do
       end
     end
 
-    describe '.by_source' do
-      let!(:telegram_doc) { create(:document, source: 'telegram') }
-      let!(:web_doc) { create(:document, source: 'web') }
-      let!(:email_doc) { create(:document, source: 'email') }
-
-      it 'filters documents by source' do
-        expect(Document.by_source('telegram')).to contain_exactly(telegram_doc)
-      end
-    end
+    # NOTE: by_source scope was removed — documents now use tags instead of source field
   end
 end

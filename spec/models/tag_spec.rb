@@ -54,7 +54,7 @@ RSpec.describe Tag, type: :model do
         create(:document_tag, document: doc1, tag: unpopular_tag)
       end
 
-      it 'returns tags ordered by document count' do
+      it "returns tags ordered by total items count" do
         expect(Tag.popular.first).to eq(popular_tag)
       end
     end
