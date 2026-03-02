@@ -4,7 +4,7 @@ require 'rails_helper'
 
 RSpec.describe 'Document Editor', type: :system do
   before do
-    driven_by(:selenium, using: :headless_chrome, screen_size: [1400, 1400])
+    driven_by(:selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ])
   end
 
   let(:document) { create(:document, title: 'Test Document') }
@@ -60,7 +60,7 @@ RSpec.describe 'Document Editor', type: :system do
       initial_count = blocks_container.all('.block-wrapper').count
 
       # Send Cmd+Enter (Meta+Enter on Mac)
-      find('body').send_keys [:meta, :enter]
+      find('body').send_keys [ :meta, :enter ]
 
       # Wait for new block to appear
       expect(blocks_container).to have_css('.block-wrapper', count: initial_count + 1, wait: 5)
@@ -86,7 +86,7 @@ RSpec.describe 'Document Editor', type: :system do
       find('.text-block[contenteditable="true"]').click
 
       accept_confirm do
-        find('body').send_keys [:meta, :backspace]
+        find('body').send_keys [ :meta, :backspace ]
       end
 
       # Block should disappear

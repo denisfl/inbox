@@ -2,7 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Document Editor Drag-and-Drop Styles */
+html,
+body {
+  overflow-x: hidden;
+}
+
+/* ── App layout: sidebar + main ── */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--color-bg-secondary);
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
 
 /* Drag handle cursor */
 .block-drag-handle {
@@ -23,12 +48,12 @@
 
 /* Drop zone indicators */
 .block-wrapper.drop-above {
-  border-top: 3px solid #4caf50;
+  border-top: 3px solid var(--color-secondary);
   margin-top: 8px;
 }
 
 .block-wrapper.drop-below {
-  border-bottom: 3px solid #4caf50;
+  border-bottom: 3px solid var(--color-secondary);
   margin-bottom: 8px;
 }
 
@@ -37,4 +62,427 @@
   transition:
     margin 150ms ease,
     border-color 150ms ease;
+}
+
+/* Main Content Layout */
+.content-wrapper {
+  padding: var(--spacing-lg);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: var(--spacing-md);
+  }
+}
+
+/* PWA Update Banner */
+.pwa-update-banner {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: var(--color-primary);
+  color: white;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+}
+
+.pwa-update-banner .btn {
+  background: white;
+  color: var(--color-primary);
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-weight: var(--font-semibold);
+}
+
+.pwa-update-banner .btn:hover {
+  background: var(--color-bg-secondary);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ─── Markdown Editor ─────────────────────────────────────────── */
+
+/* Preview wrapper (view mode) */
+.markdown-preview-wrapper {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+/* Edit button — always visible, subtle */
+.markdown-edit-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 3px 5px;
+  color: var(--color-text-muted, #9ca3af);
+  line-height: 1;
+  align-self: flex-start;
+  margin-top: 2px;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.markdown-edit-btn:hover {
+  background: var(--color-bg-secondary, #f3f4f6);
+  color: var(--color-text, #374151);
+  border-color: var(--color-text-muted, #9ca3af);
+}
+
+/* Preview (rendered markdown) */
+.markdown-preview {
+  flex: 1;
+  min-height: 1.5rem;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+/* Prose typography for rendered markdown output */
+.markdown-preview p {
+  margin: 0 0 0.6em;
+}
+.markdown-preview p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 1em 0 0.4em;
+}
+.markdown-preview h1 {
+  font-size: 1.75em;
+}
+.markdown-preview h2 {
+  font-size: 1.4em;
+}
+.markdown-preview h3 {
+  font-size: 1.2em;
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+  padding-left: 1.5em;
+  margin: 0.4em 0;
+}
+.markdown-preview li {
+  margin: 0.2em 0;
+}
+
+/* Task list checkboxes */
+.markdown-preview input[type="checkbox"] {
+  margin-right: 0.4em;
+  cursor: pointer;
+  accent-color: var(--color-primary, #3b82f6);
+}
+
+.markdown-preview code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.875em;
+  background: var(--color-bg-secondary, #f3f4f6);
+  padding: 0.15em 0.35em;
+  border-radius: 3px;
+}
+
+.markdown-preview pre {
+  background: var(--color-bg-secondary, #f3f4f6);
+  border-radius: 6px;
+  padding: 0.8em 1em;
+  overflow-x: auto;
+  margin: 0.6em 0;
+}
+.markdown-preview pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.85em;
+}
+
+.markdown-preview blockquote {
+  border-left: 3px solid var(--color-border, #d1d5db);
+  padding-left: 1em;
+  margin: 0.6em 0;
+  color: var(--color-text-muted, #6b7280);
+  font-style: italic;
+}
+
+.markdown-preview a {
+  color: var(--color-primary, #3b82f6);
+  text-decoration: underline;
+}
+
+.markdown-preview strong {
+  font-weight: 700;
+}
+.markdown-preview em {
+  font-style: italic;
+}
+.markdown-preview del {
+  text-decoration: line-through;
+}
+
+.markdown-preview table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.6em 0;
+}
+.markdown-preview th,
+.markdown-preview td {
+  border: 1px solid var(--color-border, #e5e7eb);
+  padding: 0.4em 0.7em;
+  text-align: left;
+}
+.markdown-preview th {
+  font-weight: 700;
+  background: var(--color-bg-secondary, #f9fafb);
+}
+
+.markdown-preview hr {
+  border-color: var(--color-border);
+  border-top: 0;
+  margin-top: var(--spacing-2xl);
+  margin-bottom: var(--spacing-2xl);
+  border-left: 0;
+  border-right: 0;
+  padding: 0;
+}
+
+/* Edit area */
+.markdown-edit-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.markdown-textarea {
+  width: 100%;
+  min-height: 8rem;
+  padding: 0.5rem 0.6rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  border: 2px solid var(--color-primary, #3b82f6);
+  border-radius: 6px;
+  background: var(--color-bg, #ffffff);
+  color: var(--color-text, #111827);
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.markdown-textarea:focus {
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--color-primary, #3b82f6) 20%, transparent);
+}
+
+.markdown-edit-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.markdown-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+/* ── Inbox + Calendar sidebar layout ──────────────────────────────────────── */
+.inbox-with-sidebar {
+  display: grid;
+  grid-template-columns: 1frx;
+  gap: 1.5rem;
+  align-items: start;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.inbox-main {
+  min-width: 0; /* prevent overflow */
+  overflow: hidden;
+}
+
+.inbox-sidebar {
+  position: sticky;
+  top: 1rem;
+  min-width: 0;
+}
+
+/* ── Calendar widget ────────────────────────────────────────────────────────── */
+.cal-widget {
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  font-size: 0.875rem;
+}
+
+.cal-widget-header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+}
+
+.cal-widget-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-primary, #3b82f6);
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+a:hover .cal-widget-icon {
+  color: var(--color-primary-dark, #2563eb);
+}
+
+.cal-widget-title {
+  font-weight: 600;
+  color: var(--color-text, #111827);
+  flex: 1;
+  font-size: 0.875rem;
+}
+
+.cal-widget-link {
+  font-size: 0.75rem;
+  color: var(--color-primary, #3b82f6);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.cal-widget-link:hover {
+  text-decoration: underline;
+}
+
+.cal-widget-section {
+  margin-bottom: 0.75rem;
+}
+
+.cal-widget-section-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted, #9ca3af);
+  margin-bottom: 0.375rem;
+}
+
+.cal-widget-event {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--color-border, #f3f4f6);
+}
+
+.cal-widget-event:last-child {
+  border-bottom: none;
+}
+
+.cal-widget-event-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 0.35rem;
+}
+
+.cal-widget-event-body {
+  min-width: 0;
+}
+
+.cal-widget-event-time {
+  font-size: 0.7rem;
+  color: var(--color-text-muted, #9ca3af);
+  line-height: 1.2;
+}
+
+.cal-widget-event-title {
+  font-size: 0.8rem;
+  color: var(--color-text, #111827);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.cal-widget-empty {
+  color: var(--color-text-muted, #9ca3af);
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 0.5rem 0;
+}
+.cal-widget-empty-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+.cal-widget-empty-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Mini week calendar (empty state) ── */
+.cal-widget-mini-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--spacing-xs);
+  text-align: center;
+  margin-bottom: var(--spacing-sm);
+}
+.cal-mini-day {
+  padding: var(--spacing-xs) 0;
+  border-radius: var(--radius-sm);
+}
+.cal-mini-day--today {
+  background: var(--color-primary);
+  color: var(--color-bg-primary);
+}
+.cal-mini-day--past {
+  opacity: 0.4;
+}
+.cal-mini-day-name {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-tertiary);
+}
+.cal-mini-day--today .cal-mini-day-name {
+  color: color-mix(in srgb, var(--color-bg-primary) 80%, transparent);
+}
+.cal-mini-day-num {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  margin-top: 1px;
+}
+
+.back-link {
+  display: inline-flex;
+  gap: var(--spacing-sm);
+  align-items: center;
 }

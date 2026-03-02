@@ -1,0 +1,64 @@
+<%# Calendar widget content — rendered inside Turbo Frame "calendar-widget"
+    via GET /calendar/widget %>
+
+<%= turbo_frame_tag "calendar-widget" do %>
+  <div class="cal-widget">
+    <div class="cal-widget-header">
+      <span class="cal-widget-title">Upcoming</span>
+      <%= link_to calendar_path, class: "cal-widget-link", title: "Open Calendar",
+            "aria-label": "Open Calendar", data: { turbo_frame: "_top" } do %>
+        <%= heroicon(:calendar, class: 'cal-widget-icon') %>
+      <% end %>
+    </div>
+
+    <%# Today %>
+    <% if @today_events.any? %>
+      <div class="cal-widget-section">
+        <div class="cal-widget-section-label">Today</div>
+        <% @today_events.each do |ev| %>
+          <%= render "calendars/widget_event", event: ev %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Tomorrow %>
+    <% if @tomorrow_events.any? %>
+      <div class="cal-widget-section">
+        <div class="cal-widget-section-label">Tomorrow</div>
+        <% @tomorrow_events.each do |ev| %>
+          <%= render "calendars/widget_event", event: ev %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Rest of this week %>
+    <% if @week_events.any? %>
+      <div class="cal-widget-section">
+        <div class="cal-widget-section-label">This week</div>
+        <% @week_events.each do |ev| %>
+          <%= render "calendars/widget_event", event: ev %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Empty state — show mini week calendar %>
+    <% if @today_events.none? && @tomorrow_events.none? && @week_events.none? %>
+      <div class="cal-widget-mini-week">
+        <% today = Date.today %>
+        <% week_start = today.beginning_of_week(:monday) %>
+        <% 7.times do |i| %>
+          <% day = week_start + i %>
+          <div class="cal-mini-day<%= ' cal-mini-day--today' if day == today %><%= ' cal-mini-day--past' if day < today %>">
+            <span class="cal-mini-day-name"><%= day.strftime('%a') %></span>
+            <span class="cal-mini-day-num"><%= day.day %></span>
+          </div>
+        <% end %>
+      </div>
+      <div class="cal-widget-empty">
+        No events this week ·
+        <%= link_to "Open Calendar", calendar_path, class: "cal-widget-empty-link",
+              data: { turbo_frame: "_top" } %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

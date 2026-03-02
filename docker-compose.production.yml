@@ -1,0 +1,81 @@
+# Production overrides for docker-compose.yml
+# Usage: docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
+
+services:
+  web:
+    build:
+      target: production
+    command: bundle exec rails server -b 0.0.0.0
+    # Do NOT mount source code in production — image is self-contained
+    volumes:
+      - storage_data:/app/storage
+      - log_data:/app/log
+    environment:
+      - RAILS_ENV=production
+      - DATABASE_URL=sqlite3:/app/storage/production.sqlite3
+      - REDIS_URL=redis://redis:6379/0
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - RAILS_LOG_TO_STDOUT=true
+      # Secrets loaded from /run/secrets/* by bin/docker-entrypoint
+      # TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET_TOKEN are injected automatically
+      - TELEGRAM_BOT_NAME=${TELEGRAM_BOT_NAME}
+      - TELEGRAM_ALLOWED_USER_ID=${TELEGRAM_ALLOWED_USER_ID}
+      - TELEGRAM_WEBHOOK_URL=${TELEGRAM_WEBHOOK_URL}
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
+      - WEB_PASSWORD=${WEB_PASSWORD}
+      - API_TOKEN=${API_TOKEN}
+      - WHISPER_BASE_URL=http://whisper:5000
+      - RAILS_HOSTS=${RAILS_HOSTS}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN}
+      - GOOGLE_CALENDAR_IDS=${GOOGLE_CALENDAR_IDS:-primary}
+      - CALENDAR_REMINDER_MINUTES=${CALENDAR_REMINDER_MINUTES:-10}
+      # Omit WHISPER_LANGUAGE to use auto-detection; set to 'ru' or 'en' to force a language
+      # - WHISPER_LANGUAGE=ru
+      # Ollama model for transcription correction (default: gemma3:4b)
+      # - OLLAMA_CORRECTION_MODEL=gemma3:4b
+      # Ollama model for intent classification (default: gemma3:4b)
+      # - OLLAMA_INTENT_MODEL=gemma3:4b
+    ports:
+      - "3000:3000"
+
+  worker:
+    build:
+      target: production
+    command: bundle exec rails solid_queue:start
+    volumes:
+      - storage_data:/app/storage
+      - log_data:/app/log
+    environment:
+      - RAILS_ENV=production
+      - DATABASE_URL=sqlite3:/app/storage/production.sqlite3
+      - REDIS_URL=redis://redis:6379/0
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - RAILS_LOG_TO_STDOUT=true
+      - TELEGRAM_ALLOWED_USER_ID=${TELEGRAM_ALLOWED_USER_ID}
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
+      - WHISPER_BASE_URL=http://whisper:5000
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - RAILS_HOSTS=${RAILS_HOSTS}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN}
+      - GOOGLE_CALENDAR_IDS=${GOOGLE_CALENDAR_IDS:-primary}
+      - CALENDAR_REMINDER_MINUTES=${CALENDAR_REMINDER_MINUTES:-10}
+      # Omit WHISPER_LANGUAGE to use auto-detection; set to 'ru' or 'en' to force a language
+      # - WHISPER_LANGUAGE=ru
+      # Ollama model for transcription correction (default: gemma3:4b)
+      - OLLAMA_CORRECTION_MODEL=gemma3:4b
+      # Ollama model for intent classification (default: gemma3:4b)
+      # - OLLAMA_INTENT_MODEL=gemma3:4b
+
+  # Close internal ports in production
+  redis:
+    ports: []
+
+  ollama:
+    ports: []
+
+  whisper:
+    ports: []

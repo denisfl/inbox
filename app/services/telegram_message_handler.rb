@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'telegram/bot'
+require "telegram/bot"
 
 class TelegramMessageHandler
   attr_reader :update, :message, :bot
@@ -8,7 +8,7 @@ class TelegramMessageHandler
   def initialize(update)
     @update = update
     @message = update.message
-    @bot = Telegram::Bot::Client.new(ENV['TELEGRAM_BOT_TOKEN'])
+    @bot = Telegram::Bot::Client.new(ENV["TELEGRAM_BOT_TOKEN"])
   end
 
   def handle
@@ -23,6 +23,8 @@ class TelegramMessageHandler
       handle_photo
     when :voice
       handle_voice
+    when :audio
+      handle_audio
     when :document
       handle_document
     else
@@ -40,26 +42,22 @@ class TelegramMessageHandler
     return :text if message.text.present?
     return :photo if message.photo.present?
     return :voice if message.voice.present?
+    return :audio if message.audio.present?
     return :document if message.document.present?
     :unknown
   end
 
   def handle_text
-    doc = Document.create!(
-      title: message.text.truncate(50),
-      source: 'telegram',
-      telegram_chat_id: message.chat.id,
-      telegram_message_id: message.message_id
-    )
+    result = IntentClassifierService.classify(message.text)
+    doc = IntentRouter.dispatch(result, message.chat.id)
 
-    doc.blocks.create!(
-      block_type: 'text',
-      position: 0,
-      content: { text: message.text }.to_json
-    )
+    # Update telegram_message_id after creation (IntentRouter doesn't have access to it)
+    # Only for Document records — Tasks don't have telegram fields
+    if doc&.persisted? && doc.respond_to?(:telegram_message_id)
+      doc.update_columns(telegram_message_id: message.message_id)
+    end
 
-    send_reply("✅ Note saved")
-    Rails.logger.info("Created text document: #{doc.id}")
+    Rails.logger.info("Created #{result.intent} document: #{doc&.id} (confidence: #{result.confidence})")
   end
 
   def handle_photo
@@ -78,14 +76,17 @@ class TelegramMessageHandler
 
     doc = Document.create!(
       title: title_with_timestamp.truncate(50),
-      source: 'telegram',
       telegram_chat_id: message.chat.id,
       telegram_message_id: message.message_id
     )
 
+    # Auto-tag as telegram
+    telegram_tag = Tag.find_or_create_by!(name: "telegram")
+    doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
+
     # Create image block
     image_block = doc.blocks.create!(
-      block_type: 'image',
+      block_type: "image",
       position: 0,
       content: {}.to_json
     )
@@ -94,13 +95,17 @@ class TelegramMessageHandler
     image_block.image.attach(
       io: downloaded_file,
       filename: "telegram_photo_#{photo.file_id}.jpg",
-      content_type: 'image/jpeg'
+      content_type: "image/jpeg"
     )
+
+    # Auto-tag as file
+    file_tag = Tag.find_or_create_by!(name: "file")
+    doc.tags << file_tag unless doc.tags.include?(file_tag)
 
     # Add caption as text block if present
     if message.caption.present?
       doc.blocks.create!(
-        block_type: 'text',
+        block_type: "text",
         position: 1,
         content: { text: message.caption }.to_json
       )
@@ -118,38 +123,84 @@ class TelegramMessageHandler
     file_url = "https://api.telegram.org/file/bot#{ENV['TELEGRAM_BOT_TOKEN']}/#{file_path}"
     downloaded_file = download_file(file_url)
 
+    # Add timestamp to ensure unique slug
+    title = "🎤 Voice #{Time.current.to_i}"
+
     doc = Document.create!(
-      title: "🎤 Transcribing...",
-      source: 'telegram',
+      title: title,
       telegram_chat_id: message.chat.id,
       telegram_message_id: message.message_id
     )
 
-    # Create placeholder text block
-    doc.blocks.create!(
-      block_type: 'text',
-      position: 0,
-      content: { text: "🎤 Transcription in progress..." }.to_json
-    )
+    # Auto-tag as telegram
+    telegram_tag = Tag.find_or_create_by!(name: "telegram")
+    doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
 
     # Create file block with voice attachment
     file_block = doc.blocks.create!(
-      block_type: 'file',
-      position: 1,
+      block_type: "file",
+      position: 0,
       content: { filename: "voice_#{message.voice.file_id}.ogg" }.to_json
     )
 
     file_block.file.attach(
       io: downloaded_file,
       filename: "voice_#{message.voice.file_id}.ogg",
-      content_type: 'audio/ogg'
+      content_type: "audio/ogg"
     )
 
-    # TODO: Queue transcription job (Story 11)
-    # TranscribeAudioJob.perform_later(doc.id, file_block.file.blob.key)
+    # Auto-tag as audio
+    audio_tag = Tag.find_or_create_by!(name: "audio")
+    doc.tags << audio_tag unless doc.tags.include?(audio_tag)
 
-    send_reply("🎤 Voice note saved. Transcription coming in Story 11!")
-    Rails.logger.info("Created voice document: #{doc.id}")
+    # Queue transcription job
+    TranscribeAudioJob.perform_later(doc.id, file_block.file.blob.key)
+
+    send_reply("🎤 Transcribing your voice note...")
+    Rails.logger.info("Created voice document: #{doc.id}, queued transcription")
+  end
+
+  def handle_audio
+    file_info = bot.api.get_file(file_id: message.audio.file_id)
+    file_path = file_info.file_path
+
+    # Download audio file
+    file_url = "https://api.telegram.org/file/bot#{ENV['TELEGRAM_BOT_TOKEN']}/#{file_path}"
+    downloaded_file = download_file(file_url)
+
+    filename = message.audio.file_name || "audio_#{message.audio.file_id}"
+    # Add timestamp to ensure unique slug
+    title = "🎵 #{filename} #{Time.current.to_i}"
+
+    doc = Document.create!(
+      title: title.truncate(50),
+      telegram_chat_id: message.chat.id,
+      telegram_message_id: message.message_id
+    )
+
+    # Auto-tag as telegram
+    telegram_tag = Tag.find_or_create_by!(name: "telegram")
+    doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
+
+    # Create file block with audio attachment
+    file_block = doc.blocks.create!(
+      block_type: "file",
+      position: 0,
+      content: { filename: filename }.to_json
+    )
+
+    file_block.file.attach(
+      io: downloaded_file,
+      filename: filename,
+      content_type: message.audio.mime_type || "audio/mpeg"
+    )
+
+    # Auto-tag as audio
+    audio_tag = Tag.find_or_create_by!(name: "audio")
+    doc.tags << audio_tag unless doc.tags.include?(audio_tag)
+
+    send_reply("🎵 Audio file saved")
+    Rails.logger.info("Created audio document: #{doc.id}")
   end
 
   def handle_document
@@ -165,14 +216,17 @@ class TelegramMessageHandler
 
     doc = Document.create!(
       title: caption.truncate(50),
-      source: 'telegram',
       telegram_chat_id: message.chat.id,
       telegram_message_id: message.message_id
     )
 
+    # Auto-tag as telegram
+    telegram_tag = Tag.find_or_create_by!(name: "telegram")
+    doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
+
     # Create file block
     file_block = doc.blocks.create!(
-      block_type: 'file',
+      block_type: "file",
       position: 0,
       content: { filename: filename }.to_json
     )
@@ -183,10 +237,14 @@ class TelegramMessageHandler
       content_type: message.document.mime_type
     )
 
+    # Auto-tag as file
+    file_tag = Tag.find_or_create_by!(name: "file")
+    doc.tags << file_tag unless doc.tags.include?(file_tag)
+
     # Add caption as text block if present
     if message.caption.present?
       doc.blocks.create!(
-        block_type: 'text',
+        block_type: "text",
         position: 1,
         content: { text: message.caption }.to_json
       )
@@ -197,7 +255,7 @@ class TelegramMessageHandler
   end
 
   def download_file(url)
-    require 'open-uri'
+    require "open-uri"
 
     URI.parse(url).open
   rescue StandardError => e

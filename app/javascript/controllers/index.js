@@ -10,5 +10,32 @@ application.register("document-editor", DocumentEditorController);
 import SearchController from "./search_controller";
 application.register("search", SearchController);
 
+import PwaController from "./pwa_controller";
+application.register("pwa", PwaController);
+
 import HelloController from "./hello_controller";
 application.register("hello", HelloController);
+
+import MarkdownEditorController from "./markdown_editor_controller";
+application.register("markdown-editor", MarkdownEditorController);
+
+import SimpleEditorController from "./simple_editor_controller";
+application.register("simple-editor", SimpleEditorController);
+
+import EventPopupController from "./event_popup_controller";
+application.register("event-popup", EventPopupController);
+
+import QuickCaptureController from "./quick_capture_controller";
+application.register("quick-capture", QuickCaptureController);
+
+import FileUploadController from "./file_upload_controller";
+application.register("file-upload", FileUploadController);
+
+import SidebarController from "./sidebar_controller";
+application.register("sidebar", SidebarController);
+
+import TagInputController from "./tag_input_controller";
+application.register("tag-input", TagInputController);
+
+import TagFilterController from "./tag_filter_controller";
+application.register("tag-filter", TagFilterController);

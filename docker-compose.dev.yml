@@ -1,0 +1,38 @@
+# Development overrides for docker-compose.yml
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  redis:
+    ports:
+      - "6379:6379"
+
+  ollama:
+    ports:
+      - "11434:11434"
+
+  whisper:
+    ports:
+      - "5001:5000"
+
+  web:
+    build:
+      target: development
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    environment:
+      - RAILS_ENV=development
+      - DATABASE_URL=sqlite3:db/development.sqlite3
+
+  worker:
+    build:
+      target: development
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    environment:
+      - RAILS_ENV=development
+      - DATABASE_URL=sqlite3:db/development.sqlite3
+
+volumes:
+  node_modules:

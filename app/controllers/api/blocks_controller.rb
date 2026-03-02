@@ -1,11 +1,16 @@
 class Api::BlocksController < Api::BaseController
   before_action :set_document
-  before_action :set_block, only: [:update, :destroy]
+  before_action :set_block, only: [ :update, :destroy ]
 
   # POST /api/documents/:document_id/blocks
   def create
-    @block = @document.blocks.build(block_params)
+    params_for_create = block_params.to_h
+    content_data = params_for_create.delete(:content)
+
+    @block = @document.blocks.build(params_for_create)
+    @block.content_hash = content_data if content_data.present?
     @block.save!
+
     render json: serialize_block(@block), status: :created
   end
 
@@ -28,7 +33,7 @@ class Api::BlocksController < Api::BaseController
     @block.destroy!
 
     # Reorder remaining blocks
-    @document.blocks.where('position > ?', position).order(:position).each_with_index do |block, index|
+    @document.blocks.where("position > ?", position).order(:position).each_with_index do |block, index|
       block.update_column(:position, position + index)
     end
 
@@ -42,7 +47,7 @@ class Api::BlocksController < Api::BaseController
     # Validate all blocks belong to this document
     blocks = @document.blocks.where(id: block_ids)
     if blocks.size != block_ids.size
-      return render json: { error: 'Invalid block IDs' }, status: :unprocessable_entity
+      return render json: { error: "Invalid block IDs" }, status: :unprocessable_entity
     end
 
     # Update positions
@@ -55,6 +60,7 @@ class Api::BlocksController < Api::BaseController
       blocks: @document.blocks.ordered.map { |b| serialize_block(b) }
     }
   end
+
 
   private
 

@@ -3,281 +3,468 @@
   <meta name="auth-token" content="<%= ENV['API_TOKEN'] || 'development_token' %>">
 <% end %>
 
-<div class="document-editor-container" 
-     data-controller="document-editor"
-     data-document-editor-document-id-value="<%= @document.id %>"
-     data-document-editor-save-url-value="/api/documents/<%= @document.id %>">
-  
-  <!-- Header -->
-  <header class="editor-header">
-    <div class="header-left">
-      <%= link_to "← Back", documents_path, class: "back-link" %>
+<%
+  audio_mime_prefix = "audio/"
+  audio_extensions  = %w[.ogg .mp3 .m4a .wav .opus .aac .flac .webm]
+
+  text_block   = @blocks.find { |b| b.block_type == "text" }
+  audio_blocks = @blocks.select do |b|
+    b.block_type == "file" && b.file.attached? &&
+      (b.file.content_type.to_s.start_with?(audio_mime_prefix) ||
+       audio_extensions.any? { |ext| b.file.filename.to_s.end_with?(ext) })
+  end
+
+  image_blocks = @blocks.select { |b| b.block_type == "image" && b.image.attached? }
+  file_blocks  = @blocks.select do |b|
+    b.block_type == "file" && b.file.attached? &&
+      !b.file.content_type.to_s.start_with?(audio_mime_prefix) &&
+      audio_extensions.none? { |ext| b.file.filename.to_s.end_with?(ext) }
+  end
+%>
+
+<div class="simple-editor-container"
+     data-controller="simple-editor"
+     data-simple-editor-document-id-value="<%= @document.id %>"
+     data-simple-editor-block-id-value="<%= text_block&.id.to_i %>">
+
+  <%# ── Header ────────────────────────────────────────────────────── %>
+  <header class="simple-editor-header">
+    <div class="simple-editor-header-left">
+      <%= back_link(documents_path, "Back") %>
     </div>
-    
-    <div class="header-center">
-      <h1 contenteditable="true" class="document-title"><%= @document.title %></h1>
-    </div>
-    
-    <div class="header-right">
-      <span data-document-editor-target="saveIndicator" class="save-indicator"></span>
+
+    <div class="simple-editor-header-right">
+      <span class="save-indicator" data-simple-editor-target="saveIndicator"></span>
+
+      <%# Upload buttons %>
+      <label class="simple-editor-upload-btn" title="Attach images">
+        <%= heroicon :photo, width: 16, height: 16 %>
+        <input type="file" accept="image/*" multiple class="hidden"
+               data-simple-editor-target="imageInput"
+               data-action="change->simple-editor#handleImageChange">
+      </label>
+
+      <label class="simple-editor-upload-btn" title="Attach files">
+        <%= heroicon :paper_clip, width: 16, height: 16 %>
+        <input type="file" multiple class="hidden"
+               data-simple-editor-target="fileInput"
+               data-action="change->simple-editor#handleFileChange">
+      </label>
+
+      <%# Preview / Edit toggle %>
+      <button type="button"
+              class="btn btn-sm simple-editor-preview-btn"
+              data-simple-editor-target="previewToggleBtn"
+              data-action="click->simple-editor#togglePreview">
+        Preview
+      </button>
+
+      <%# Delete %>
+      <%= button_to document_path(@document), method: :delete,
+            class: "simple-editor-delete-btn",
+            title: "Delete note",
+            form: { data: { turbo_confirm: "Delete \"#{j @document.title.truncate(40)}\"? This will remove the note and all attached files. This cannot be undone." } } do %>
+        <%= heroicon(:trash, style: 'width: 1rem; height: 1rem;') %>
+      <% end %>
     </div>
   </header>
 
-  <!-- Blocks Container -->
-  <main class="blocks-container" data-document-editor-target="blocksContainer">
-    <% @blocks.each do |block| %>
-      <%= render partial: "blocks/block", locals: { block: block } %>
-    <% end %>
-  </main>
-
-  <!-- Add Block Button -->
-  <div class="add-block-section">
-    <button type="button" 
-            class="add-block-btn"
-            data-action="click->document-editor#addNewBlock">
-      + Add Block
-    </button>
-    <p class="keyboard-hint">
-      <kbd>⌘</kbd> + <kbd>Enter</kbd> to add block · 
-      <kbd>⌘</kbd> + <kbd>Backspace</kbd> to delete
-    </p>
+  <%# ── Title ─────────────────────────────────────────────────────── %>
+  <div class="simple-editor-title-wrapper">
+    <h1 class="simple-editor-title"
+        contenteditable="true"
+        data-simple-editor-target="title"
+        data-action="blur->simple-editor#saveTitle"
+        spellcheck="false"><%= @document.title %></h1>
   </div>
+
+  <%# ── Tags ───────────────────────────────────────────────────────── %>
+  <div class="simple-editor-tags"
+       data-controller="tag-input"
+       data-tag-input-entity-type-value="document"
+       data-tag-input-entity-id-value="<%= @document.id %>">
+    <div class="tag-input-pills" data-tag-input-target="pills">
+      <% @document.tags.each do |tag| %>
+        <span class="tag-pill" data-tag-name="<%= tag.name %>">
+          <span class="tag-pill-dot" style="background:<%= tag_dot_color(tag) %>"></span>
+          #<%= tag.name %>
+          <button type="button" class="tag-pill-remove" data-action="click->tag-input#removeTag">&times;</button>
+        </span>
+      <% end %>
+    </div>
+    <div class="tag-input-wrapper">
+      <input type="text"
+             class="tag-input-field"
+             placeholder="Add tag…"
+             data-tag-input-target="input"
+             data-action="input->tag-input#onInput keydown->tag-input#onKeydown"
+             autocomplete="off">
+      <div class="tag-dropdown hidden" data-tag-input-target="dropdown"></div>
+    </div>
+  </div>
+
+  <%# ── Editor body ────────────────────────────────────────────────── %>
+  <main class="simple-editor-body">
+
+    <%# ── Audio players (voice / audio blocks) ─────────────────────── %>
+    <% if audio_blocks.any? %>
+      <div class="simple-editor-audio-section">
+        <% audio_blocks.each do |ab| %>
+          <div class="simple-editor-attachment" data-block-id="<%= ab.id %>">
+            <div class="simple-editor-audio-player">
+              <audio controls preload="metadata"
+                     src="<%= url_for(ab.file) %>"
+                     style="width:100%">
+                Your browser does not support audio playback.
+              </audio>
+              <div class="simple-editor-audio-filename">
+                🎙 <%= ab.file.filename %>
+              </div>
+            </div>
+            <button type="button" class="simple-editor-attachment-delete"
+                    title="Remove audio"
+                    data-action="click->simple-editor#deleteBlock"
+                    data-block-id="<%= ab.id %>">
+              <%= heroicon(:trash, style: "width:13px;height:13px") %>
+            </button>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# ── Image blocks ──────────────────────────────────────────────── %>
+    <% if image_blocks.any? %>
+      <div class="simple-editor-images-section">
+        <% image_blocks.each do |ib| %>
+          <div class="simple-editor-attachment" data-block-id="<%= ib.id %>">
+            <div class="simple-editor-image-wrapper">
+              <%= image_tag url_for(ib.image), alt: ib.image.filename.to_s,
+                    class: "simple-editor-image-preview" %>
+              <div class="simple-editor-image-filename">
+                📷 <%= ib.image.filename %> · <%= number_to_human_size(ib.image.byte_size) %>
+              </div>
+            </div>
+            <button type="button" class="simple-editor-attachment-delete"
+                    title="Remove image"
+                    data-action="click->simple-editor#deleteBlock"
+                    data-block-id="<%= ib.id %>">
+              <%= heroicon(:trash, style: "width:13px;height:13px") %>
+            </button>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# ── File blocks (non-audio) ──────────────────────────────────── %>
+    <% if file_blocks.any? %>
+      <div class="simple-editor-files-section">
+        <% file_blocks.each do |fb| %>
+          <div class="simple-editor-attachment" data-block-id="<%= fb.id %>">
+            <div class="simple-editor-file-info">
+              <%= heroicon(:document, style: "width:16px;height:16px;color:var(--color-text-tertiary);flex-shrink:0") %>
+              <a href="<%= url_for(fb.file) %>" target="_blank" class="simple-editor-file-link">
+                <%= fb.file.filename %>
+              </a>
+              <span class="simple-editor-file-size"><%= number_to_human_size(fb.file.byte_size) %></span>
+            </div>
+            <button type="button" class="simple-editor-attachment-delete"
+                    title="Remove file"
+                    data-action="click->simple-editor#deleteBlock"
+                    data-block-id="<%= fb.id %>">
+              <%= heroicon(:trash, style: "width:13px;height:13px") %>
+            </button>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Edit mode (default): hidden when there is no text block and audio-only document %>
+    <textarea class="simple-editor-textarea<%= ' hidden' if text_block.nil? && audio_blocks.any? %>"
+              data-simple-editor-target="textarea"
+              data-action="input->simple-editor#scheduleAutoSave"
+              placeholder="Write in Markdown…"
+              spellcheck="true"
+              autocomplete="off"><%= text_block&.content_hash&.dig("text") %></textarea>
+
+    <%# Preview mode (hidden by default) %>
+    <div class="hidden markdown-preview simple-editor-preview"
+         data-simple-editor-target="preview"></div>
+  </main>
 </div>
 
 <style>
-    * { box-sizing: border-box; }
-    
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f5f5f5;
-    }
+  .simple-editor-container {
+    max-width: 800px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-primary);
+  }
 
-    .document-editor-container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: white;
-      min-height: 100vh;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
-    }
+  /* Header */
+  .simple-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    background: var(--color-bg-primary);
+    z-index: var(--z-sticky);
+  }
 
-    .editor-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 40px;
-      border-bottom: 1px solid #e0e0e0;
-      position: sticky;
-      top: 0;
-      background: white;
-      z-index: 100;
-    }
+  .simple-editor-header-left,
+  .simple-editor-header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
 
-    .back-link {
-      text-decoration: none;
-      color: #666;
-      font-size: 14px;
-    }
+  /* Upload icon buttons */
+  .simple-editor-upload-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+    color: var(--color-text-tertiary);
+    border: 1px solid var(--color-border);
+    background: none;
+    transition: background var(--transition-fast), color var(--transition-fast);
+    line-height: 1;
+  }
 
-    .document-title {
-      font-size: 24px;
-      margin: 0;
-      padding: 8px;
-      border: 2px solid transparent;
-      outline: none;
-    }
+  .simple-editor-upload-btn:hover {
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+  }
 
-    .document-title:focus {
-      border-color: #4CAF50;
-      border-radius: 4px;
-    }
+  /* Preview toggle button */
+  .simple-editor-preview-btn {
+    font-size: var(--text-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
 
-    .save-indicator {
-      font-size: 14px;
-      padding: 4px 12px;
-      border-radius: 4px;
-    }
+  /* Delete button */
+  .simple-editor-delete-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+    color: var(--color-text-tertiary);
+    border: 1px solid var(--color-border);
+    background: none;
+    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+    line-height: 1;
+  }
+  .simple-editor-delete-btn:hover {
+    color: var(--color-danger);
+    border-color: color-mix(in srgb, var(--color-danger) 25%, var(--color-border));
+    background: color-mix(in srgb, var(--color-danger) 6%, var(--color-bg-primary));
+  }
 
-    .save-indicator--saving { color: #ff9800; }
-    .save-indicator--saved { color: #4CAF50; }
-    .save-indicator--error { color: #f44336; }
+  /* Title */
+  .simple-editor-title-wrapper {
+    padding: var(--spacing-lg) var(--spacing-xl) 0;
+  }
 
-    .blocks-container {
-      padding: 40px;
-    }
+  .simple-editor-title {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    line-height: 1.25;
+    margin: 0;
+    padding: var(--spacing-xs) 0;
+    outline: none;
+    border-bottom: 2px solid transparent;
+    word-break: break-word;
+    color: var(--color-text-primary);
+  }
 
-    .block-wrapper {
-      position: relative;
-      margin-bottom: 16px;
-      padding-left: 40px;
-    }
+  .simple-editor-title:focus {
+    border-bottom-color: var(--color-primary);
+  }
 
-    .block-wrapper:hover .block-controls {
-      opacity: 1;
-    }
+  /* Body */
+  .simple-editor-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-md) var(--spacing-xl) var(--spacing-2xl);
+  }
 
-    .block-controls {
-      position: absolute;
-      left: 0;
-      top: 0;
-      display: flex;
-      gap: 4px;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
+  /* Textarea */
+  .simple-editor-textarea {
+    flex: 1;
+    width: 100%;
+    min-height: calc(100vh - 200px);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: 1.7;
+    color: var(--color-text-primary);
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    padding: 0;
+    box-sizing: border-box;
+  }
 
-    .block-controls button {
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      font-size: 16px;
-      padding: 4px;
-    }
+  .simple-editor-textarea::placeholder {
+    color: var(--color-text-tertiary);
+  }
 
-    .block-controls button:hover {
-      background: #f0f0f0;
-      border-radius: 4px;
-    }
+  /* Preview pane */
+  .simple-editor-preview {
+    min-height: calc(100vh - 200px);
+    line-height: 1.7;
+    word-break: break-word;
+  }
 
-    .block-content {
-      min-height: 24px;
-    }
+  /* Audio players */
+  .simple-editor-audio-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+  }
 
-    /* Block types */
-    .text-block {
-      padding: 8px;
-      min-height: 40px;
-      line-height: 1.6;
-      outline: none;
-      border: 2px solid transparent;
-      border-radius: 4px;
-    }
+  .simple-editor-audio-player {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
 
-    .text-block:focus {
-      border-color: #4CAF50;
-    }
+  .simple-editor-audio-filename {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin-top: var(--spacing-xs);
+  }
 
-    .heading-block {
-      margin: 16px 0;
-      outline: none;
-    }
+  /* Attachments (common wrapper with delete button) */
+  .simple-editor-attachment {
+    position: relative;
+  }
 
-    .todo-block {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 8px;
-    }
+  .simple-editor-attachment-delete {
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    background: var(--color-bg-secondary);
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+  }
 
-    .todo-block input[type="checkbox"] {
-      width: 20px;
-      height: 20px;
-    }
+  .simple-editor-attachment:hover .simple-editor-attachment-delete {
+    opacity: 1;
+  }
 
-    .todo-block span {
-      flex: 1;
-      outline: none;
-    }
+  .simple-editor-attachment-delete:hover {
+    color: var(--color-danger);
+    background: color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-primary));
+    border-color: color-mix(in srgb, var(--color-danger) 25%, var(--color-border));
+  }
 
-    .code-block {
-      background: #f5f5f5;
-      padding: 16px;
-      border-radius: 8px;
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
-      overflow-x: auto;
-      outline: none;
-    }
+  /* Image blocks */
+  .simple-editor-images-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+  }
 
-    .quote-block {
-      border-left: 4px solid #4CAF50;
-      padding: 12px 20px;
-      margin: 16px 0;
-      background: #f9f9f9;
-      font-style: italic;
-      outline: none;
-    }
+  .simple-editor-image-wrapper {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-sm);
+    overflow: hidden;
+  }
 
-    .image-block, .file-block, .link-block {
-      padding: 16px;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-    }
+  .simple-editor-image-preview {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    border-radius: var(--radius-base);
+    display: block;
+  }
 
-    .image-block img {
-      max-width: 100%;
-      border-radius: 4px;
-    }
+  .simple-editor-image-filename {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin-top: var(--spacing-xs);
+  }
 
-    .link-block input {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #e0e0e0;
-      border-radius: 4px;
-      margin-bottom: 8px;
-    }
+  /* File blocks (non-audio) */
+  .simple-editor-files-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-lg);
+  }
 
-    .link-preview {
-      padding: 12px;
-      background: #f5f5f5;
-      border-radius: 4px;
-      color: #666;
-    }
+  .simple-editor-file-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
 
-    .add-block-section {
-      padding: 40px;
-      text-align: center;
-    }
+  .simple-editor-file-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-size: var(--text-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
-    .add-block-btn {
-      background: #4CAF50;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-    }
+  .simple-editor-file-link:hover {
+    text-decoration: underline;
+  }
 
-    .add-block-btn:hover {
-      background: #45a049;
-    }
+  .simple-editor-file-size {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
+    margin-left: auto;
+  }
 
-    .keyboard-hint {
-      margin-top: 16px;
-      color: #999;
-      font-size: 14px;
-    }
+  /* Save indicator */
+  .save-indicator { font-size: var(--text-xs); }
+  .save-indicator--saving { color: var(--color-accent); }
+  .save-indicator--saved  { color: var(--color-success); }
+  .save-indicator--error  { color: var(--color-danger); }
 
-    kbd {
-      background: #f0f0f0;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 2px 6px;
-      font-family: monospace;
-      font-size: 12px;
-    }
+  /* ── Tag input in editor ── */
+  .simple-editor-tags {
+    padding: 0 var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
+  }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-      .editor-header {
-        padding: 16px 20px;
-      }
-
-      .document-title {
-        font-size: 20px;
-      }
-
-      .blocks-container {
-        padding: 20px;
-      }
-
-      .block-wrapper {
-        padding-left: 30px;
-      }
-
-      .add-block-section {
-        padding: 20px;
-      }
-    }
-  </style>
+  /* Responsive */
+  @media (max-width: 640px) {
+    .simple-editor-header { padding: var(--spacing-sm) var(--spacing-md); }
+    .simple-editor-title-wrapper { padding: var(--spacing-md) var(--spacing-md) 0; }
+    .simple-editor-body { padding: var(--spacing-sm) var(--spacing-md) var(--spacing-xl); }
+    .simple-editor-title { font-size: var(--text-xl); }
+    .simple-editor-tags { padding: 0 var(--spacing-md); }
+  }
+</style>

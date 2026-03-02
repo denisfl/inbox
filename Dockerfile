@@ -88,6 +88,9 @@ RUN pnpm install
 # Copy application
 COPY . .
 
+# Build CSS and JS assets (app/assets/builds/ is gitignored)
+RUN pnpm run build && pnpm run build:css
+
 # Create necessary directories
 RUN mkdir -p /app/log /app/tmp /app/db
 
@@ -143,13 +146,8 @@ COPY --from=builder --chown=rails:rails /app/node_modules ./node_modules
 COPY --from=builder --chown=rails:rails /app/public/assets ./public/assets
 COPY --chown=rails:rails . .
 
-# Ensure bundle config persists for runtime
-RUN bundle config set deployment true && \
-    bundle config set without "development test" && \
-    bundle config set frozen true
-
-# Create dirs
-RUN mkdir -p /app/log /app/tmp /app/db && \
+# Create dirs with all Rails tmp subdirectories
+RUN mkdir -p /app/log /app/tmp/cache /app/tmp/pids /app/tmp/sockets /app/db && \
     chown -R rails:rails /app
 
 USER rails
@@ -159,4 +157,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
+ENTRYPOINT ["bin/docker-entrypoint"]
 CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]

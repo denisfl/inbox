@@ -1,0 +1,49 @@
+<%# Calendar widget — rendered server-side in documents index sidebar.
+    Data comes from @widget_today, @widget_tomorrow, @widget_week
+    set in DocumentsController#index. %>
+
+<div class="cal-widget">
+  <div class="cal-widget-header">
+    <span class="cal-widget-title">Upcoming</span>
+    <%= link_to calendar_path, class: "cal-widget-link", title: "Open Calendar",
+          "aria-label": "Open Calendar" do %>
+      <%= heroicon(:calendar, class: 'cal-widget-icon') %>
+    <% end %>
+  </div>
+
+  <%# Today %>
+  <% if @widget_today&.any? %>
+    <div class="cal-widget-section">
+      <div class="cal-widget-section-label">Today</div>
+      <% @widget_today.each do |ev| %>
+        <%= render "calendars/widget_event", event: ev %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Tomorrow %>
+  <% if @widget_tomorrow&.any? %>
+    <div class="cal-widget-section">
+      <div class="cal-widget-section-label">Tomorrow</div>
+      <% @widget_tomorrow.each do |ev| %>
+        <%= render "calendars/widget_event", event: ev %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Rest of this week %>
+  <% if @widget_week&.any? %>
+    <div class="cal-widget-section">
+      <div class="cal-widget-section-label">This week</div>
+      <% @widget_week.each do |ev| %>
+        <%= render "calendars/widget_event", event: ev %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Empty state %>
+  <% if @widget_today.blank? && @widget_tomorrow.blank? && @widget_week.blank? %>
+    <div class="cal-widget-empty">No upcoming events</div>
+  <% end %>
+</div>
+

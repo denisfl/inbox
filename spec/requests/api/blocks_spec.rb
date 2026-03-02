@@ -16,7 +16,7 @@ RSpec.describe "Api::Blocks", type: :request do
       {
         block: {
           block_type: 'text',
-          content: { text: 'Hello world' }.to_json
+          content: { text: 'Hello world' }  # Should be Hash, not JSON string
         }
       }
     end
@@ -46,6 +46,39 @@ RSpec.describe "Api::Blocks", type: :request do
 
         json = JSON.parse(response.body)
         expect(json['position']).to eq(2)
+      end
+
+      it "includes file_url when file is attached" do
+        file_attrs = {
+          block: {
+            block_type: 'file',
+            content: { text: 'attachment' }
+          }
+        }
+
+        post "/api/documents/#{document.id}/blocks",
+             params: file_attrs.to_json,
+             headers: headers
+
+        expect(response).to have_http_status(:created)
+        created_block = Block.last
+
+        # Attach a file to the block
+        created_block.file.attach(
+          io: StringIO.new("test data"),
+          filename: "test.txt",
+          content_type: "text/plain"
+        )
+
+        # Update the block to trigger blocks controller's serialize_block (which includes file data)
+        patch "/api/documents/#{document.id}/blocks/#{created_block.id}",
+              params: { block: { content: { text: "updated" } } }.to_json,
+              headers: headers
+
+        expect(response).to have_http_status(:success)
+        json = JSON.parse(response.body)
+        expect(json["file_url"]).to be_present
+        expect(json["file_filename"]).to eq("test.txt")
       end
 
       it "accepts explicit position" do
@@ -80,6 +113,16 @@ RSpec.describe "Api::Blocks", type: :request do
 
         expect(response).to have_http_status(:not_found)
       end
+
+      it "returns bad request when block param is missing" do
+        post "/api/documents/#{document.id}/blocks",
+             params: {}.to_json,
+             headers: headers
+
+        expect(response).to have_http_status(:bad_request)
+        json = JSON.parse(response.body)
+        expect(json['error']).to eq('Parameter missing')
+      end
     end
   end
 
@@ -89,7 +132,7 @@ RSpec.describe "Api::Blocks", type: :request do
     context "with valid parameters" do
       it "updates the block content" do
         patch "/api/documents/#{document.id}/blocks/#{block.id}",
-              params: { block: { content: { text: 'Updated text' }.to_json } }.to_json,
+              params: { block: { content: { text: 'Updated text' } } }.to_json,
               headers: headers
 
         expect(response).to have_http_status(:success)
@@ -108,6 +151,24 @@ RSpec.describe "Api::Blocks", type: :request do
         expect(response).to have_http_status(:success)
         json = JSON.parse(response.body)
         expect(json['block_type']).to eq('heading')
+      end
+
+      it "includes image_url when image is attached" do
+        image_block = create(:block, document: document, block_type: 'image', position: 5)
+        image_block.image.attach(
+          io: StringIO.new("fake image data"),
+          filename: "test_img.png",
+          content_type: "image/png"
+        )
+
+        patch "/api/documents/#{document.id}/blocks/#{image_block.id}",
+              params: { block: { content: { caption: "nice" } } }.to_json,
+              headers: headers
+
+        expect(response).to have_http_status(:success)
+        json = JSON.parse(response.body)
+        expect(json["image_url"]).to be_present
+        expect(json["image_filename"]).to eq("test_img.png")
       end
 
       it "updates the block position" do
@@ -179,7 +240,7 @@ RSpec.describe "Api::Blocks", type: :request do
     context "with valid block IDs" do
       it "reorders blocks according to the provided array" do
         # Reverse the order: 3, 2, 1
-        new_order = [block3.id, block2.id, block1.id]
+        new_order = [ block3.id, block2.id, block1.id ]
 
         post "/api/documents/#{document.id}/blocks/reorder",
              params: { block_ids: new_order }.to_json,
@@ -205,7 +266,7 @@ RSpec.describe "Api::Blocks", type: :request do
 
       it "handles partial reordering" do
         # Only reorder 2 blocks
-        new_order = [block2.id, block1.id]
+        new_order = [ block2.id, block1.id ]
 
         post "/api/documents/#{document.id}/blocks/reorder",
              params: { block_ids: new_order }.to_json,
@@ -213,11 +274,33 @@ RSpec.describe "Api::Blocks", type: :request do
 
         expect(response).to have_http_status(:success)
       end
+
+      it "serializes blocks with file attachments during reorder" do
+        # Attach a file to one of the blocks
+        block1.update!(block_type: "file")
+        block1.file.attach(
+          io: StringIO.new("test file content"),
+          filename: "reorder_test.txt",
+          content_type: "text/plain"
+        )
+
+        new_order = [block1.id, block2.id, block3.id]
+
+        post "/api/documents/#{document.id}/blocks/reorder",
+             params: { block_ids: new_order }.to_json,
+             headers: headers
+
+        expect(response).to have_http_status(:success)
+        json = JSON.parse(response.body)
+        file_block = json["blocks"].find { |b| b["id"] == block1.id }
+        expect(file_block["file_url"]).to be_present
+        expect(file_block["file_filename"]).to eq("reorder_test.txt")
+      end
     end
 
     context "with invalid block IDs" do
       it "returns error for non-existent block" do
-        new_order = [block1.id, 99999, block3.id]
+        new_order = [ block1.id, 99999, block3.id ]
 
         post "/api/documents/#{document.id}/blocks/reorder",
              params: { block_ids: new_order }.to_json,
@@ -232,7 +315,7 @@ RSpec.describe "Api::Blocks", type: :request do
         other_document = create(:document)
         other_block = create(:block, document: other_document)
 
-        new_order = [block1.id, other_block.id]
+        new_order = [ block1.id, other_block.id ]
 
         post "/api/documents/#{document.id}/blocks/reorder",
              params: { block_ids: new_order }.to_json,

@@ -4,8 +4,19 @@
      data-position="<%= block.position %>">
 
   <div class="block-controls">
-    <button type="button" class="block-drag-handle" data-action="click->document-editor#startDrag">⋮⋮</button>
-    <button type="button" class="block-delete" data-action="click->document-editor#deleteBlock">🗑</button>
+    <button type="button" class="block-drag-handle" data-action="click->document-editor#startDrag" title="Drag to reorder">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <circle cx="4" cy="4" r="1.5"/>
+        <circle cx="4" cy="8" r="1.5"/>
+        <circle cx="4" cy="12" r="1.5"/>
+        <circle cx="12" cy="4" r="1.5"/>
+        <circle cx="12" cy="8" r="1.5"/>
+        <circle cx="12" cy="12" r="1.5"/>
+      </svg>
+    </button>
+    <button type="button" class="block-delete" data-action="click->document-editor#deleteBlock" title="Delete block">
+      <%= heroicon(:trash, style: 'width: 16px; height: 16px;') %>
+    </button>
   </div>
 
   <div class="block-content" data-document-editor-target="blockContent">

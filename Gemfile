@@ -32,6 +32,21 @@ gem "redis", "~> 5.0"
 # Telegram bot integration
 gem "telegram-bot-ruby"
 
+# Google Calendar API
+gem "google-apis-calendar_v3", "~> 0.24"
+
+# iCalendar import/export
+gem "icalendar", "~> 2.10"
+
+# HTTP client for API calls
+gem "http", "~> 5.0"
+
+# Pagination
+gem "pagy", "~> 9.0"
+
+# Markdown rendering
+gem "redcarpet"
+
 # Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
 gem "solid_cache"
 gem "solid_queue"
@@ -87,4 +102,7 @@ group :test do
 
   # Matchers for RSpec tests
   gem "shoulda-matchers", "~> 7.0"
+
+  # Stub external HTTP requests in tests
+  gem "webmock", "~> 3.23"
 end

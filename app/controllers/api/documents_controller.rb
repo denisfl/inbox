@@ -1,5 +1,5 @@
 class Api::DocumentsController < Api::BaseController
-  before_action :set_document, only: [:show, :update, :destroy]
+  before_action :set_document, only: [ :show, :update, :destroy, :upload, :preview ]
 
   # GET /api/documents
   def index
@@ -21,7 +21,7 @@ class Api::DocumentsController < Api::BaseController
     per_page = params[:per_page]&.to_i || 20
 
     if query.blank?
-      return render json: { error: 'Query parameter is required' }, status: :bad_request
+      return render json: { error: "Query parameter is required" }, status: :bad_request
     end
 
     start_time = Time.now
@@ -73,6 +73,93 @@ class Api::DocumentsController < Api::BaseController
     head :no_content
   end
 
+  # GET /api/documents/:id/preview
+  # Returns rendered HTML for the whole document:
+  #   - native <audio> players for each audio file block
+  #   - markdown-rendered text from the first text block
+  def preview
+    audio_mime_re = /\Aaudio\//
+    audio_ext_re  = /\.(ogg|mp3|m4a|wav|opus|aac|flac|webm)\z/i
+    audio_html    = ""
+
+    @document.blocks.where(block_type: "file").find_each do |b|
+      next unless b.file.attached?
+      next unless b.file.content_type.to_s.match?(audio_mime_re) ||
+                  b.file.filename.to_s.match?(audio_ext_re)
+
+      audio_url = url_for(b.file)
+      filename  = ERB::Util.html_escape(b.file.filename.to_s)
+      safe_url  = ERB::Util.html_escape(audio_url)
+      audio_html += <<~HTML
+        <div class="audio-block">
+          <audio controls preload="metadata" src="#{safe_url}" style="width:100%">
+            Your browser does not support audio playback.
+          </audio>
+          <div class="audio-block-filename">🎙 #{filename}</div>
+        </div>
+      HTML
+    end
+
+    text_block = @document.blocks.find_by(block_type: "text")
+    text_html  = ""
+
+    if text_block
+      text = text_block.content_hash["text"].to_s
+      # Pre-process task lists (Redcarpet doesn't support GFM tasklists)
+      text = text
+        .gsub(/^- \[x\] /i, "- \x00CHECKED\x00 ")
+        .gsub(/^- \[ \] /,  "- \x00UNCHECKED\x00 ")
+      renderer = Redcarpet::Render::HTML.new(
+        hard_wrap: true,
+        link_attributes: { target: "_blank", rel: "noopener noreferrer" }
+      )
+      md = Redcarpet::Markdown.new(renderer,
+        autolink: true, tables: true, fenced_code_blocks: true,
+        strikethrough: true, lax_spacing: true,
+        no_intra_emphasis: true, space_after_headers: false
+      )
+      text_html = md.render(text)
+        .gsub("\x00CHECKED\x00",   '<input type="checkbox" checked>')
+        .gsub("\x00UNCHECKED\x00", '<input type="checkbox">')
+    end
+
+    render json: { html: audio_html + text_html }
+  end
+
+  # POST /api/documents/:id/upload
+  # Attaches a file or image to the document via a new Block + Active Storage.
+  # Returns { url, filename, is_image, block_id, byte_size } on success.
+  def upload
+    file = params[:file]
+    return render json: { error: "No file provided" }, status: :bad_request if file.blank?
+
+    is_image = file.content_type.to_s.start_with?("image/")
+
+    if is_image
+      block = @document.blocks.create!(
+        block_type: "image",
+        content: {}.to_json
+      )
+      block.image.attach(file)
+      attachment = block.image
+    else
+      block = @document.blocks.create!(
+        block_type: "file",
+        content: { filename: file.original_filename }.to_json
+      )
+      block.file.attach(file)
+      attachment = block.file
+    end
+
+    render json: {
+      url: url_for(attachment),
+      filename: attachment.filename.to_s,
+      is_image: is_image,
+      block_id: block.id,
+      byte_size: attachment.byte_size
+    }
+  end
+
   private
 
   def set_document
@@ -80,7 +167,7 @@ class Api::DocumentsController < Api::BaseController
   end
 
   def document_params
-    params.require(:document).permit(:title, :slug, :source, :body, tag_ids: [])
+    params.require(:document).permit(:title, :slug, tag_ids: [])
   end
 
   def document_summary(doc)
@@ -88,7 +175,6 @@ class Api::DocumentsController < Api::BaseController
       id: doc.id,
       title: doc.title,
       slug: doc.slug,
-      source: doc.source,
       blocks_count: doc.blocks.size,
       tags: doc.tags.map(&:name),
       created_at: doc.created_at,
@@ -101,8 +187,6 @@ class Api::DocumentsController < Api::BaseController
       id: doc.id,
       title: doc.title,
       slug: doc.slug,
-      source: doc.source,
-      body: doc.body,
       blocks: doc.blocks.ordered.map { |block| serialize_block(block) },
       tags: doc.tags.map { |tag| { id: tag.id, name: tag.name } },
       created_at: doc.created_at,
@@ -135,9 +219,8 @@ class Api::DocumentsController < Api::BaseController
       id: doc.id,
       title: doc.title,
       slug: doc.slug,
-      source: doc.source,
       title_snippet: doc.respond_to?(:title_snippet) ? doc.title_snippet : doc.title,
-      content_snippet: doc.respond_to?(:content_snippet) ? doc.content_snippet : '',
+      content_snippet: doc.respond_to?(:content_snippet) ? doc.content_snippet : "",
       rank: doc.respond_to?(:rank) ? doc.rank : 0,
       blocks_count: doc.blocks.count,
       created_at: doc.created_at,

@@ -1,29 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title><%= content_for(:title) || "App" %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title><%= content_for(:title) || "Inbox - Block Notes" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="App">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Inbox">
+    <meta name="application-name" content="Inbox">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description" content="Capture and organize your thoughts from Telegram">
+    <meta name="theme-color" content="#2563eb">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <meta name="auth-token" content="<%= ENV.fetch('API_TOKEN', 'development_token') %>">
 
     <%= yield :head %>
 
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+    <%# PWA manifest for installable app %>
+    <link rel="manifest" href="/manifest.json">
 
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%# Load design system variables first, then compiled Tailwind CSS, then extras %>
+    <%= stylesheet_link_tag "design_system.tailwind", "application", "tasks", "events", "highlight", "tags", "pagy.tailwind", "data-turbo-track": "reload" %>
     <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
   </head>
 
-  <body>
-    <%= yield %>
+    <body class="antialiased" data-controller="pwa keyboard sidebar">
+    <%# ── Mobile top bar (visible < 769px) ── %>
+    <div class="mobile-topbar">
+      <button class="btn btn-icon" data-action="click->sidebar#toggle" aria-label="Menu">
+        <%= heroicon(:bars_3, style: 'width: 20px; height: 20px;') %>
+      </button>
+      <%= link_to root_path, class: "sidebar-logo" do %>
+        <%= heroicon(:inbox, style: 'width: 1.25rem; height: 1.25rem;') %>
+        <span>Inbox</span>
+      <% end %>
+      <%= link_to new_note_path, class: "btn btn-success btn-sm", data: { turbo: false } do %>
+        <%= heroicon(:plus, style: 'width: 14px; height: 14px;') %>
+      <% end %>
+    </div>
+
+    <div class="app-layout">
+      <%# ── Global sidebar ── %>
+      <%= render "layouts/sidebar" %>
+
+      <%# ── Mobile overlay ── %>
+      <div class="sidebar-overlay" data-action="click->sidebar#close" data-sidebar-target="overlay"></div>
+
+      <%# ── Main content area ── %>
+      <div class="app-main">
+        <div class="content-wrapper">
+          <%= yield %>
+        </div>
+      </div>
+    </div>
+
+    <%# PWA Update Button (shown when new version available) %>
+    <div class="pwa-update-banner hidden" data-pwa-target="updateButton">
+      <span>New version available!</span>
+      <button class="btn btn-sm" data-action="click->pwa#update">Update</button>
+    </div>
   </body>
 </html>

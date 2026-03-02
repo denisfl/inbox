@@ -1,0 +1,1413 @@
+<% content_for :title, "Calendar — Inbox" %>
+
+<div class="calendar-page" data-controller="calendar">
+
+  <%# ── Top bar ─────────────────────────────────────────────────────── %>
+  <div class="calendar-topbar">
+    <div class="calendar-topbar-left">
+      <%= link_to calendar_path(date: Date.today, view: @view_mode, filter: @filter), class: "btn btn-sm" do %>
+        Today
+      <% end %>
+
+      <%# View mode switcher %>
+      <div class="view-mode-switcher">
+        <% %w[agenda week month].each do |mode| %>
+          <%= link_to calendar_path(date: params[:date], filter: params[:filter], view: mode),
+                class: "view-mode-btn #{'view-mode-btn--active' if @view_mode == mode}" do %>
+            <%= mode.capitalize %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="calendar-topbar-actions">
+
+      <%# Import .ical %>
+      <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('ical-import-input').click()">
+        <%= heroicon(:arrow_up_tray, style: 'width: 1rem; height: 1rem;') %>
+        <span class="topbar-btn-label">Import</span>
+      </button>
+      <div style="display:none">
+        <%= form_with url: import_ical_path, method: :post, multipart: true, id: "ical-import-form" do %>
+          <%= file_field_tag :ical_file, id: "ical-import-input", accept: ".ics,text/calendar",
+                onchange: "this.form.submit()" %>
+        <% end %>
+      </div>
+
+      <%# New Event %>
+      <%= link_to new_calendar_event_path(date: @view_date), class: "btn btn-sm btn-primary" do %>
+        <%= heroicon(:plus, style: 'width: 1rem; height: 1rem;') %>
+        <span class="topbar-btn-label">New Event</span>
+      </button>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="calendar-layout">
+
+    <%# ── Left: Mini-month ────────────────────────────────────────────── %>
+    <aside class="calendar-sidebar">
+      <%# Navigation arrows %>
+      <div class="mini-month-header">
+        <%= link_to calendar_path(date: (@month_start - 1.month).to_s),
+              class: "mini-month-nav-btn", "aria-label": "Previous month" do %>
+          ‹
+        <% end %>
+        <span class="mini-month-title"><%= @month_start.strftime("%B %Y") %></span>
+        <%= link_to calendar_path(date: (@month_start + 1.month).to_s),
+              class: "mini-month-nav-btn", "aria-label": "Next month" do %>
+          ›
+        <% end %>
+      </div>
+
+      <%# Day-of-week headers %>
+      <div class="mini-month-grid">
+        <% %w[Mo Tu We Th Fr Sa Su].each do |day| %>
+          <div class="mini-month-dow"><%= day %></div>
+        <% end %>
+
+        <%# Blank cells before month start %>
+        <% ((@month_start.wday - 1) % 7).times do %>
+          <div class="mini-month-cell mini-month-cell--empty"></div>
+        <% end %>
+
+        <%# Days of the month %>
+        <% (@month_start..@month_end).each do |day| %>
+          <%
+            is_today    = day == Date.today
+            is_selected = day == @view_date
+            has_content = @days_with_content.include?(day)
+            classes = ["mini-month-cell"]
+            classes << "mini-month-cell--today"    if is_today
+            classes << "mini-month-cell--selected" if is_selected
+            classes << "mini-month-cell--has-events" if has_content
+          %>
+          <%= link_to calendar_path(date: day.to_s),
+                class: classes.join(" "),
+                "data-calendar-target": "miniDay",
+                "data-date": day.to_s do %>
+            <%= day.day %>
+            <% if has_content %>
+              <span class="mini-month-dot"></span>
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+
+      <%# Quick stats %>
+      <div class="calendar-sidebar-stats">
+        <div class="calendar-stat">
+          <span class="calendar-stat-value"><%= CalendarEvent.today.count %></span>
+          <span class="calendar-stat-label">today</span>
+        </div>
+        <div class="calendar-stat">
+          <span class="calendar-stat-value"><%= CalendarEvent.this_week.count %></span>
+          <span class="calendar-stat-label">this week</span>
+        </div>
+      </div>
+
+      <%# Filter tabs %>
+      <div class="calendar-filter-tabs">
+        <%
+          filter_options = [
+            ["events", "Events"],
+            ["tasks", "Tasks"],
+            ["notes", "Notes"],
+            ["all", "All"]
+          ]
+        %>
+        <% filter_options.each do |value, label| %>
+          <%= link_to calendar_path(date: params[:date], filter: value, view: @view_mode),
+                class: "calendar-filter-tab #{'calendar-filter-tab--active' if @filter == value}" do %>
+            <%= label %>
+          <% end %>
+        <% end %>
+      </div>
+    </aside>
+
+    <%# ── Right: Content area (view-mode dependent) ─────────────────── %>
+    <section class="calendar-content">
+
+      <% if @view_mode == "week" %>
+        <%# ── WEEK VIEW ── %>
+        <div class="week-view">
+          <%# Navigation %>
+          <div class="week-nav">
+            <%= link_to calendar_path(date: (@range_start - 7.days), view: "week", filter: @filter),
+                  class: "mini-month-nav-btn", "aria-label": "Previous week" do %>‹<% end %>
+            <span class="week-nav-title">
+              <%= @range_start.strftime("%-d %b") %> — <%= @range_end.strftime("%-d %b %Y") %>
+            </span>
+            <%= link_to calendar_path(date: (@range_start + 7.days), view: "week", filter: @filter),
+                  class: "mini-month-nav-btn", "aria-label": "Next week" do %>›<% end %>
+          </div>
+
+          <%# Day columns %>
+          <div class="week-grid">
+            <% @week_days.each do |day| %>
+              <% is_today = day == Date.today %>
+              <div class="week-day-col">
+                <div class="week-day-header <%= 'week-day-header--today' if is_today %>">
+                  <span class="week-day-name"><%= day.strftime("%a") %></span>
+                  <span class="week-day-num"><%= day.day %></span>
+                </div>
+                <div class="week-day-events">
+                  <% (@week_events_by_day[day] || []).each do |entry| %>
+                    <% if entry[:type] == :event %>
+                      <% ev = entry[:record] %>
+                      <div class="week-event" style="border-left: 3px solid <%= ev.display_color %>;"
+                           data-controller="event-popup">
+                        <div data-action="click->event-popup#toggle"
+                             data-event-popup-target="trigger" style="cursor: pointer;">
+                          <div class="week-event-time"><%= ev.time_label %></div>
+                          <div class="week-event-title"><%= ev.title.truncate(30) %></div>
+                        </div>
+
+                        <%# Popup %>
+                        <div class="event-popup" hidden data-event-popup-target="popup">
+                          <%= render "calendar_events/popup", event: ev %>
+                        </div>
+                      </div>
+                    <% elsif entry[:type] == :document %>
+                      <% doc = entry[:record] %>
+                      <div class="week-event week-event--doc">
+                        <div class="week-event-time"><%= doc.created_at.strftime("%-H:%M") %></div>
+                        <%= link_to (doc.title.presence || "(untitled)").truncate(30),
+                              edit_document_path(doc), class: "week-event-title" %>
+                      </div>
+                    <% elsif entry[:type] == :task %>
+                      <% task = entry[:record] %>
+                      <div class="week-event week-event--task week-event--priority-<%= task.priority %>">
+                        <div class="week-event-time">
+                          <% if task.due_time.present? %><%= task.due_time.strftime("%-H:%M") %><% end %>
+                        </div>
+                        <%= link_to task.title.truncate(30), edit_task_path(task), class: "week-event-title" %>
+                      </div>
+                    <% end %>
+                  <% end %>
+                  <% if (@week_events_by_day[day] || []).empty? %>
+                    <div class="week-day-empty"></div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+      <% elsif @view_mode == "month" %>
+        <%# ── MONTH VIEW ── %>
+        <div class="month-view">
+          <%# Navigation %>
+          <div class="week-nav">
+            <%= link_to calendar_path(date: (@view_date - 1.month).to_s, view: "month", filter: @filter),
+                  class: "mini-month-nav-btn", "aria-label": "Previous month" do %>‹<% end %>
+            <span class="week-nav-title"><%= @view_date.strftime("%B %Y") %></span>
+            <%= link_to calendar_path(date: (@view_date + 1.month).to_s, view: "month", filter: @filter),
+                  class: "mini-month-nav-btn", "aria-label": "Next month" do %>›<% end %>
+          </div>
+
+          <%# Day-of-week headers %>
+          <div class="month-grid">
+            <% %w[Mon Tue Wed Thu Fri Sat Sun].each do |dow| %>
+              <div class="month-dow"><%= dow %></div>
+            <% end %>
+
+            <%# Blank cells before month start %>
+            <% ((@month_start.wday - 1) % 7).times do %>
+              <div class="month-cell month-cell--empty"></div>
+            <% end %>
+
+            <%# Days of the month %>
+            <% (@month_start..@month_end).each do |day| %>
+              <% is_today = day == Date.today %>
+              <% day_entries = @timeline[day] || [] %>
+              <div class="month-cell <%= 'month-cell--today' if is_today %>">
+                <%= link_to day.day, calendar_path(date: day.to_s, view: "agenda", filter: @filter),
+                      class: "month-cell-num #{'month-cell-num--today' if is_today}" %>
+                <div class="month-cell-events">
+                  <% day_entries.first(3).each do |entry| %>
+                    <% if entry[:type] == :event %>
+                      <% ev = entry[:record] %>
+                      <div class="month-event" style="background: <%= ev.display_color %>20; border-left: 2px solid <%= ev.display_color %>;"
+                           data-controller="event-popup">
+                        <span class="month-event-title"
+                              data-action="click->event-popup#toggle"
+                              data-event-popup-target="trigger"
+                              style="cursor: pointer;"><%= ev.title.truncate(18) %></span>
+
+                        <div class="event-popup" hidden data-event-popup-target="popup">
+                          <%= render "calendar_events/popup", event: ev %>
+                        </div>
+                      </div>
+                    <% elsif entry[:type] == :task %>
+                      <% task = entry[:record] %>
+                      <div class="month-event month-event--task" style="border-left: 2px solid var(--color-primary);">
+                        <span class="month-event-title"><%= task.title.truncate(15) %></span>
+                      </div>
+                    <% else %>
+                      <div class="month-event month-event--doc">
+                        <span class="month-event-title"><%= (entry[:record].title.presence || "note").truncate(18) %></span>
+                      </div>
+                    <% end %>
+                  <% end %>
+                  <% if day_entries.size > 3 %>
+                    <div class="month-event-more">+<%= day_entries.size - 3 %> more</div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+      <% else %>
+        <%# ── AGENDA VIEW (default) ── %>
+        <div class="calendar-agenda">
+          <% if @timeline.empty? %>
+            <div class="agenda-empty">
+              <div class="agenda-empty-icon">
+                <%= heroicon(:calendar, style: 'width: 48px; height: 48px;') %>
+              </div>
+              <div class="agenda-empty-text">No events in this period</div>
+              <div class="agenda-empty-sub">Sync Google Calendar or create events to see them here</div>
+            </div>
+          <% else %>
+            <% @timeline.each do |date, entries| %>
+          <%
+            date_id = "day-#{date}"
+            is_today = date == Date.today
+          %>
+          <div class="agenda-day" id="<%= date_id %>" data-calendar-target="agendaDay" data-date="<%= date %>">
+            <%# Day header %>
+            <div class="agenda-day-header <%= 'agenda-day-header--today' if is_today %>">
+              <span class="agenda-day-label">
+                <span class="agenda-day-name"><%= date.strftime("%A") %></span>
+                <span class="agenda-day-date"><%= date.strftime("%B %-d") %></span>
+              </span>
+              <% if is_today %>
+                <span class="agenda-today-badge">Today</span>
+              <% end %>
+            </div>
+
+            <%# Day entries %>
+            <div class="agenda-entries">
+              <% entries.each do |entry| %>
+                <% if entry[:type] == :event %>
+                  <% ev = entry[:record] %>
+                  <div class="agenda-entry agenda-entry--event"
+                       data-controller="event-popup">
+                    <div class="agenda-entry-color-bar"
+                         style="background: <%= ev.display_color %>"
+                         data-action="click->event-popup#toggle"
+                         data-event-popup-target="trigger"></div>
+                    <div class="agenda-entry-time"
+                         data-action="click->event-popup#toggle"><%= ev.time_label %></div>
+                    <div class="agenda-entry-body"
+                         data-action="click->event-popup#toggle">
+                      <span class="agenda-entry-title"><%= ev.title %></span>
+                      <% if ev.duration_label.present? && !ev.all_day? %>
+                        <span class="agenda-entry-duration"><%= ev.duration_label %></span>
+                      <% end %>
+                      <% if ev.description.present? %>
+                        <div class="agenda-entry-desc"><%= truncate(ev.description, length: 80) %></div>
+                      <% end %>
+                    </div>
+                    <div class="agenda-entry-actions">
+                      <div class="agenda-entry-source agenda-entry-source--<%= ev.source == 'google' ? 'gcal' : ev.source %>">
+                        <%= ev.source == 'google' ? 'GCal' : ev.source.capitalize %>
+                      </div>
+                    </div>
+
+                    <%# ── Popup detail ── %>
+                    <div class="event-popup" hidden data-event-popup-target="popup">
+                      <%= render "calendar_events/popup", event: ev %>
+                    </div>
+                  </div>
+                <% elsif entry[:type] == :document %>
+                  <% doc = entry[:record] %>
+                  <div class="agenda-entry agenda-entry--document">
+                    <div class="agenda-entry-color-bar"
+                         style="background: var(--color-text-tertiary)"></div>
+                    <div class="agenda-entry-time">
+                      <%= doc.created_at.strftime("%-H:%M") %>
+                    </div>
+                    <div class="agenda-entry-body">
+                      <%= link_to doc.title.presence || "(untitled)",
+                            edit_document_path(doc),
+                            class: "agenda-entry-title" %>
+                      <% text_block = doc.blocks.find_by(block_type: "text") %>
+                      <% if text_block %>
+                        <div class="agenda-entry-desc">
+                          <%= truncate(text_block.content_hash["text"].to_s.gsub(/[#*`>\-\[\]]+/, " ").squish, length: 80) %>
+                        </div>
+                      <% end %>
+                    </div>
+                    <div class="agenda-entry-source agenda-entry-source--inbox">
+                      Inbox
+                    </div>
+                  </div>
+                <% elsif entry[:type] == :task %>
+                  <% task = entry[:record] %>
+                  <div class="agenda-entry agenda-entry--task">
+                    <div class="agenda-entry-color-bar"
+                         style="background: var(--color-primary)"></div>
+                    <%= button_to toggle_task_path(task), method: :patch,
+                          class: "agenda-task-checkbox-btn" do %>
+                      <span class="task-checkbox <%= 'task-checkbox--checked' if task.completed? %>">
+                        <% if task.completed? %>
+                          <%= heroicon(:check, variant: :solid, style: 'width:12px;height:12px;') %>
+                        <% end %>
+                      </span>
+                    <% end %>
+                    <div class="agenda-entry-body">
+                      <span class="agenda-entry-title <%= 'agenda-entry-title--done' if task.completed? %>">
+                        <%= task.title %>
+                      </span>
+                      <% if task.due_time.present? %>
+                        <span class="agenda-entry-duration"><%= task.due_time.strftime("%H:%M") %></span>
+                      <% end %>
+                      <% if task.description.present? %>
+                        <div class="agenda-entry-desc"><%= truncate(task.description, length: 80) %></div>
+                      <% end %>
+                    </div>
+                    <div class="agenda-entry-source agenda-entry-source--task">
+                      Task
+                    </div>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+        </div><%# .calendar-agenda %>
+      <% end %><%# view_mode %>
+    </section><%# .calendar-content %>
+
+  </div><%# .calendar-layout %>
+</div><%# .calendar-page %>
+
+<style>
+  /* ── Layout ──────────────────────────────────────────────────────────────── */
+  .calendar-page {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .calendar-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+  }
+
+  .calendar-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+  }
+
+  .calendar-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  .topbar-btn-label { margin-left: var(--spacing-xs); }
+
+  /* ── View mode switcher ── */
+  .view-mode-switcher {
+    display: flex;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-base);
+    padding: 2px;
+    gap: 1px;
+  }
+
+  .view-mode-btn {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+  }
+  .view-mode-btn:hover {
+    color: var(--color-text-primary);
+  }
+  .view-mode-btn--active {
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-weight: var(--font-semibold);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .calendar-heading {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  .calendar-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: var(--spacing-xl);
+    align-items: start;
+  }
+
+  @media (max-width: 700px) {
+    .calendar-layout { grid-template-columns: 1fr; }
+    .calendar-sidebar { order: 2; }
+    .calendar-content  { order: 1; }
+  }
+
+  /* ── Mini-month ──────────────────────────────────────────────────────────── */
+  .calendar-sidebar {
+    position: sticky;
+    top: 1rem;
+  }
+
+  .mini-month-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .mini-month-title {
+    font-weight: var(--font-semibold);
+    font-size: var(--text-sm);
+    color: var(--color-text-primary);
+  }
+
+  .mini-month-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: var(--radius-md);
+    font-size: var(--text-lg);
+    line-height: 1;
+    color: var(--color-text-tertiary);
+    text-decoration: none;
+    transition: background var(--transition-fast);
+  }
+  .mini-month-nav-btn:hover {
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+  }
+
+  .mini-month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--spacing-xs);
+  }
+
+  .mini-month-dow {
+    text-align: center;
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-tertiary);
+    padding: var(--spacing-xs) 0;
+  }
+
+  .mini-month-cell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    font-size: var(--text-xs);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    color: var(--color-text-primary);
+    transition: background var(--transition-fast);
+    cursor: pointer;
+  }
+
+  .mini-month-cell:hover {
+    background: var(--color-bg-secondary);
+  }
+
+  .mini-month-cell--empty {
+    pointer-events: none;
+  }
+
+  .mini-month-cell--today {
+    font-weight: var(--font-bold);
+    color: var(--color-primary);
+  }
+
+  .mini-month-cell--selected {
+    background: var(--color-primary) !important;
+    color: var(--color-bg-primary) !important;
+  }
+
+  .mini-month-dot {
+    display: block;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    margin-top: 1px;
+  }
+
+  .mini-month-cell--selected .mini-month-dot {
+    background: color-mix(in srgb, var(--color-bg-primary) 70%, transparent);
+  }
+
+  /* Stats */
+  .calendar-sidebar-stats {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .calendar-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .calendar-stat-value {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--color-text-primary);
+    line-height: 1;
+  }
+
+  .calendar-stat-label {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin-top: var(--spacing-xs);
+  }
+
+  /* ── Agenda ───────────────────────────────────────────────────────────────── */
+  .calendar-content {
+    min-height: 400px;
+  }
+
+  .agenda-empty {
+    text-align: center;
+    padding: var(--spacing-2xl) var(--spacing-lg);
+    color: var(--color-text-tertiary);
+  }
+
+  .agenda-empty-icon { font-size: var(--text-3xl); margin-bottom: var(--spacing-sm); }
+  .agenda-empty-text { font-size: var(--text-base); font-weight: var(--font-semibold); margin-bottom: var(--spacing-xs); }
+  .agenda-empty-sub  { font-size: var(--text-sm); }
+
+  /* Day group */
+  .agenda-day {
+    margin-bottom: var(--spacing-xl);
+    scroll-margin-top: 80px;
+  }
+
+  .agenda-day-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--color-border);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .agenda-day-header--today {
+    border-color: var(--color-primary);
+  }
+
+  .agenda-day-label {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-xs);
+  }
+
+  .agenda-day-name {
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .agenda-day-date {
+    font-size: var(--text-sm);
+    font-weight: var(--font-bold);
+    color: var(--color-text-primary);
+  }
+
+  .agenda-today-badge {
+    font-size: var(--text-xs);
+    font-weight: var(--font-bold);
+    background: var(--color-primary);
+    color: var(--color-bg-primary);
+    border-radius: var(--radius-full);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* Entry row */
+  .agenda-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .agenda-entry:last-child { border-bottom: none; }
+
+  .agenda-entry-color-bar {
+    flex-shrink: 0;
+    width: 3px;
+    border-radius: 2px;
+    align-self: stretch;
+    min-height: 20px;
+  }
+
+  .agenda-entry-time {
+    flex-shrink: 0;
+    width: 48px;
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-tertiary);
+    padding-top: var(--spacing-xs);
+    text-align: right;
+  }
+
+  .agenda-entry-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .agenda-entry-title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .agenda-entry-title:hover { text-decoration: underline; }
+
+  .agenda-entry-duration {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin-left: var(--spacing-xs);
+  }
+
+  .agenda-entry-desc {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin-top: var(--spacing-xs);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .agenda-entry-source {
+    flex-shrink: 0;
+    font-size: var(--text-xs);
+    font-weight: var(--font-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: var(--spacing-xs) var(--spacing-xs);
+    border-radius: var(--radius-base);
+    align-self: flex-start;
+    margin-top: var(--spacing-xs);
+  }
+
+  .agenda-entry-source--gcal {
+    background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-primary));
+    color: var(--color-primary);
+  }
+
+  .agenda-entry-source--inbox {
+    background: var(--color-bg-secondary);
+    color: var(--color-text-tertiary);
+  }
+
+  .agenda-entry-source--manual {
+    background: color-mix(in srgb, var(--color-secondary) 15%, var(--color-bg-primary));
+    color: var(--color-secondary);
+  }
+
+  .agenda-entry-source--ical {
+    background: color-mix(in srgb, var(--color-accent) 20%, var(--color-bg-primary));
+    color: color-mix(in srgb, var(--color-accent) 70%, var(--color-text-primary));
+  }
+
+  .agenda-entry-source--task {
+    background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-primary));
+    color: var(--color-primary);
+  }
+
+  .agenda-entry-title--done {
+    text-decoration: line-through;
+    color: var(--color-text-tertiary);
+  }
+
+  .agenda-task-checkbox-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .agenda-entry--task .task-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--color-border-hover);
+    border-radius: var(--radius-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    color: transparent;
+  }
+
+  .agenda-entry--task .task-checkbox:hover {
+    border-color: var(--color-primary);
+  }
+
+  .agenda-entry--task .task-checkbox--checked {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+  }
+
+  .month-event--task {
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg-primary));
+  }
+
+  .week-event--task {
+    border-left: 3px solid var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg-primary));
+  }
+
+  /* Entry actions (source badge + edit + delete) */
+  .agenda-entry-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex-shrink: 0;
+  }
+
+  .agenda-entry-edit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-primary);
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    opacity: 0;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+  }
+  .agenda-entry:hover .agenda-entry-edit { opacity: 1; }
+  .agenda-entry-edit:hover {
+    color: var(--color-primary);
+    border-color: color-mix(in srgb, var(--color-primary) 25%, var(--color-border));
+    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg-primary));
+  }
+
+  .agenda-entry-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-primary);
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    opacity: 0;
+    transition: all var(--transition-fast);
+  }
+  .agenda-entry:hover .agenda-entry-delete { opacity: 1; }
+  .agenda-entry-delete:hover {
+    color: var(--color-danger);
+    border-color: color-mix(in srgb, var(--color-danger) 25%, var(--color-border));
+    background: color-mix(in srgb, var(--color-danger) 6%, var(--color-bg-primary));
+  }
+
+  @media (max-width: 700px) {
+    .topbar-btn-label { display: none; }
+    .agenda-entry-edit { opacity: 1; }
+    .agenda-entry-delete { opacity: 1; }
+  }
+
+  /* ── Week View ────────────────────────────────────────────────────────────── */
+  .week-view {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    min-height: calc(100vh - 14rem);
+  }
+
+  .week-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+  }
+
+  .week-nav-title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-primary);
+    min-width: 180px;
+    text-align: center;
+  }
+
+  .week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--color-border);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .week-day-col {
+    background: var(--color-bg-primary);
+    min-height: 200px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .week-day-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-xs);
+    border-bottom: 2px solid transparent;
+    background: var(--color-bg-secondary);
+  }
+
+  .week-day-header--today {
+    border-bottom-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 5%, var(--color-bg-primary));
+  }
+
+  .week-day-name {
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .week-day-header--today .week-day-name {
+    color: var(--color-primary);
+  }
+
+  .week-day-num {
+    font-size: var(--text-base);
+    font-weight: var(--font-bold);
+    color: var(--color-text-primary);
+    line-height: 1;
+  }
+
+  .week-day-header--today .week-day-num {
+    color: var(--color-primary);
+  }
+
+  .week-day-events {
+    flex: 1;
+    padding: var(--spacing-xs);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .week-day-empty {
+    flex: 1;
+    min-height: 60px;
+  }
+
+  .week-event {
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-secondary);
+    transition: background var(--transition-fast);
+    cursor: default;
+  }
+
+  .week-event:hover {
+    background: var(--color-bg-hover);
+  }
+
+  .week-event--doc {
+    border-left: 3px solid var(--color-text-tertiary);
+  }
+
+  .week-event-time {
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-tertiary);
+    line-height: 1.2;
+  }
+
+  .week-event-title {
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+  }
+
+  a.week-event-title:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 700px) {
+    .week-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .week-day-col {
+      min-height: 120px;
+    }
+  }
+
+  /* ── Month View ──────────────────────────────────────────────────────────── */
+  .month-view {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    min-height: calc(100vh - 14rem);
+  }
+
+  .month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: var(--color-border);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .month-dow {
+    background: var(--color-bg-secondary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-tertiary);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .month-cell {
+    background: var(--color-bg-primary);
+    min-height: 90px;
+    padding: var(--spacing-xs);
+    display: flex;
+    flex-direction: column;
+    transition: background var(--transition-fast);
+  }
+
+  .month-cell:hover {
+    background: var(--color-bg-secondary);
+  }
+
+  .month-cell--empty {
+    background: var(--color-bg-tertiary);
+    pointer-events: none;
+  }
+
+  .month-cell--today {
+    background: color-mix(in srgb, var(--color-primary) 4%, var(--color-bg-primary));
+  }
+
+  .month-cell-num {
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-full);
+    margin-bottom: var(--spacing-xs);
+    transition: background var(--transition-fast), color var(--transition-fast);
+  }
+
+  .month-cell-num:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+  }
+
+  .month-cell-num--today {
+    background: var(--color-primary);
+    color: var(--color-bg-primary);
+    font-weight: var(--font-bold);
+  }
+
+  .month-cell-num--today:hover {
+    background: var(--color-primary-hover);
+    color: var(--color-bg-primary);
+  }
+
+  .month-cell-events {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .month-event {
+    padding: 1px var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .month-event--doc {
+    background: var(--color-bg-tertiary);
+    border-left: 2px solid var(--color-text-tertiary);
+    color: var(--color-text-secondary);
+  }
+
+  .month-event-title {
+    font-weight: var(--font-medium);
+  }
+
+  .month-event-more {
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-tertiary);
+    padding: 1px var(--spacing-xs);
+    text-align: center;
+  }
+
+  @media (max-width: 700px) {
+    .month-cell {
+      min-height: 50px;
+      padding: var(--spacing-xs);
+    }
+    .month-event-title { display: none; }
+    .month-event {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      padding: 0;
+      min-height: 0;
+      overflow: visible;
+    }
+    .month-event--doc {
+      border-left: none;
+    }
+    .month-cell-events {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: var(--spacing-xs);
+      justify-content: center;
+      margin-top: var(--spacing-xs);
+    }
+    .month-event-more { font-size: var(--text-xs); }
+    .month-cell-num {
+      width: 20px;
+      height: 20px;
+      font-size: var(--text-xs);
+    }
+  }
+
+  /* ── Event Popup ──────────────────────────────────────────────────────────── */
+  .agenda-entry--event,
+  .week-event {
+    position: relative;
+  }
+
+  .agenda-entry--event {
+    cursor: pointer;
+  }
+
+  .event-popup {
+    position: fixed;
+    z-index: var(--z-popover);
+    width: 300px;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    animation: popup-fade-in 150ms ease-out;
+  }
+
+  @keyframes popup-fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .event-popup-header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .event-popup-color {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: var(--radius-full);
+    margin-top: var(--spacing-xs);
+  }
+
+  .event-popup-title {
+    flex: 1;
+    font-size: var(--text-sm);
+    font-weight: var(--font-bold);
+    color: var(--color-text-primary);
+    line-height: 1.3;
+    word-break: break-word;
+    white-space: normal;
+  }
+
+  .event-popup-close {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    color: var(--color-text-tertiary);
+    font-size: var(--text-lg);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    line-height: 1;
+  }
+
+  .event-popup-close:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+  }
+
+  .event-popup-body {
+    padding: var(--spacing-sm) var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .event-popup-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+
+  .event-popup-icon {
+    flex-shrink: 0;
+    width: 16px;
+    text-align: center;
+    font-size: var(--text-xs);
+  }
+
+  .event-popup-icon-svg {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    color: var(--color-text-tertiary);
+    margin-top: var(--spacing-xs);
+  }
+
+  .event-popup-detail {
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-primary);
+  }
+
+  .event-popup-detail-sub {
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+  }
+
+  .event-popup-duration {
+    color: var(--color-text-tertiary);
+    margin-left: var(--spacing-xs);
+  }
+
+  .event-popup-calendar-name {
+    display: block;
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin-top: var(--spacing-xs);
+  }
+
+  .event-popup-status {
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    text-transform: capitalize;
+  }
+
+  .event-popup-status--tentative {
+    color: var(--color-accent);
+  }
+
+  .event-popup-status--cancelled {
+    color: var(--color-danger);
+    text-decoration: line-through;
+  }
+
+  .event-popup-row--muted {
+    color: var(--color-text-tertiary);
+    font-size: var(--text-xs);
+  }
+
+  .event-popup-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .event-popup-tags .tag-pill {
+    text-decoration: none;
+  }
+
+  .event-popup-description {
+    word-break: break-word;
+  }
+
+  .event-popup-description p {
+    margin: 0;
+  }
+
+  .event-popup-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+  }
+
+  .event-popup-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    text-align: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .event-popup-btn:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+    border-color: var(--color-text-tertiary);
+  }
+
+  .event-popup-btn--danger {
+    color: var(--color-danger);
+    border-color: color-mix(in srgb, var(--color-danger) 20%, var(--color-border));
+  }
+
+  .event-popup-btn--danger:hover {
+    background: color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-primary));
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+  }
+
+  /* Mobile: bottom sheet style */
+  .event-popup--mobile {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-height: 70vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    overflow-y: auto;
+    animation: popup-slide-up 200ms ease-out;
+  }
+
+  @keyframes popup-slide-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  /* ── Filter tabs ─────────────────────────────────────────────────────────── */
+  .calendar-filter-tabs {
+    display: flex;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .calendar-filter-tab {
+    flex: 1;
+    text-align: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    border-radius: var(--radius-base);
+    transition: all var(--transition-fast);
+  }
+
+  .calendar-filter-tab:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+  }
+
+  .calendar-filter-tab--active {
+    background: var(--color-primary);
+    color: var(--color-bg-primary);
+  }
+
+  .calendar-filter-tab--active:hover {
+    background: var(--color-primary-hover);
+    color: var(--color-bg-primary);
+  }
+</style>

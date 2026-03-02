@@ -7,8 +7,8 @@ RSpec.describe Block, type: :model do
 
   describe 'validations' do
     it { is_expected.to validate_presence_of(:block_type) }
-    it { is_expected.to validate_presence_of(:position) }
-    it { is_expected.to validate_numericality_of(:position).only_integer.is_greater_than_or_equal_to(0) }
+    # Position allows nil (set_default_position callback assigns it)
+    it { is_expected.to validate_numericality_of(:position).only_integer.is_greater_than_or_equal_to(0).allow_nil }
     it { is_expected.to validate_inclusion_of(:block_type).in_array(Block::BLOCK_TYPES) }
   end
 
@@ -21,7 +21,7 @@ RSpec.describe Block, type: :model do
 
     describe '.ordered' do
       it 'returns blocks ordered by position' do
-        expect(Block.ordered).to eq([heading_block, block_1, block_2, code_block])
+        expect(Block.ordered).to eq([ heading_block, block_1, block_2, code_block ])
       end
     end
 
