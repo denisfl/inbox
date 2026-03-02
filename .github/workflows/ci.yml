@@ -74,10 +74,16 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
+      - name: Install Node dependencies
+        run: pnpm install
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
+
+      - name: Build assets
+        run: pnpm run build && pnpm run build:css
 
       - name: Run tests
         env:
@@ -110,10 +116,16 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
+      - name: Install Node dependencies
+        run: pnpm install
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
+
+      - name: Build assets
+        run: pnpm run build && pnpm run build:css
 
       - name: Run System Tests
         env:
