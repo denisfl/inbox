@@ -65,6 +65,16 @@ RSpec.describe "Tasks", type: :request do
 
       expect(response).to have_http_status(:ok)
     end
+
+    it "filters by single tag parameter" do
+      tag = create(:tag, name: "important")
+      create(:task_tag, task: today_task, tag: tag)
+
+      get tasks_path(tag: "important")
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Today task")
+    end
   end
 
   describe "GET /tasks/new" do

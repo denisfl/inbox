@@ -153,6 +153,24 @@ RSpec.describe "Api::Blocks", type: :request do
         expect(json['block_type']).to eq('heading')
       end
 
+      it "includes image_url when image is attached" do
+        image_block = create(:block, document: document, block_type: 'image', position: 5)
+        image_block.image.attach(
+          io: StringIO.new("fake image data"),
+          filename: "test_img.png",
+          content_type: "image/png"
+        )
+
+        patch "/api/documents/#{document.id}/blocks/#{image_block.id}",
+              params: { block: { content: { caption: "nice" } } }.to_json,
+              headers: headers
+
+        expect(response).to have_http_status(:success)
+        json = JSON.parse(response.body)
+        expect(json["image_url"]).to be_present
+        expect(json["image_filename"]).to eq("test_img.png")
+      end
+
       it "updates the block position" do
         patch "/api/documents/#{document.id}/blocks/#{block.id}",
               params: { block: { position: 10 } }.to_json,

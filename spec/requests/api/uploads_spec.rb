@@ -66,6 +66,20 @@ RSpec.describe 'Api::Uploads', type: :request do
         expect(response).to have_http_status(:not_found)
       end
     end
+
+    context 'with invalid block' do
+      let(:image_file) { fixture_file_upload(Rails.root.join('spec/fixtures/files/test_image.png'), 'image/png') }
+
+      it 'returns not found for non-existent block' do
+        post "/api/documents/#{document.id}/blocks/99999/upload_image",
+             params: { image: image_file },
+             headers: headers
+
+        expect(response).to have_http_status(:not_found)
+        json = JSON.parse(response.body)
+        expect(json['error']).to eq('Block not found')
+      end
+    end
   end
 
   describe 'POST /api/documents/:document_id/blocks/:block_id/upload_file' do

@@ -35,10 +35,8 @@ RSpec.describe "Api::Telegram", type: :request do
 
   describe "POST /api/telegram/webhook" do
     it "returns 200 for valid message" do
-      # Stub the TelegramMessageHandler
-      handler = instance_double(TelegramMessageHandler)
-      allow(TelegramMessageHandler).to receive(:new).and_return(handler)
-      allow(handler).to receive(:handle)
+      # Use allow_any_instance_of to ensure the handler intercepts in-controller instantiation
+      allow_any_instance_of(TelegramMessageHandler).to receive(:handle)
 
       post webhook_path, params: text_message_params, headers: valid_headers
 

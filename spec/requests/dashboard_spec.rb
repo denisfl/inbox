@@ -233,6 +233,29 @@ RSpec.describe "Dashboard", type: :request do
       end
     end
 
+    it "shows Friday before 4pm greeting with tasks" do
+      travel_to Time.zone.parse("2026-03-13 10:00") do # Friday 10am, wday=5
+        create(:task, :due_today)
+
+        get dashboard_path
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("weekend is in sight")
+      end
+    end
+
+    it "shows inbox mention greeting on a normal day" do
+      travel_to Time.zone.parse("2026-03-11 10:00") do # Wednesday
+        6.times { create(:document) }
+        create(:task, :due_today)
+
+        get dashboard_path
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("inbox")
+      end
+    end
+
     it "shows Friday afternoon clear day greeting" do
       travel_to Time.zone.parse("2026-03-13 17:00") do # Friday 5pm
         # No tasks, no events — triggers wday==5 && hour>=16 clear day branch
