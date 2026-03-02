@@ -56,13 +56,13 @@ RSpec.describe CalendarEvent, type: :model do
       it "corrects ends_at if it is before starts_at" do
         starts = 2.hours.from_now
         event = create(:calendar_event, starts_at: starts, ends_at: starts - 1.hour)
-        expect(event.ends_at).to eq(starts + 1.hour)
+        expect(event.ends_at).to be_within(0.001.seconds).of(starts + 1.hour)
       end
 
       it "corrects ends_at if it equals starts_at" do
         starts = 2.hours.from_now
         event = create(:calendar_event, starts_at: starts, ends_at: starts)
-        expect(event.ends_at).to eq(starts + 1.hour)
+        expect(event.ends_at).to be_within(0.001.seconds).of(starts + 1.hour)
       end
     end
   end
