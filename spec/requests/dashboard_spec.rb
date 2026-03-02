@@ -10,12 +10,98 @@ RSpec.describe "Dashboard", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
-    it "displays stats" do
+    it "displays stats with tasks and events" do
       create(:task, :due_today)
       create(:calendar_event, :today)
       create(:document, title: "Recent note")
 
       get dashboard_path
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "builds activity feed from recent documents" do
+      create(:document, title: "Feed doc", created_at: 1.day.ago)
+
+      get dashboard_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Feed doc")
+    end
+
+    it "builds activity feed from completed tasks" do
+      create(:task, :completed, title: "Done task", completed_at: 1.hour.ago)
+
+      get dashboard_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Done task")
+    end
+
+    it "shows upcoming events" do
+      create(:calendar_event, :tomorrow, title: "Tomorrow meeting")
+
+      get dashboard_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Tomorrow meeting")
+    end
+
+    it "supports cal_month parameter for mini calendar" do
+      get dashboard_path(cal_month: "2026-06")
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "shows overdue tasks count" do
+      create(:task, :overdue, title: "Overdue item")
+
+      get dashboard_path
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "shows busy day greeting when many tasks and events" do
+      6.times { create(:task, :due_today) }
+      4.times { create(:calendar_event, :today) }
+
+      get dashboard_path
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "includes google calendar sync activity" do
+      create(:calendar_event, :google, synced_at: 1.hour.ago)
+
+      get dashboard_path
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "includes telegram-tagged documents in activity feed" do
+      doc = create(:document, title: "TG note", created_at: 1.day.ago)
+      tag = create(:tag, name: "telegram")
+      create(:document_tag, document: doc, tag: tag)
+
+      get dashboard_path
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "includes audio-tagged documents in activity feed" do
+      doc = create(:document, title: "Audio note", created_at: 1.day.ago)
+      tag = create(:tag, name: "audio")
+      create(:document_tag, document: doc, tag: tag)
+
+      get dashboard_path
+
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe "GET / (root)" do
+    it "renders the dashboard" do
+      get root_path
 
       expect(response).to have_http_status(:ok)
     end

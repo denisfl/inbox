@@ -18,6 +18,69 @@ RSpec.describe "Documents (web)", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("My note")
     end
+
+    it "searches by query" do
+      doc = create(:document, title: "Searchable note")
+
+      get documents_path(q: "Searchable")
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Searchable note")
+    end
+
+    it "filters by tags" do
+      doc = create(:document, title: "Tagged doc")
+      tag = create(:tag, name: "important")
+      create(:document_tag, document: doc, tag: tag)
+
+      get documents_path(tags: ["important"])
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "sorts by created_asc" do
+      get documents_path(sort: "created_asc")
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "sorts by title_asc" do
+      get documents_path(sort: "title_asc")
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "filters by voice type" do
+      get documents_path(type: "voice")
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "filters by photo type" do
+      get documents_path(type: "photo")
+
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe "GET /documents/:id" do
+    let(:document) { create(:document, :with_initial_block) }
+
+    it "returns 406 (no show template — documents use edit mode)" do
+      get document_path(document)
+
+      expect(response).to have_http_status(:not_acceptable)
+    end
+  end
+
+  describe "GET /documents/:id/edit" do
+    let(:document) { create(:document, :with_initial_block) }
+
+    it "returns success" do
+      get edit_document_path(document)
+
+      expect(response).to have_http_status(:ok)
+    end
   end
 
   describe "GET /documents/new" do
@@ -34,6 +97,14 @@ RSpec.describe "Documents (web)", type: :request do
 
       doc = Document.last
       expect(doc.tags.map(&:name)).to include("web")
+    end
+
+    it "creates an initial text block" do
+      get new_document_path
+
+      doc = Document.last
+      expect(doc.blocks.count).to eq(1)
+      expect(doc.blocks.first.block_type).to eq("text")
     end
   end
 
@@ -57,6 +128,81 @@ RSpec.describe "Documents (web)", type: :request do
         delete document_path(document)
       }.to change(Block, :count).by(-1)
         .and change(DocumentTag, :count).by(-1)
+    end
+  end
+
+  describe "PATCH /documents/:id/toggle_pinned" do
+    let(:document) { create(:document, pinned: false) }
+
+    it "toggles the pinned status" do
+      patch toggle_pinned_document_path(document)
+
+      expect(document.reload.pinned).to be true
+    end
+
+    it "redirects back for HTML" do
+      patch toggle_pinned_document_path(document)
+
+      expect(response).to have_http_status(:redirect)
+    end
+
+    it "returns JSON for JSON requests" do
+      patch toggle_pinned_document_path(document), headers: { "Accept" => "application/json" }
+
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)["pinned"]).to be true
+    end
+  end
+
+  describe "POST /documents/bulk_upload" do
+    it "creates documents from uploaded files" do
+      file = fixture_file_upload(
+        Rails.root.join("spec", "fixtures", "files", "test_upload.txt"),
+        "text/plain"
+      )
+
+      expect {
+        post bulk_upload_documents_path, params: { files: [file] }
+      }.to change(Document, :count).by(1)
+
+      expect(response).to redirect_to(documents_path)
+      doc = Document.last
+      expect(doc.tags.map(&:name)).to include("web", "file")
+    end
+
+    it "handles image uploads with image block" do
+      file = fixture_file_upload(
+        Rails.root.join("spec", "fixtures", "files", "test_image.png"),
+        "image/png"
+      )
+
+      expect {
+        post bulk_upload_documents_path, params: { files: [file] }
+      }.to change(Document, :count).by(1)
+
+      doc = Document.last
+      expect(doc.blocks.find_by(block_type: "image")).to be_present
+    end
+
+    it "redirects with alert when no files selected" do
+      post bulk_upload_documents_path, params: { files: nil }
+
+      expect(response).to redirect_to(documents_path)
+    end
+
+    it "handles multiple files" do
+      file1 = fixture_file_upload(
+        Rails.root.join("spec", "fixtures", "files", "test_upload.txt"),
+        "text/plain"
+      )
+      file2 = fixture_file_upload(
+        Rails.root.join("spec", "fixtures", "files", "test_upload.txt"),
+        "text/plain"
+      )
+
+      expect {
+        post bulk_upload_documents_path, params: { files: [file1, file2] }
+      }.to change(Document, :count).by(2)
     end
   end
 end

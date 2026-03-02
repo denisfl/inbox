@@ -51,6 +51,12 @@ RSpec.describe "Tasks", type: :request do
       expect(response.body).to include("Overdue task")
     end
 
+    it "filters by all" do
+      get tasks_path(filter: "all")
+
+      expect(response).to have_http_status(:ok)
+    end
+
     it "filters by tags" do
       tag = create(:tag, name: "urgent")
       create(:task_tag, task: today_task, tag: tag)
@@ -143,6 +149,12 @@ RSpec.describe "Tasks", type: :request do
       patch toggle_task_path(task)
 
       expect(response).to have_http_status(:redirect)
+    end
+
+    it "responds with ok for JSON" do
+      patch toggle_task_path(task), headers: { "Accept" => "application/json" }
+
+      expect(response).to have_http_status(:ok)
     end
   end
 end

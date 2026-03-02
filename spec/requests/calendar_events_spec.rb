@@ -120,4 +120,53 @@ RSpec.describe "CalendarEvents", type: :request do
       expect(response).to redirect_to(calendar_path)
     end
   end
+
+  describe "POST /calendar/import" do
+    it "imports events from valid ICS file" do
+      ics_content = <<~ICS
+        BEGIN:VCALENDAR
+        VERSION:2.0
+        BEGIN:VEVENT
+        DTSTART:20260415T100000Z
+        DTEND:20260415T110000Z
+        SUMMARY:Imported event
+        UID:test-uid-123@example.com
+        END:VEVENT
+        END:VCALENDAR
+      ICS
+
+      # Create a real temp file for upload
+      temp_file = Tempfile.new(["test", ".ics"])
+      temp_file.write(ics_content)
+      temp_file.rewind
+
+      file = Rack::Test::UploadedFile.new(temp_file.path, "text/calendar")
+
+      expect {
+        post import_ical_path, params: { ical_file: file }
+      }.to change(CalendarEvent, :count).by(1)
+
+      expect(response).to redirect_to(calendar_path)
+
+      temp_file.close
+      temp_file.unlink
+    end
+
+    it "redirects with alert when no file selected" do
+      post import_ical_path
+
+      expect(response).to redirect_to(calendar_path)
+    end
+
+    it "rejects non-ICS files" do
+      file = fixture_file_upload(
+        Rails.root.join("spec", "fixtures", "files", "test_upload.txt"),
+        "text/plain"
+      )
+
+      post import_ical_path, params: { ical_file: file }
+
+      expect(response).to redirect_to(calendar_path)
+    end
+  end
 end

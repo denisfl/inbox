@@ -13,18 +13,36 @@ RSpec.describe TelegramMessageHandler do
     ENV["TELEGRAM_BOT_TOKEN"] ||= "test_token"
   end
 
-  def build_update(text: nil, photo: nil, voice: nil, audio: nil, document: nil)
+  def build_update(text: nil, photo: nil, voice: nil, audio: nil, document: nil, caption: nil)
     msg = double("message",
       text: text,
       photo: photo,
       voice: voice,
       audio: audio,
       document: document,
-      caption: nil,
+      caption: caption,
       chat: double("chat", id: chat_id),
       message_id: message_id
     )
     double("update", message: msg)
+  end
+
+  # Stub bot.api.get_file to return a file_path
+  def stub_bot_get_file(file_path: "documents/file_123.ogg")
+    file_result = double("file_info", file_path: file_path)
+    bot_api = double("bot_api")
+    allow(bot_api).to receive(:get_file).and_return(file_result)
+    allow(bot_api).to receive(:send_message)
+
+    bot = double("bot", api: bot_api)
+    allow(Telegram::Bot::Client).to receive(:new).and_return(bot)
+  end
+
+  # Stub file download via open-uri
+  def stub_file_download(content: "fake file data")
+    io = StringIO.new(content)
+    allow(URI).to receive(:parse).and_call_original
+    allow_any_instance_of(URI::HTTPS).to receive(:open).and_return(io)
   end
 
   describe "#handle" do
@@ -60,6 +78,141 @@ RSpec.describe TelegramMessageHandler do
       end
     end
 
+    context "with photo message" do
+      let(:photo) do
+        [
+          double("photo_small", file_id: "small_id", file_size: 1000),
+          double("photo_large", file_id: "large_id", file_size: 5000)
+        ]
+      end
+
+      before do
+        stub_bot_get_file(file_path: "photos/photo_large_id.jpg")
+        stub_file_download(content: "fake jpeg data")
+      end
+
+      it "creates a document with image block" do
+        update = build_update(photo: photo, caption: "My photo")
+
+        expect {
+          described_class.new(update).handle
+        }.to change(Document, :count).by(1)
+
+        doc = Document.last
+        expect(doc.blocks.where(block_type: "image").count).to eq(1)
+        expect(doc.tags.map(&:name)).to include("telegram", "file")
+      end
+
+      it "uses the largest photo size" do
+        update = build_update(photo: photo)
+
+        described_class.new(update).handle
+
+        # The bot should have been asked for the large file
+        bot = Telegram::Bot::Client.new("test")
+        expect(bot.api).to have_received(:get_file).with(file_id: "large_id")
+      end
+
+      it "adds caption as text block when present" do
+        update = build_update(photo: photo, caption: "Photo caption")
+
+        described_class.new(update).handle
+
+        doc = Document.last
+        text_block = doc.blocks.find_by(block_type: "text")
+        expect(text_block).to be_present
+        expect(JSON.parse(text_block.content)["text"]).to eq("Photo caption")
+      end
+    end
+
+    context "with voice message" do
+      let(:voice) { double("voice", file_id: "voice_123") }
+
+      before do
+        stub_bot_get_file(file_path: "voices/voice_123.ogg")
+        stub_file_download(content: "fake ogg data")
+        # Prevent actual job execution in test
+        allow(TranscribeAudioJob).to receive(:perform_later)
+      end
+
+      it "creates a document with file block and queues transcription" do
+        update = build_update(voice: voice)
+
+        expect {
+          described_class.new(update).handle
+        }.to change(Document, :count).by(1)
+
+        doc = Document.last
+        expect(doc.blocks.where(block_type: "file").count).to eq(1)
+        expect(doc.tags.map(&:name)).to include("telegram", "audio")
+        expect(TranscribeAudioJob).to have_received(:perform_later)
+      end
+    end
+
+    context "with audio message" do
+      let(:audio) do
+        double("audio",
+          file_id: "audio_456",
+          file_name: "song.mp3",
+          mime_type: "audio/mpeg"
+        )
+      end
+
+      before do
+        stub_bot_get_file(file_path: "audio/audio_456.mp3")
+        stub_file_download(content: "fake mp3 data")
+      end
+
+      it "creates a document with audio file block" do
+        update = build_update(audio: audio)
+
+        expect {
+          described_class.new(update).handle
+        }.to change(Document, :count).by(1)
+
+        doc = Document.last
+        expect(doc.blocks.where(block_type: "file").count).to eq(1)
+        expect(doc.tags.map(&:name)).to include("telegram", "audio")
+      end
+    end
+
+    context "with document message" do
+      let(:tg_document) do
+        double("document",
+          file_id: "doc_789",
+          file_name: "report.pdf",
+          mime_type: "application/pdf"
+        )
+      end
+
+      before do
+        stub_bot_get_file(file_path: "documents/doc_789.pdf")
+        stub_file_download(content: "fake pdf data")
+      end
+
+      it "creates a document with file block" do
+        update = build_update(document: tg_document)
+
+        expect {
+          described_class.new(update).handle
+        }.to change(Document, :count).by(1)
+
+        doc = Document.last
+        expect(doc.blocks.where(block_type: "file").count).to eq(1)
+        expect(doc.tags.map(&:name)).to include("telegram", "file")
+      end
+
+      it "adds caption as text block when present" do
+        update = build_update(document: tg_document, caption: "Important report")
+
+        described_class.new(update).handle
+
+        doc = Document.last
+        text_block = doc.blocks.find_by(block_type: "text")
+        expect(text_block).to be_present
+      end
+    end
+
     context "with nil message" do
       it "does nothing" do
         update = double("update", message: nil)
@@ -74,12 +227,10 @@ RSpec.describe TelegramMessageHandler do
       it "sends error reply and does not propagate" do
         stub_ollama_classify(intent: "note", confidence: 0.9, title: "Test")
 
-        # Force IntentRouter to raise
         allow(IntentRouter).to receive(:dispatch).and_raise(StandardError, "boom")
 
         update = build_update(text: "test")
 
-        # Should not raise — error is caught and reply sent
         expect {
           described_class.new(update).handle
         }.not_to raise_error
