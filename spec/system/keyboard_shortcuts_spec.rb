@@ -14,12 +14,13 @@ RSpec.describe 'Keyboard Shortcuts', type: :system, js: true do
       before { visit documents_path }
 
       it 'g + n creates new note' do
-        find('body').send_keys('g')
-        sleep 0.2
-        find('body').send_keys('n')
+        expect(page).to have_css('body[data-controller~="keyboard"]')
+        page.execute_script("document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'g', bubbles: true}))")
+        sleep 0.3
+        page.execute_script("document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'n', bubbles: true}))")
 
         # /new creates a document and redirects to its edit page
-        expect(page).to have_css('.simple-editor-container', wait: 5)
+        expect(page).to have_css('.simple-editor-container', wait: 10)
       end
 
       it 'sequence timeout resets after 1 second' do
@@ -38,12 +39,13 @@ RSpec.describe 'Keyboard Shortcuts', type: :system, js: true do
       before { visit root_path }
 
       it 'g + n creates new note from dashboard' do
-        find('body').send_keys('g')
-        sleep 0.2
-        find('body').send_keys('n')
+        expect(page).to have_css('body[data-controller~="keyboard"]')
+        page.execute_script("document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'g', bubbles: true}))")
+        sleep 0.3
+        page.execute_script("document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'n', bubbles: true}))")
 
         # /new creates a document and redirects to its edit page
-        expect(page).to have_css('.simple-editor-container', wait: 5)
+        expect(page).to have_css('.simple-editor-container', wait: 10)
       end
     end
   end

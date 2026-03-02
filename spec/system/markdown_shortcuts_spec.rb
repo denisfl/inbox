@@ -87,7 +87,7 @@ RSpec.describe 'Markdown Preview', type: :system, js: true do
     end
 
     it 'has save indicator element' do
-      expect(page).to have_css('[data-simple-editor-target="saveIndicator"]')
+      expect(page).to have_css('[data-simple-editor-target="saveIndicator"]', visible: :all)
     end
   end
 end

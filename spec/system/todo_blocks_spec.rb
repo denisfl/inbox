@@ -64,6 +64,7 @@ RSpec.describe 'Tasks Page', type: :system, js: true do
 
   describe 'empty state' do
     it 'shows empty state when no tasks exist' do
+      Task.destroy_all
       visit tasks_path(filter: 'today')
 
       expect(page).to have_content('No tasks for today')
