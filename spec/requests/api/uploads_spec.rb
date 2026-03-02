@@ -66,6 +66,20 @@ RSpec.describe 'Api::Uploads', type: :request do
         expect(response).to have_http_status(:not_found)
       end
     end
+
+    context 'with invalid block' do
+      let(:image_file) { fixture_file_upload(Rails.root.join('spec/fixtures/files/test_image.png'), 'image/png') }
+
+      it 'returns not found for non-existent block' do
+        post "/api/documents/#{document.id}/blocks/99999/upload_image",
+             params: { image: image_file },
+             headers: headers
+
+        expect(response).to have_http_status(:not_found)
+        json = JSON.parse(response.body)
+        expect(json['error']).to eq('Block not found')
+      end
+    end
   end
 
   describe 'POST /api/documents/:document_id/blocks/:block_id/upload_file' do
@@ -79,9 +93,12 @@ RSpec.describe 'Api::Uploads', type: :request do
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        expect(json['block']).to include('id', 'url', 'filename', 'content_type', 'size')
-        expect(json['block']['filename']).to eq('test_document.pdf')
-        expect(json['block']['content_type']).to eq('application/pdf')
+        block_data = json['block']
+        expect(block_data['id']).to eq(file_block.id)
+        expect(block_data['url']).to be_present
+        expect(block_data['filename']).to eq('test_document.pdf')
+        expect(block_data['content_type']).to eq('application/pdf')
+        expect(block_data['size']).to be_a(Integer)
 
         file_block.reload
         expect(file_block.file).to be_attached

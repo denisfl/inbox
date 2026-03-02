@@ -21,7 +21,7 @@ RSpec.describe Block, type: :model do
 
     describe '.ordered' do
       it 'returns blocks ordered by position' do
-        expect(Block.ordered).to eq([heading_block, block_1, block_2, code_block])
+        expect(Block.ordered).to eq([ heading_block, block_1, block_2, code_block ])
       end
     end
 

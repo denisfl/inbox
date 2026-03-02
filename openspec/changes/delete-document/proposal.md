@@ -12,9 +12,11 @@ Documents accumulate over time and there's no way to remove them. Users need the
 ## Capabilities
 
 ### New Capabilities
+
 - `document-deletion`: Users can delete individual documents and their associated blocks, tags, and file attachments. Includes confirmation dialog to prevent accidental deletion. Bulk delete from index page.
 
 ### Modified Capabilities
+
 - none
 
 ## Impact

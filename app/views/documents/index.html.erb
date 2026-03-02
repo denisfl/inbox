@@ -1,10 +1,19 @@
 <% content_for :title, "Inbox - Documents" %>
 <% content_for :page_title, @page_title || "All Notes" %>
 
-<div class="inbox-with-sidebar<%= ' inbox-with-sidebar--no-sidebar' unless @show_calendar_widget %>">
+<div class="inbox-with-sidebar">
   <div class="inbox-main">
 
 <div class="documents-container">
+  <%# Tag filter bar — always shown when tags exist or tags are selected %>
+  <% if @selected_tags.any? || Tag.any? %>
+    <%= render partial: "shared/tag_filter_bar", locals: {
+      selected_tags: @selected_tags,
+      base_path: documents_path,
+      preserve: { sort: params[:sort], type: params[:type], q: params[:q] }.compact_blank
+    } %>
+  <% end %>
+
   <%# Filters and sorting bar %>
   <div class="filters-bar">
     <div class="filters-left">
@@ -34,60 +43,69 @@
       <% @documents.each do |document| %>
         <%= render 'documents/card', document: document %>
       <% end %>
+
+      <%# ── Dashed "New Note" card ── %>
+      <%= link_to new_note_path, class: "new-note-card", data: { turbo: false } do %>
+        <%= heroicon(:plus, style: 'width: 1.5rem; height: 1.5rem;') %>
+        <span>New Note</span>
+      <% end %>
+
+      <%# ── Upload files card ── %>
+      <%= form_with url: bulk_upload_documents_path, method: :post, multipart: true, class: "upload-card", data: { controller: "file-upload", turbo: false } do %>
+        <label class="upload-card-label" data-file-upload-target="dropzone" data-action="dragover->file-upload#dragover dragenter->file-upload#dragenter dragleave->file-upload#dragleave drop->file-upload#drop">
+          <%= heroicon(:arrow_up_tray, style: 'width: 1.5rem; height: 1.5rem;') %>
+          <span data-file-upload-target="label">Upload Files</span>
+          <input type="file" name="files[]" multiple class="upload-input" data-file-upload-target="input" data-action="change->file-upload#change">
+        </label>
+        <button type="submit" class="upload-submit btn btn-primary btn-sm" data-file-upload-target="submit" style="display:none">
+          <%= heroicon(:arrow_up_tray, style: 'width: 0.875rem; height: 0.875rem;') %>
+          Upload
+        </button>
+      <% end %>
     </div>
   <% else %>
     <div class="empty-state">
       <% if params[:q].present? %>
         <%# No search results %>
-        <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-        </svg>
+        <%= heroicon(:magnifying_glass, class: 'empty-state-icon') %>
         <h2 class="empty-state-title">No results found</h2>
         <p class="empty-state-description">
           We couldn't find any notes matching "<strong><%= params[:q] %></strong>"<br>
           Try a different search term or clear filters
         </p>
         <div class="empty-state-actions">
-          <%= link_to root_path, class: "btn btn-secondary" do %>
+          <%= link_to documents_path, class: "btn btn-secondary" do %>
             Clear search
           <% end %>
         </div>
-      
-      <% elsif params[:source].present? || params[:type].present? || params[:tag].present? %>
+
+      <% elsif params[:type].present? || params[:tag].present? || params[:tags].present? %>
         <%# No results for filters %>
-        <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
-        </svg>
+        <%= heroicon(:funnel, class: 'empty-state-icon') %>
         <h2 class="empty-state-title">No matches for current filters</h2>
         <p class="empty-state-description">
           Try adjusting your filters or browse all notes
         </p>
         <div class="empty-state-actions">
-          <%= link_to root_path, class: "btn btn-secondary" do %>
+          <%= link_to documents_path, class: "btn btn-secondary" do %>
             Clear all filters
           <% end %>
         </div>
-      
+
       <% else %>
         <%# No documents at all %>
-        <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
-        </svg>
+        <%= heroicon(:clipboard, class: 'empty-state-icon') %>
         <h2 class="empty-state-title">No documents yet</h2>
         <p class="empty-state-description">
           Start capturing your thoughts by creating a new note or sending messages to your Telegram bot
         </p>
         <div class="empty-state-actions">
           <%= link_to new_note_path, class: "btn btn-primary", data: { turbo: false } do %>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
+            <%= heroicon(:plus, style: 'width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;') %>
             New Note
           <% end %>
           <a href="https://t.me/inbox_fl_bot" target="_blank" class="btn btn-secondary">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
-            </svg>
+            <%= heroicon(:device_phone_mobile, style: 'width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;') %>
             Open Telegram Bot
           </a>
         </div>
@@ -162,6 +180,69 @@
   gap: var(--spacing-lg);
 }
 
+/* ── Dashed "New Note" card ── */
+.new-note-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  min-height: 140px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+}
+.new-note-card:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-bg-secondary);
+}
+
+/* ── Upload card ── */
+.upload-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 140px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+.upload-card.drag-over {
+  border-color: var(--color-primary);
+  background: var(--color-bg-secondary);
+}
+.upload-card-label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+  padding: var(--spacing-md);
+}
+.upload-card-label:hover {
+  color: var(--color-primary);
+}
+.upload-input {
+  display: none;
+}
+.upload-submit {
+  margin: 0 var(--spacing-sm) var(--spacing-sm);
+  gap: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (max-width: 768px) {
   .documents-grid {
     grid-template-columns: 1fr;
@@ -188,11 +269,6 @@
 
 </style>
 
-<%# Close inbox-main + render calendar widget sidebar %>
+<%# Close inbox-main %>
   </div><%# .inbox-main %>
-  <% if @show_calendar_widget %>
-    <aside class="inbox-sidebar">
-      <%= render "calendars/widget" %>
-    </aside>
-  <% end %>
 </div><%# .inbox-with-sidebar %>

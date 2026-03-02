@@ -2,10 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-.app-container {
+html,
+body {
+  overflow-x: hidden;
+}
+
+/* ── App layout: sidebar + main ── */
+.app-layout {
   display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--color-bg-secondary);
 }
 
 .main-content {
@@ -244,6 +258,16 @@
   background: var(--color-bg-secondary, #f9fafb);
 }
 
+.markdown-preview hr {
+  border-color: var(--color-border);
+  border-top: 0;
+  margin-top: var(--spacing-2xl);
+  margin-bottom: var(--spacing-2xl);
+  border-left: 0;
+  border-right: 0;
+  padding: 0;
+}
+
 /* Edit area */
 .markdown-edit-area {
   display: flex;
@@ -287,23 +311,23 @@
 /* ── Inbox + Calendar sidebar layout ──────────────────────────────────────── */
 .inbox-with-sidebar {
   display: grid;
-  grid-template-columns: 1fr 280px;
+  grid-template-columns: 1frx;
   gap: 1.5rem;
   align-items: start;
   width: 100%;
-}
-
-.inbox-with-sidebar--no-sidebar {
-  grid-template-columns: 1fr;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .inbox-main {
   min-width: 0; /* prevent overflow */
+  overflow: hidden;
 }
 
 .inbox-sidebar {
   position: sticky;
   top: 1rem;
+  min-width: 0;
 }
 
 /* ── Calendar widget ────────────────────────────────────────────────────────── */
@@ -411,15 +435,54 @@ a:hover .cal-widget-icon {
   text-align: center;
   padding: 0.5rem 0;
 }
-
-@media (max-width: 900px) {
-  .inbox-with-sidebar {
-    grid-template-columns: 1fr;
-  }
-
-  .inbox-sidebar {
-    position: static;
-    order: -1; /* Show widget above the list on mobile */
-  }
+.cal-widget-empty-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+.cal-widget-empty-link:hover {
+  text-decoration: underline;
 }
 
+/* ── Mini week calendar (empty state) ── */
+.cal-widget-mini-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--spacing-xs);
+  text-align: center;
+  margin-bottom: var(--spacing-sm);
+}
+.cal-mini-day {
+  padding: var(--spacing-xs) 0;
+  border-radius: var(--radius-sm);
+}
+.cal-mini-day--today {
+  background: var(--color-primary);
+  color: var(--color-bg-primary);
+}
+.cal-mini-day--past {
+  opacity: 0.4;
+}
+.cal-mini-day-name {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-tertiary);
+}
+.cal-mini-day--today .cal-mini-day-name {
+  color: color-mix(in srgb, var(--color-bg-primary) 80%, transparent);
+}
+.cal-mini-day-num {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  margin-top: 1px;
+}
+
+.back-link {
+  display: inline-flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}

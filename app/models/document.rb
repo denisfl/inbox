@@ -21,16 +21,36 @@ class Document < ApplicationRecord
 
   # Scopes
   scope :recent, -> { order(created_at: :desc) }
-  scope :by_source, ->(source) { where(source: source) }
-  scope :todos, -> { where(document_type: 'todo') }
-  scope :notes, -> { where(document_type: 'note') }
+  scope :todos, -> { where(document_type: "todo") }
+  scope :notes, -> { where(document_type: "note") }
+  scope :pinned, -> { where(pinned: true) }
+  scope :not_pinned, -> { where(pinned: false) }
+  scope :pinned_first, -> { order(pinned: :desc) }
+
+  # Filter by multiple tags (AND — documents must have ALL specified tags)
+  scope :tagged_with, ->(tag_names) {
+    return all if tag_names.blank?
+
+    names = Array(tag_names).map { |n| n.to_s.strip.downcase }.reject(&:blank?)
+    return all if names.empty?
+
+    joins(:tags)
+      .where(tags: { name: names })
+      .group("documents.id")
+      .having("COUNT(DISTINCT tags.id) = ?", names.size)
+  }
+
+  # Toggle pinned status
+  def toggle_pinned!
+    update!(pinned: !pinned)
+  end
 
   # Full-text search using SQLite FTS5
   def self.search(query, page: 1, per_page: 20)
     return none if query.blank?
 
     # Sanitize query for FTS5 (escape special characters)
-    sanitized_query = query.gsub(/[^a-zA-Z0-9\s]/, ' ')
+    sanitized_query = query.gsub(/[^a-zA-Z0-9\s]/, " ")
 
     # Search in FTS table
     sql = <<-SQL
@@ -50,15 +70,15 @@ class Document < ApplicationRecord
 
     # Execute raw SQL and map to Document objects
     results = connection.select_all(
-      sanitize_sql([sql, sanitized_query, per_page, offset])
+      sanitize_sql([ sql, sanitized_query, per_page, offset ])
     )
 
     # Convert to Document objects with snippet attributes
     results.map do |row|
-      doc = find(row['id'])
-      doc.define_singleton_method(:title_snippet) { row['title_snippet'] }
-      doc.define_singleton_method(:content_snippet) { row['content_snippet'] }
-      doc.define_singleton_method(:rank) { row['rank'] }
+      doc = find(row["id"])
+      doc.define_singleton_method(:title_snippet) { row["title_snippet"] }
+      doc.define_singleton_method(:content_snippet) { row["content_snippet"] }
+      doc.define_singleton_method(:rank) { row["rank"] }
       doc
     end
   end
@@ -67,7 +87,7 @@ class Document < ApplicationRecord
   def self.search_count(query)
     return 0 if query.blank?
 
-    sanitized_query = query.gsub(/[^a-zA-Z0-9\s]/, ' ')
+    sanitized_query = query.gsub(/[^a-zA-Z0-9\s]/, " ")
 
     sql = <<-SQL
       SELECT COUNT(*) as count
@@ -75,14 +95,14 @@ class Document < ApplicationRecord
       WHERE documents_fts MATCH ?
     SQL
 
-    connection.select_value(sanitize_sql([sql, sanitized_query]))
+    connection.select_value(sanitize_sql([ sql, sanitized_query ]))
   end
 
   private
 
   def generate_slug
     base_slug = title.parameterize
-    
+
     # Check if slug already exists
     if Document.exists?(slug: base_slug)
       # Append timestamp to make it unique

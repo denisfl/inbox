@@ -18,22 +18,15 @@ class IntentRouter
   private
 
   def create_todo(result, telegram_chat_id)
-    document = Document.create!(
+    task = Task.create!(
       title: result.title,
-      document_type: "todo",
-      source: "telegram",
-      telegram_chat_id: telegram_chat_id
+      description: result.body,
+      due_date: result.due_at&.to_date,
+      due_time: result.due_at
     )
-    document.blocks.create!(
-      block_type: "text",
-      position: 0,
-      content: { text: result.body }.to_json
-    )
-    tag = Tag.find_or_create_by!(name: "todo")
-    document.tags << tag unless document.tags.include?(tag)
-    reply(telegram_chat_id, "✅ Задача добавлена: #{result.title}")
-    Rails.logger.info("IntentRouter: created todo document #{document.id}")
-    document
+    reply(telegram_chat_id, "✅ Task added: #{result.title}")
+    Rails.logger.info("IntentRouter: created task #{task.id}")
+    task
   end
 
   def create_event(result, telegram_chat_id)
@@ -42,7 +35,6 @@ class IntentRouter
     document = Document.create!(
       title: result.title,
       document_type: "note",
-      source: "telegram",
       telegram_chat_id: telegram_chat_id
     )
     document.blocks.create!(
@@ -50,11 +42,14 @@ class IntentRouter
       position: 0,
       content: { text: result.body, due_at: result.due_at&.iso8601 }.compact.to_json
     )
+    # Auto-tag as telegram + event
+    telegram_tag = Tag.find_or_create_by!(name: "telegram")
+    document.tags << telegram_tag unless document.tags.include?(telegram_tag)
     tag = Tag.find_or_create_by!(name: "event")
     document.tags << tag unless document.tags.include?(tag)
 
     time_str = result.due_at ? result.due_at.strftime("%d.%m %H:%M") : "??"
-    reply(telegram_chat_id, "📅 Событие сохранено: #{result.title} на #{time_str}")
+    reply(telegram_chat_id, "📅 Event saved: #{result.title} on #{time_str}")
     Rails.logger.info("IntentRouter: created event document #{document.id}")
     document
   rescue StandardError => e
@@ -66,7 +61,6 @@ class IntentRouter
     document = Document.create!(
       title: result.title,
       document_type: "note",
-      source: "telegram",
       telegram_chat_id: telegram_chat_id
     )
     document.blocks.create!(
@@ -74,7 +68,10 @@ class IntentRouter
       position: 0,
       content: { text: result.body }.to_json
     )
-    reply(telegram_chat_id, "📝 Заметка сохранена")
+    # Auto-tag as telegram
+    telegram_tag = Tag.find_or_create_by!(name: "telegram")
+    document.tags << telegram_tag unless document.tags.include?(telegram_tag)
+    reply(telegram_chat_id, "📝 Note saved")
     Rails.logger.info("IntentRouter: created note document #{document.id}")
     document
   end

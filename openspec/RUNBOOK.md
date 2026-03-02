@@ -17,6 +17,7 @@ inbox-worker-1    – SolidQueue background jobs
 ```
 
 Проверить статус:
+
 ```bash
 docker compose ps
 ```
@@ -35,6 +36,7 @@ docker compose -f docker-compose.yml -f docker-compose.production.yml --env-file
 ```
 
 Проверить, что поднялось:
+
 ```bash
 docker compose ps
 docker compose logs web --tail=30
@@ -51,11 +53,13 @@ docker compose exec web rails db:migrate
 ```
 
 Проверить применённые миграции:
+
 ```bash
 docker compose exec web rails db:migrate:status
 ```
 
 Откат последней миграции (при необходимости):
+
 ```bash
 docker compose exec web rails db:rollback
 ```
@@ -65,21 +69,25 @@ docker compose exec web rails db:rollback
 ## 3. Обновление языковой модели Ollama
 
 Скачать новую модель (пример: `gemma3:4b`):
+
 ```bash
 docker compose exec ollama ollama pull gemma3:4b
 ```
 
 Посмотреть установленные модели:
+
 ```bash
 docker compose exec ollama ollama list
 ```
 
 Перезапуск Ollama после смены модели:
+
 ```bash
 docker compose restart ollama
 ```
 
 После смены модели нужно перезапустить worker (он использует Ollama):
+
 ```bash
 docker compose restart worker
 ```
@@ -146,11 +154,13 @@ docker compose exec web rails runner 'SendEventReminderJob.perform_now'
 Хранятся в `~/inbox/.env.production` на RPi.
 
 Редактировать:
+
 ```bash
 nano ~/inbox/.env.production
 ```
 
 После изменения ENV — перезапустить соответствующий сервис:
+
 ```bash
 docker compose up -d web worker   # пересоздаёт контейнеры с новыми ENV
 ```
@@ -179,7 +189,7 @@ docker compose -f docker-compose.yml -f docker-compose.production.yml --env-file
    production:
      my_new_job:
        class: MyNewJob
-       schedule: every 15 minutes   # или: at 2am every day
+       schedule: every 15 minutes # или: at 2am every day
    ```
 3. Перезапустить worker:
    ```bash
@@ -199,6 +209,7 @@ docker compose exec web rails console
 ```
 
 Примеры:
+
 ```ruby
 # Последний документ
 Document.last
@@ -220,10 +231,13 @@ puts result.inspect
 
 По умолчанию Whisper определяет язык автоматически.  
 Принудительно задать язык (в `.env.production`):
+
 ```
 WHISPER_LANGUAGE=ru
 ```
+
 После — пересоздать контейнер:
+
 ```bash
 docker compose up -d whisper
 ```
@@ -250,6 +264,7 @@ docker compose -f docker-compose.yml -f docker-compose.production.yml --env-file
 Docker Compose **по умолчанию читает `.env`**, но не `.env.production`.
 
 **Всегда** используй полную команду:
+
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.production.yml --env-file .env.production <команда>
 ```

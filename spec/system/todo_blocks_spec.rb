@@ -23,7 +23,7 @@ RSpec.describe 'TODO Blocks', type: :system, js: true do
       # Should convert to TODO block
       sleep 1 # Wait for conversion
       expect(page).to have_selector('.block-wrapper[data-block-type="todo"]')
-      
+
       checkbox = find('input[type="checkbox"]')
       expect(checkbox).not_to be_checked
     end
@@ -36,7 +36,7 @@ RSpec.describe 'TODO Blocks', type: :system, js: true do
 
       sleep 1
       expect(page).to have_selector('.block-wrapper[data-block-type="todo"]')
-      
+
       checkbox = find('input[type="checkbox"]')
       expect(checkbox).to be_checked
     end
@@ -58,7 +58,7 @@ RSpec.describe 'TODO Blocks', type: :system, js: true do
       sleep 1
       todos = all('.block-wrapper[data-block-type="todo"]')
       expect(todos.count).to eq(2)
-      
+
       # Second TODO should be empty
       second_todo = todos.last.find('span[contenteditable]')
       expect(second_todo.text).to be_empty
@@ -75,7 +75,7 @@ RSpec.describe 'TODO Blocks', type: :system, js: true do
       # Rapidly press Enter 5 times
       todo_span = find('.block-wrapper[data-block-type="todo"] span[contenteditable]', match: :first)
       todo_span.click
-      
+
       5.times do
         todo_span.send_keys(:return)
         sleep 0.1 # Very short delay to simulate rapid typing
@@ -92,15 +92,15 @@ RSpec.describe 'TODO Blocks', type: :system, js: true do
       errors = page.driver.browser.logs.get(:browser)
                  .select { |log| log.level == 'SEVERE' }
                  .map(&:message)
-      
+
       expect(errors).to be_empty, "JavaScript errors: #{errors.join("\n")}"
     end
   end
 
   describe 'TODO interactions' do
     let!(:todo_block) do
-      create(:block, :todo, 
-             document: document, 
+      create(:block, :todo,
+             document: document,
              position: 1,
              content: { text: 'Test TODO', checked: false }.to_json)
     end
@@ -112,14 +112,14 @@ RSpec.describe 'TODO Blocks', type: :system, js: true do
 
     it 'toggles TODO checkbox' do
       checkbox = find('.block-wrapper[data-block-type="todo"] input[type="checkbox"]')
-      
+
       expect(checkbox).not_to be_checked
-      
+
       checkbox.click
       sleep 0.5 # Wait for AJAX save
-      
+
       expect(checkbox).to be_checked
-      
+
       # Verify saved to server
       todo_block.reload
       expect(todo_block.content_hash['checked']).to be true
@@ -129,9 +129,9 @@ RSpec.describe 'TODO Blocks', type: :system, js: true do
       todo_span = find('.block-wrapper[data-block-type="todo"] span[contenteditable]')
       todo_span.click
       todo_span.send_keys(' - updated')
-      
+
       sleep 1 # Wait for debounced autosave
-      
+
       # Verify saved
       todo_block.reload
       expect(todo_block.content_hash['text']).to include('updated')
@@ -141,13 +141,13 @@ RSpec.describe 'TODO Blocks', type: :system, js: true do
       todo_span = find('.block-wrapper[data-block-type="todo"] span[contenteditable]')
       todo_span.click
       todo_span.send_keys(:return)
-      
+
       sleep 1
-      
+
       # Active element should be the new TODO span
       active_element = page.evaluate_script('document.activeElement.tagName')
       expect(active_element).to eq('SPAN')
-      
+
       active_contenteditable = page.evaluate_script(
         'document.activeElement.hasAttribute("contenteditable")'
       )
@@ -171,15 +171,15 @@ RSpec.describe 'TODO Blocks', type: :system, js: true do
     it 'deletes TODO block' do
       todo_wrapper = find('.block-wrapper[data-block-type="todo"]')
       delete_button = todo_wrapper.find('.block-delete', visible: false)
-      
+
       # Hover to show delete button
       todo_wrapper.hover
-      
+
       # Click delete (need to confirm)
       accept_confirm { delete_button.click }
-      
+
       sleep 0.5
-      
+
       expect(page).not_to have_selector('.block-wrapper[data-block-type="todo"]')
     end
   end
@@ -205,7 +205,7 @@ RSpec.describe 'TODO Blocks', type: :system, js: true do
       # Should still be checked
       reloaded_checkbox = find('input[type="checkbox"]')
       expect(reloaded_checkbox).to be_checked
-      
+
       todo_text = find('.block-wrapper[data-block-type="todo"] span[contenteditable]').text
       expect(todo_text).to eq('Persistent TODO')
     end
@@ -224,9 +224,9 @@ RSpec.describe 'TODO Blocks', type: :system, js: true do
       todo_span = find('.block-wrapper[data-block-type="todo"] span[contenteditable]')
       todo_span.click
       todo_span.send_keys(:return)
-      
+
       sleep 1
-      
+
       # Should create new empty TODO without error
       todos = all('.block-wrapper[data-block-type="todo"]')
       expect(todos.count).to eq(2)

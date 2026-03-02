@@ -3,6 +3,7 @@
 class CalendarEvent < ApplicationRecord
   # ── Constants ──────────────────────────────────────────────────────────────
   STATUSES = %w[confirmed tentative cancelled].freeze
+  SOURCES  = %w[google manual ical].freeze
 
   # Google Calendar color IDs → approximate hex values (for UI)
   GOOGLE_COLOR_MAP = {
@@ -20,13 +21,26 @@ class CalendarEvent < ApplicationRecord
   }.freeze
 
   # ── Validations ────────────────────────────────────────────────────────────
-  validates :google_event_id, presence: true, uniqueness: true
+  validates :google_event_id, presence: true, uniqueness: true, if: -> { source == "google" }
+  validates :google_event_id, uniqueness: true, allow_nil: true, unless: -> { source == "google" }
   validates :title,           presence: true
   validates :starts_at,       presence: true
   validates :status,          inclusion: { in: STATUSES }
+  validates :source,          inclusion: { in: SOURCES }
+
+  # ── Associations ───────────────────────────────────────────────────────────
+  has_many :calendar_event_tags, dependent: :destroy
+  has_many :tags, through: :calendar_event_tags
+
+  # ── Callbacks ──────────────────────────────────────────────────────────────
+  before_validation :assign_local_uid, unless: -> { source == "google" }
+  before_validation :normalize_event_times
 
   # ── Scopes ─────────────────────────────────────────────────────────────────
   scope :confirmed,   -> { where(status: "confirmed") }
+  scope :google,      -> { where(source: "google") }
+  scope :manual,      -> { where(source: "manual") }
+  scope :ical,        -> { where(source: "ical") }
   scope :upcoming,    -> { confirmed.where("starts_at >= ?", Time.current).order(:starts_at) }
   scope :today,       -> { confirmed.where(starts_at: Time.current.beginning_of_day..Time.current.end_of_day).order(:starts_at) }
   scope :tomorrow,    -> { confirmed.where(starts_at: 1.day.from_now.beginning_of_day..1.day.from_now.end_of_day).order(:starts_at) }
@@ -71,5 +85,28 @@ class CalendarEvent < ApplicationRecord
   # Returns events grouped by date (Date → [CalendarEvent])
   def self.grouped_by_day(events)
     events.group_by { |e| e.starts_at.to_date }
+  end
+
+  # Can this event be edited/deleted through the web UI?
+  def local?
+    source != "google"
+  end
+
+  private
+
+  def assign_local_uid
+    self.google_event_id ||= "#{source}-#{SecureRandom.uuid}"
+  end
+
+  # Normalize all-day event times and ensure ends_at > starts_at.
+  def normalize_event_times
+    return unless starts_at.present?
+
+    if all_day?
+      self.starts_at = starts_at.beginning_of_day
+      self.ends_at   = starts_at.end_of_day
+    elsif ends_at.present? && ends_at <= starts_at
+      self.ends_at = starts_at + 1.hour
+    end
   end
 end

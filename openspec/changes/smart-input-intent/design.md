@@ -177,24 +177,24 @@ end
 
 ## Error Handling & Fallback
 
-| Scenario | Behavior |
-|----------|----------|
-| Ollama unreachable | Fallback to `note`; log error |
-| Malformed JSON response | Fallback to `note`; log error |
-| Low confidence (`< 0.65`) | Classify as `note` |
-| Unknown intent | Classify as `note` |
+| Scenario                   | Behavior                        |
+| -------------------------- | ------------------------------- |
+| Ollama unreachable         | Fallback to `note`; log error   |
+| Malformed JSON response    | Fallback to `note`; log error   |
+| Low confidence (`< 0.65`)  | Classify as `note`              |
+| Unknown intent             | Classify as `note`              |
 | `CalendarEvent` save fails | Fallback to `note`; log warning |
 
 ---
 
 ## Integration Points
 
-| Modified File | Change |
-|---------------|--------|
-| `app/services/telegram_message_handler.rb` | Replace direct document creation with `IntentRouter.dispatch` |
-| `app/jobs/transcribe_audio_job.rb` | After correction, call `IntentRouter.dispatch` instead of raw block save |
-| `app/models/document.rb` | Add `document_type` field; optional enum |
-| `db/migrate/` | New migration for `document_type` on `documents` |
+| Modified File                              | Change                                                                   |
+| ------------------------------------------ | ------------------------------------------------------------------------ |
+| `app/services/telegram_message_handler.rb` | Replace direct document creation with `IntentRouter.dispatch`            |
+| `app/jobs/transcribe_audio_job.rb`         | After correction, call `IntentRouter.dispatch` instead of raw block save |
+| `app/models/document.rb`                   | Add `document_type` field; optional enum                                 |
+| `db/migrate/`                              | New migration for `document_type` on `documents`                         |
 
 ---
 

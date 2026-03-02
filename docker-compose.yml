@@ -69,6 +69,7 @@ services:
       - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN}
       - GOOGLE_CALENDAR_IDS=${GOOGLE_CALENDAR_IDS:-primary}
       - CALENDAR_REMINDER_MINUTES=${CALENDAR_REMINDER_MINUTES:-10}
+      - RAILS_HOSTS=${RAILS_HOSTS}
     depends_on:
       redis:
         condition: service_healthy
@@ -105,6 +106,7 @@ services:
       - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN}
       - GOOGLE_CALENDAR_IDS=${GOOGLE_CALENDAR_IDS:-primary}
       - CALENDAR_REMINDER_MINUTES=${CALENDAR_REMINDER_MINUTES:-10}
+      - RAILS_HOSTS=${RAILS_HOSTS}
     depends_on:
       - redis
       - web

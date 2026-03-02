@@ -3,209 +3,244 @@
   has_voice = document.blocks.any? { |b| b.block_type == 'file' && b.content.to_s.include?('voice') }
   has_photo = document.blocks.any? { |b| b.block_type == 'file' && (b.content.to_s.include?('image') || b.content.to_s.include?('photo')) }
   has_document_file = document.blocks.any? { |b| b.block_type == 'file' && !b.content.to_s.include?('voice') && !b.content.to_s.include?('image') }
-  
+
   # Get first text block for preview
-  preview_text = document.title
+  preview_text = nil
   text_block = document.blocks.find { |b| b.block_type == 'text' }
   if text_block && text_block.content.present?
     begin
       content_data = text_block.content.is_a?(String) ? JSON.parse(text_block.content) : text_block.content
-      preview_text = content_data['text'] || content_data[:text] || document.title
-    rescue JSON::ParserError => e
-      # Invalid JSON in database, fallback to title
-      preview_text = document.title
+      raw_text = content_data['text'] || content_data[:text]
+      preview_text = raw_text if raw_text.present? && raw_text != document.title
+    rescue JSON::ParserError
+      # Invalid JSON, skip preview
     end
   end
 %>
 
-<article class="document-card">
+<%= tag.article id: dom_id(document), class: "document-card #{document.pinned? ? 'document-card--pinned' : ''}" do %>
+  <%# ── Header: badges + time ── %>
   <div class="card-header">
     <div class="card-badges">
-      <% if document.source == 'telegram' %>
-        <span class="badge badge-secondary" title="From Telegram">
-          <%= heroicon(:device_phone_mobile, style: 'width: 1rem; height: 1rem; display: inline-block; vertical-align: text-bottom;') %>
-          Telegram
+      <% if document.pinned? %>
+        <span class="source-badge source-badge--pinned" title="Pinned">
+          <%= heroicon(:bookmark, variant: :solid, style: 'width: 10px; height: 10px;') %>
+          Pinned
         </span>
       <% end %>
-      
       <% if has_voice %>
-        <span class="badge badge-secondary" title="Voice note">
-          <%= heroicon(:microphone, style: 'width: 1rem; height: 1rem; display: inline-block; vertical-align: text-bottom;') %>
-          Voice
-        </span>
+        <span class="source-badge source-badge--voice">Voice</span>
       <% elsif has_photo %>
-        <span class="badge badge-secondary" title="Photo">
-          <%= heroicon(:camera, style: 'width: 1rem; height: 1rem; display: inline-block; vertical-align: text-bottom;') %>
-          Photo
-        </span>
+        <span class="source-badge source-badge--photo">Photo</span>
       <% elsif has_document_file %>
-        <span class="badge badge-secondary" title="Document">
-          <%= heroicon(:document, style: 'width: 1rem; height: 1rem; display: inline-block; vertical-align: text-bottom;') %>
-          File
-        </span>
+        <span class="source-badge source-badge--file">File</span>
       <% end %>
     </div>
-    
-    <time class="card-time" datetime="<%= document.updated_at.iso8601 %>" title="<%= document.updated_at.strftime('%B %d, %Y at %H:%M') %>">
+
+    <time class="card-time" datetime="<%= document.updated_at.iso8601 %>"
+          title="<%= document.updated_at.strftime('%B %d, %Y at %H:%M') %>">
       <%= time_ago_in_words(document.updated_at) %> ago
     </time>
   </div>
 
+  <%# ── Title (clickable) ── %>
   <%= link_to edit_document_path(document), class: "card-link" do %>
-    <h3 class="card-title">
-      <%= document.title.truncate(80) %>
-    </h3>
+    <h3 class="card-title"><%= document.title.truncate(80) %></h3>
   <% end %>
 
-  <% if preview_text && preview_text != document.title %>
-    <div class="card-preview">
-      <%= preview_text.truncate(150) %>
+  <%# ── Preview text ── %>
+  <% if preview_text %>
+    <div class="card-preview"><%= preview_text.truncate(120) %></div>
+  <% end %>
+
+  <%# ── Footer: tags ── %>
+  <% if document.tags.any? %>
+    <div class="card-footer">
+      <% document.tags.limit(3).each do |tag| %>
+        <%= link_to tag_path(tag.name), class: "card-tag" do %>
+          #<%= tag.name %>
+        <% end %>
+      <% end %>
+      <% if document.tags.count > 3 %>
+        <span class="card-tag">+<%= document.tags.count - 3 %></span>
+      <% end %>
     </div>
   <% end %>
 
-  <div class="card-meta">
-    <span class="meta-item">
-      <%= heroicon(:clipboard, class: 'meta-icon', style: 'width: 1rem; height: 1rem;') %>
-      <%= pluralize(document.blocks.size, 'block') %>
-    </span>
-    
-    <% if document.tags.any? %>
-      <div class="card-tags">
-        <% document.tags.limit(3).each do |tag| %>
-          <%= link_to root_path(tag: tag.name), class: "tag", style: "border-color: #{tag.color || 'var(--color-border)'}" do %>
-            <%= heroicon(:tag, style: "width: 0.875rem; height: 0.875rem; color: #{tag.color || 'var(--color-text-secondary)'}") %>
-            <%= tag.name %>
-          <% end %>
-        <% end %>
-        <% if document.tags.count > 3 %>
-          <span class="tag">+<%= document.tags.count - 3 %></span>
-        <% end %>
-      </div>
+  <%# ── Hover actions ── %>
+  <div class="card-hover-actions">
+    <%= button_to toggle_pinned_document_path(document), method: :patch,
+          class: "card-hover-btn #{document.pinned? ? 'card-hover-btn--pinned' : ''}",
+          title: document.pinned? ? "Unpin" : "Pin",
+          data: { turbo: true } do %>
+      <%= heroicon(:bookmark, style: 'width: 1rem; height: 1rem;') %>
+    <% end %>
+    <%= button_to document_path(document), method: :delete,
+          class: "card-hover-btn card-hover-btn--delete",
+          title: "Delete note",
+          form: { data: { turbo_confirm: "Delete \"#{j document.title.truncate(40)}\"? This cannot be undone." } } do %>
+      <%= heroicon(:trash, style: 'width: 1rem; height: 1rem;') %>
     <% end %>
   </div>
-</article>
+<% end %>
 
 <style>
+/* ── Card ── */
 .document-card {
+  position: relative;
   background-color: var(--color-bg-primary);
-  border: 2px solid var(--color-border);  /* Thicker Basecamp border */
-  border-radius: var(--radius-md);  /* Less rounded */
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   padding: var(--spacing-md);
-  transition: all var(--transition-base);  /* Smooth all properties */
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  box-shadow: var(--shadow-sm);
-  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
-
 .document-card:hover {
-  transform: translateY(-2px);  /* Subtle lift */
-  box-shadow: var(--shadow-md);  /* Stronger shadow */
-  border-color: var(--color-primary);  /* Highlight border */
+  border-color: var(--color-text-tertiary);
+  box-shadow: var(--shadow-sm);
 }
 
+/* ── Header ── */
 .card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-sm);
 }
-
 .card-badges {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
   flex-wrap: wrap;
 }
-
 .card-time {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
   white-space: nowrap;
 }
 
+/* ── Content-type badges ── */
+.source-badge {
+  display: inline-block;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.02em;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+}
+.source-badge--voice { background: color-mix(in srgb, var(--color-accent) 20%, var(--color-bg-primary)); color: color-mix(in srgb, var(--color-accent) 70%, var(--color-text-primary)); }
+.source-badge--photo { background: color-mix(in srgb, var(--color-secondary) 15%, var(--color-bg-primary)); color: var(--color-secondary); }
+.source-badge--file  { background: var(--color-bg-tertiary); color: var(--color-text-secondary); }
+
+/* ── Title ── */
 .card-link {
   text-decoration: none;
   color: inherit;
-  transition: color var(--transition-fast);
-  /* 44px min touch target for mobile */
   min-height: 44px;
   display: flex;
   align-items: center;
 }
-
-.card-link:hover .card-title {
-  color: var(--color-primary);
-}
-
+.card-link:hover .card-title { color: var(--color-primary); }
 .card-title {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
   margin: 0;
-  line-height: 1.4;
-  transition: color var(--transition-fast);
+  line-height: 1.35;
 }
 
+/* ── Preview ── */
 .card-preview {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  line-height: 1.6;
-  margin-top: var(--spacing-xs);
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.card-meta {
+/* ── Footer / tags ── */
+.card-footer {
   display: flex;
   align-items: center;
+  gap: var(--spacing-xs);
   flex-wrap: wrap;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-xs);
+  margin-top: auto;
   padding-top: var(--spacing-sm);
-  border-top: 1px solid var(--color-border);
 }
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  font-size: var(--text-sm);
+.card-tag {
+  font-size: var(--text-xs);
   color: var(--color-text-secondary);
+  background: var(--color-bg-secondary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: background var(--transition-fast);
 }
+.card-tag:hover { background: var(--color-bg-hover); }
 
-.meta-icon {
-  font-size: var(--text-base);
-}
-
-.card-tags {
+/* ── Hover actions ── */
+.card-hover-actions {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
   display: flex;
-  align-items: center;
   gap: var(--spacing-xs);
-  flex-wrap: wrap;
-  flex: 1;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+.document-card:hover .card-hover-actions { opacity: 1; }
+
+.card-hover-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-primary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.card-hover-btn:hover {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+.card-hover-btn--delete:hover {
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 25%, var(--color-border));
+  background: color-mix(in srgb, var(--color-danger) 6%, var(--color-bg-primary));
 }
 
-/* Mobile adaptation */
+/* ── Pinned card ── */
+.document-card--pinned {
+  border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary) 3%, var(--color-bg-primary));
+}
+.source-badge--pinned {
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-primary));
+  color: var(--color-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.card-hover-btn--pinned {
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 25%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg-primary));
+}
+
+/* ── Mobile: always show actions ── */
 @media (max-width: 768px) {
-  .document-card {
-    padding: var(--spacing-md);
-  }
-  
-  .card-title {
-    font-size: var(--text-base);
-  }
-  
-  .card-preview {
-    font-size: var(--text-sm);
-  }
-  
-  .card-badges .badge {
-    font-size: var(--text-xs);
-    padding: 2px var(--spacing-xs);
-  }
-  
-  .card-meta {
-    gap: var(--spacing-sm);
-  }
+  .card-hover-actions { opacity: 1; }
+  .card-title { font-size: var(--text-base); }
+  .card-preview { -webkit-line-clamp: 1; }
 }
 </style>

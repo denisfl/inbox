@@ -17,6 +17,7 @@
 ## 3. TelegramMessageHandler — PDF Branch
 
 - [ ] 3.1 In `app/services/telegram_message_handler.rb`, update `handle_document` to branch on MIME type:
+
   ```ruby
   def handle_document
     filename = message.document.file_name
@@ -29,8 +30,10 @@
     end
   end
   ```
+
 - [ ] 3.2 Extract existing `handle_document` logic into `handle_generic_document(filename, mime_type)` (rename, no logic changes)
 - [ ] 3.3 Implement `handle_pdf_document(filename)`:
+
   ```ruby
   def handle_pdf_document(filename)
     file_info = bot.api.get_file(file_id: message.document.file_id)
@@ -64,6 +67,7 @@
 ## 4. OcrPdfJob
 
 - [ ] 4.1 Create `app/jobs/ocr_pdf_job.rb`:
+
   ```ruby
   class OcrPdfJob < ApplicationJob
     queue_as :default

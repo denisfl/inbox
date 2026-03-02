@@ -89,8 +89,8 @@ class GoogleCalendarService
         cal_id,
         single_events: true,
         order_by:      "startTime",
-        time_min:      1.month.ago.iso8601,
-        time_max:      3.months.from_now.iso8601,
+        time_min:      3.months.ago.iso8601,
+        time_max:      1.year.from_now.iso8601,
         page_token:    page_token,
         max_results:   250
       )
@@ -99,10 +99,15 @@ class GoogleCalendarService
 
       next_sync  = result.next_sync_token
       page_token = result.next_page_token
+      Rails.logger.debug "[GoogleCalendarService] page items=#{(result.items || []).size}, next_sync_token=#{next_sync.present? ? 'present' : 'nil'}, next_page_token=#{page_token.present? ? 'present' : 'nil'}"
       break if page_token.nil?
     end
 
-    save_sync_token(cal_id, next_sync)
+    if next_sync.present?
+      save_sync_token(cal_id, next_sync)
+    else
+      Rails.logger.warn "[GoogleCalendarService] No syncToken returned for #{cal_id} — next sync will be full again"
+    end
     Rails.logger.info "[GoogleCalendarService] Full sync complete: #{cal_id}"
   end
 
@@ -152,6 +157,7 @@ class GoogleCalendarService
 
       CalendarEvent.find_or_initialize_by(google_event_id: item.id).tap do |ev|
         ev.google_calendar_id = cal_id
+        ev.source             = "google"
         ev.title              = item.summary.presence || "(no title)"
         ev.description        = item.description
         ev.starts_at          = starts_at
@@ -170,8 +176,9 @@ class GoogleCalendarService
     return [ nil, nil, false ] if gstart.nil?
 
     if gstart.date.present?
-      starts = Date.parse(gstart.date).beginning_of_day
-      ends   = gend&.date.present? ? Date.parse(gend.date).beginning_of_day : nil
+      # All-day event: gstart.date is a Date object from the Google gem
+      starts = Date.parse(gstart.date.to_s).beginning_of_day
+      ends   = gend&.date.present? ? Date.parse(gend.date.to_s).beginning_of_day : nil
       [ starts, ends, true ]
     else
       starts = Time.parse(gstart.date_time.to_s)

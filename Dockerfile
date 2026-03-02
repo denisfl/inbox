@@ -88,6 +88,9 @@ RUN pnpm install
 # Copy application
 COPY . .
 
+# Build CSS and JS assets (app/assets/builds/ is gitignored)
+RUN pnpm run build && pnpm run build:css
+
 # Create necessary directories
 RUN mkdir -p /app/log /app/tmp /app/db
 

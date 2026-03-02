@@ -34,7 +34,7 @@ class AllowNullPositionForBlocks < ActiveRecord::Migration[7.0]
       rename_table :blocks_new, :blocks
 
       # Recreate index and foreign key
-      add_index :blocks, [:document_id, :position]
+      add_index :blocks, [ :document_id, :position ]
       add_foreign_key :blocks, :documents
 
       # Re-enable foreign keys
@@ -49,7 +49,7 @@ class AllowNullPositionForBlocks < ActiveRecord::Migration[7.0]
         t.timestamps
       end
 
-      add_index :blocks, [:document_id, :position]
+      add_index :blocks, [ :document_id, :position ]
     end
   end
 
@@ -70,7 +70,7 @@ class AllowNullPositionForBlocks < ActiveRecord::Migration[7.0]
       drop_table :blocks
       rename_table :blocks_new, :blocks
 
-      add_index :blocks, [:document_id, :position]
+      add_index :blocks, [ :document_id, :position ]
       add_foreign_key :blocks, :documents
 
       execute "PRAGMA foreign_keys = ON"

@@ -9,8 +9,8 @@ class Block < ApplicationRecord
   # Validations
   validates :block_type, presence: true
   # Allow nil position on create (set_default_position callback will assign it)
-  validates :position, 
-            numericality: { only_integer: true, greater_than_or_equal_to: 0 }, 
+  validates :position,
+            numericality: { only_integer: true, greater_than_or_equal_to: 0 },
             allow_nil: true
 
   # Block types enumeration

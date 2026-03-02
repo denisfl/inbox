@@ -29,7 +29,7 @@ RSpec.describe 'Keyboard Shortcuts', type: :system, js: true do
 
         # Search popup should be visible
         expect(page).to have_selector('[data-search-target="popup"]', visible: true)
-        
+
         # Search input should be focused
         expect(page).to have_selector('[data-search-target="input"]:focus')
       end
@@ -52,10 +52,10 @@ RSpec.describe 'Keyboard Shortcuts', type: :system, js: true do
       it 'sequence timeout resets after 1 second' do
         # Press 'g'
         find('body').send_keys('g')
-        
+
         # Wait more than 1 second
         sleep 1.1
-        
+
         # Press 'n' (should not trigger g+n)
         find('body').send_keys('n')
 
@@ -126,7 +126,7 @@ RSpec.describe 'Keyboard Shortcuts', type: :system, js: true do
       # Check console logs (if possible with Capybara)
       # This is tricky - might need JS execution to verify
       script = <<~JS
-        return typeof window.Stimulus !== 'undefined' && 
+        return typeof window.Stimulus !== 'undefined' &&#{' '}
                window.Stimulus.controllers.some(c => c.identifier === 'keyboard')
       JS
 

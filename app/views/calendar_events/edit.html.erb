@@ -1,0 +1,13 @@
+<% content_for :title, "Edit Event — Inbox" %>
+
+<div class="event-form-page">
+  <div class="event-form-container">
+    <header class="event-form-header">
+      <%= back_link(calendar_path(date: @event.starts_at&.to_date), "Calendar") %>
+      <h1 class="event-form-title">Edit Event</h1>
+    </header>
+
+    <%= render "form", event: @event, url: calendar_event_path(@event), method: :patch, submit_label: "Update Event" %>
+  </div>
+</div>
+
