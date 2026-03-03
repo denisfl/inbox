@@ -58,7 +58,7 @@
     <div class="card-footer">
       <% document.tags.limit(3).each do |tag| %>
         <%= link_to tag_path(tag.name), class: "card-tag" do %>
-          #<%= tag.name %>
+          <%= render "shared/tag", tag: tag %>
         <% end %>
       <% end %>
       <% if document.tags.count > 3 %>

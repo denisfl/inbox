@@ -1,4 +1,4 @@
-import { Controller } from "@hotwired/stimulus"
+import { Controller } from "@hotwired/stimulus";
 
 /**
  * Tag Filter Controller
@@ -21,116 +21,118 @@ import { Controller } from "@hotwired/stimulus"
  *   preserve — JSON string of extra query params to preserve (e.g. {"filter":"today","sort":"updated_desc"})
  */
 export default class extends Controller {
-  static targets = ["pills", "input", "dropdown", "trigger", "inputWrap"]
+  static targets = ["pills", "input", "dropdown", "trigger", "inputWrap"];
   static values = {
     basePath: String,
     tags: { type: Array, default: [] },
-    preserve: { type: String, default: "{}" }
-  }
+    preserve: { type: String, default: "{}" },
+  };
 
   connect() {
-    this._onOutsideClick = this._onOutsideClick.bind(this)
-    document.addEventListener("click", this._onOutsideClick)
-    this._debounceTimer = null
+    this._onOutsideClick = this._onOutsideClick.bind(this);
+    document.addEventListener("click", this._onOutsideClick);
+    this._debounceTimer = null;
   }
 
   disconnect() {
-    document.removeEventListener("click", this._onOutsideClick)
-    if (this._debounceTimer) clearTimeout(this._debounceTimer)
+    document.removeEventListener("click", this._onOutsideClick);
+    if (this._debounceTimer) clearTimeout(this._debounceTimer);
   }
 
   // ── Actions ──────────────────────────────────────────────────────────────
 
   /** Remove a tag pill and navigate */
   removeTag(event) {
-    const tagName = event.currentTarget.dataset.tagName
-    if (!tagName) return
+    const tagName = event.currentTarget.dataset.tagName;
+    if (!tagName) return;
 
-    const updated = this.tagsValue.filter(t => t !== tagName)
-    this._navigate(updated)
+    const updated = this.tagsValue.filter((t) => t !== tagName);
+    this._navigate(updated);
   }
 
   /** Show the input field when "+ Add tag" is clicked */
   showInput(event) {
-    event.stopPropagation()
+    event.stopPropagation();
     if (this.hasInputWrapTarget) {
-      this.inputWrapTarget.style.display = ""
-      this.inputTarget.focus()
+      this.inputWrapTarget.style.display = "";
+      this.inputTarget.focus();
     }
     if (this.hasTriggerTarget) {
-      this.triggerTarget.style.display = "none"
+      this.triggerTarget.style.display = "none";
     }
   }
 
   /** Handle typing in the autocomplete input */
   onInput() {
-    const query = this.inputTarget.value.trim()
+    const query = this.inputTarget.value.trim();
 
-    if (this._debounceTimer) clearTimeout(this._debounceTimer)
+    if (this._debounceTimer) clearTimeout(this._debounceTimer);
 
     if (query.length === 0) {
-      this._hideDropdown()
-      return
+      this._hideDropdown();
+      return;
     }
 
     this._debounceTimer = setTimeout(() => {
-      this._fetchSuggestions(query)
-    }, 200)
+      this._fetchSuggestions(query);
+    }, 200);
   }
 
   /** Handle keyboard events */
   onKeydown(event) {
     if (event.key === "Escape") {
-      this._hideDropdown()
-      this._hideInput()
+      this._hideDropdown();
+      this._hideInput();
     } else if (event.key === "Enter") {
-      event.preventDefault()
-      const value = this.inputTarget.value.trim().toLowerCase()
-      if (value) this._addTag(value)
+      event.preventDefault();
+      const value = this.inputTarget.value.trim().toLowerCase();
+      if (value) this._addTag(value);
     }
   }
 
   /** Select a suggestion from the dropdown */
   selectSuggestion(event) {
-    event.preventDefault()
-    event.stopPropagation()
-    const tagName = event.currentTarget.dataset.tagName
-    if (tagName) this._addTag(tagName)
+    event.preventDefault();
+    event.stopPropagation();
+    const tagName = event.currentTarget.dataset.tagName;
+    if (tagName) this._addTag(tagName);
   }
 
   // ── Private ──────────────────────────────────────────────────────────────
 
   _addTag(name) {
-    const normalized = name.toLowerCase().trim()
+    const normalized = name.toLowerCase().trim();
     if (this.tagsValue.includes(normalized)) {
       // Already active — just close
-      this._hideDropdown()
-      this._hideInput()
-      return
+      this._hideDropdown();
+      this._hideInput();
+      return;
     }
 
-    const updated = [...this.tagsValue, normalized]
-    this._navigate(updated)
+    const updated = [...this.tagsValue, normalized];
+    this._navigate(updated);
   }
 
   _navigate(tagNames) {
-    const url = new URL(this.basePathValue, window.location.origin)
+    const url = new URL(this.basePathValue, window.location.origin);
 
     // Preserve existing params
     try {
-      const preserved = JSON.parse(this.preserveValue)
+      const preserved = JSON.parse(this.preserveValue);
       for (const [key, val] of Object.entries(preserved)) {
-        if (val) url.searchParams.set(key, val)
+        if (val) url.searchParams.set(key, val);
       }
-    } catch { /* ignore parse errors */ }
+    } catch {
+      /* ignore parse errors */
+    }
 
     // Add tags
-    tagNames.forEach(t => url.searchParams.append("tags[]", t))
+    tagNames.forEach((t) => url.searchParams.append("tags[]", t));
 
     if (window.Turbo) {
-      Turbo.visit(url.toString())
+      Turbo.visit(url.toString());
     } else {
-      window.location.href = url.toString()
+      window.location.href = url.toString();
     }
   }
 
@@ -138,77 +140,81 @@ export default class extends Controller {
     try {
       const resp = await fetch(`/api/tags?q=${encodeURIComponent(query)}`, {
         headers: {
-          "Accept": "application/json",
-          "Authorization": this._authToken()
-        }
-      })
+          Accept: "application/json",
+          Authorization: this._authToken(),
+        },
+      });
 
-      if (!resp.ok) return
+      if (!resp.ok) return;
 
-      const suggestions = await resp.json()
+      const suggestions = await resp.json();
 
       // Filter out already-active tags
-      const active = new Set(this.tagsValue)
-      const filtered = suggestions.filter(s => !active.has(s.name))
+      const active = new Set(this.tagsValue);
+      const filtered = suggestions.filter((s) => !active.has(s.name));
 
-      this._renderDropdown(filtered)
+      this._renderDropdown(filtered);
     } catch {
-      this._hideDropdown()
+      this._hideDropdown();
     }
   }
 
   _renderDropdown(suggestions) {
-    if (!this.hasDropdownTarget) return
+    if (!this.hasDropdownTarget) return;
 
     if (suggestions.length === 0) {
-      this._hideDropdown()
-      return
+      this._hideDropdown();
+      return;
     }
 
-    this.dropdownTarget.innerHTML = suggestions.map(s => `
+    this.dropdownTarget.innerHTML = suggestions
+      .map(
+        (s) => `
       <button type="button" class="tag-filter-dropdown-item"
               data-action="click->tag-filter#selectSuggestion"
               data-tag-name="${this._escapeHtml(s.name)}">
-        <span class="tag-color-dot" style="background:${this._escapeHtml(s.color || '#999')}"></span>
-        #${this._escapeHtml(s.name)}
+        <span class="tag-hash" style="--hash-tag-color:${this._escapeHtml(s.color || "#999")}">#</span>
+        ${this._escapeHtml(s.name)}
       </button>
-    `).join("")
+    `,
+      )
+      .join("");
 
-    this.dropdownTarget.style.display = "block"
+    this.dropdownTarget.style.display = "block";
   }
 
   _hideDropdown() {
     if (this.hasDropdownTarget) {
-      this.dropdownTarget.style.display = "none"
-      this.dropdownTarget.innerHTML = ""
+      this.dropdownTarget.style.display = "none";
+      this.dropdownTarget.innerHTML = "";
     }
   }
 
   _hideInput() {
     if (this.hasInputWrapTarget) {
-      this.inputWrapTarget.style.display = "none"
-      this.inputTarget.value = ""
+      this.inputWrapTarget.style.display = "none";
+      this.inputTarget.value = "";
     }
     if (this.hasTriggerTarget) {
-      this.triggerTarget.style.display = ""
+      this.triggerTarget.style.display = "";
     }
   }
 
   _onOutsideClick(event) {
     if (!this.element.contains(event.target)) {
-      this._hideDropdown()
-      this._hideInput()
+      this._hideDropdown();
+      this._hideInput();
     }
   }
 
   _authToken() {
-    const meta = document.querySelector('meta[name="auth-token"]')
-    return meta ? `Token token=${meta.content}` : ""
+    const meta = document.querySelector('meta[name="auth-token"]');
+    return meta ? `Token token=${meta.content}` : "";
   }
 
   _escapeHtml(str) {
-    const div = document.createElement("div")
-    div.textContent = str
-    return div.innerHTML
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
   }
 }

@@ -1,0 +1,34 @@
+<%# Shared tag input component — pills + inline input + add button.
+    Usage:
+      render "shared/tag_input", entity_type: "document", entity: @document
+      render "shared/tag_input", entity_type: "task",     entity: task
+      render "shared/tag_input", entity_type: "calendar_event", entity: event
+%>
+<div class="tag-input-inline"
+     data-controller="tag-input"
+     data-tag-input-entity-type-value="<%= entity_type %>"
+     data-tag-input-entity-id-value="<%= entity.id %>">
+  <div class="tag-input-pills" data-tag-input-target="pills">
+    <% entity.tags.each do |tag| %>
+      <span class="tag-pill" data-tag-name="<%= tag.name %>">
+        <%= render "shared/tag", tag: tag %>
+        <button type="button" class="tag-pill-remove" data-action="click->tag-input#removeTag">&times;</button>
+      </span>
+    <% end %>
+  </div>
+  <div class="tag-input-wrapper">
+    <input type="text"
+           class="tag-input-field"
+           placeholder="Add tag..."
+           data-tag-input-target="input"
+           data-action="input->tag-input#onInput keydown->tag-input#onKeydown"
+           autocomplete="off">
+    <button type="button"
+            class="tag-input-add-btn"
+            data-action="click->tag-input#addFromInput"
+            title="Add tag">
+      <%= heroicon(:plus, style: 'width: 14px; height: 14px;') %>
+    </button>
+    <div class="tag-dropdown hidden" data-tag-input-target="dropdown"></div>
+  </div>
+</div>

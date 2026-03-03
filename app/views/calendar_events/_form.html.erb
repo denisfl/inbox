@@ -58,26 +58,9 @@
 
   <%# Tags (only for saved events) %>
   <% if event.persisted? %>
-    <div class="event-field" data-controller="tag-input"
-         data-tag-input-entity-type-value="calendar_event"
-         data-tag-input-entity-id-value="<%= event.id %>">
+    <div class="event-field">
       <label class="event-field-label">Tags</label>
-      <div class="tag-input-pills" data-tag-input-target="pills">
-        <% event.tags.each do |t| %>
-          <span class="tag-pill" data-tag-name="<%= t.name %>">
-            <span class="tag-pill-dot" style="background:<%= tag_dot_color(t) %>"></span>
-            #<%= t.name %>
-            <button type="button" class="tag-pill-remove" data-action="click->tag-input#removeTag">&times;</button>
-          </span>
-        <% end %>
-      </div>
-      <div class="tag-input-wrapper">
-        <input type="text" class="tag-input-field" placeholder="Add tag..."
-               data-tag-input-target="input"
-               data-action="input->tag-input#onInput keydown->tag-input#onKeydown"
-               autocomplete="off">
-        <div class="tag-dropdown hidden" data-tag-input-target="dropdown"></div>
-      </div>
+      <%= render "shared/tag_input", entity_type: "calendar_event", entity: event %>
     </div>
   <% end %>
 

@@ -26,8 +26,7 @@
       <% @tags.each do |tag| %>
         <%= link_to tag_path(tag.name), class: "tag-card" do %>
           <div class="tag-card-header">
-            <span class="tag-color-dot" style="background:<%= tag_dot_color(tag) %>"></span>
-            <span class="tag-name">#<%= tag.name %></span>
+            <span class="tag-name"><%= render "shared/tag", tag: tag %></span>
           </div>
           <div class="tag-card-count">
             <%= tag.documents.count %> docs · <%= tag.tasks.count %> tasks · <%= tag.calendar_events.count %> events

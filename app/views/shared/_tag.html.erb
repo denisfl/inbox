@@ -1,0 +1,3 @@
+<%# Shared tag display: colored hash + name.
+    Usage: render "shared/tag", tag: tag %>
+<span class="tag-hash" style="--hash-tag-color:<%= tag_dot_color(tag) %>">#</span><%= tag.name %>
