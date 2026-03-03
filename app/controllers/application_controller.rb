@@ -9,6 +9,7 @@ class ApplicationController < ActionController::Base
   # Named method so subcontrollers can skip it with: skip_before_action :authenticate_web_user!
   before_action :authenticate_web_user!
   before_action :load_sidebar_data
+  before_action :set_cache_headers
 
   private
 
@@ -36,5 +37,15 @@ class ApplicationController < ActionController::Base
                        .group("tags.id")
                        .order("docs_count DESC")
                        .limit(10)
+  end
+
+  # Prevent browsers and mobile WebViews from caching HTML responses.
+  # Static assets are fingerprinted by Propshaft and cached at the HTTP level.
+  def set_cache_headers
+    return unless request.format.html?
+
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
   end
 end

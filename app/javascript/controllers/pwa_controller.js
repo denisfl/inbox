@@ -1,150 +1,116 @@
-import { Controller } from "@hotwired/stimulus"
+import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-  static targets = ["installButton", "updateButton"]
-  
-  deferredPrompt = null
-  
+  static targets = ["installButton", "updateButton"];
+
+  deferredPrompt = null;
+  registration = null;
+
   connect() {
-    console.log("✅ PWA controller connected")
-    
-    // Register service worker
-    this.registerServiceWorker()
-    
-    // Listen for install prompt
-    window.addEventListener('beforeinstallprompt', (e) => {
-      console.log("📱 beforeinstallprompt event fired")
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault()
-      // Stash the event so it can be triggered later
-      this.deferredPrompt = e
-      // Show install button
-      this.showInstallButton()
-    })
-    
-    // Listen for successful installation
-    window.addEventListener('appinstalled', () => {
-      console.log("✅ PWA installed successfully")
-      this.hideInstallButton()
-      this.deferredPrompt = null
-    })
+    this.registerServiceWorker();
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      this.deferredPrompt = e;
+      this.showInstallButton();
+    });
+
+    window.addEventListener("appinstalled", () => {
+      this.hideInstallButton();
+      this.deferredPrompt = null;
+    });
+
+    // Auto-reload when a new SW takes over (after SKIP_WAITING)
+    if (navigator.serviceWorker) {
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        window.location.reload();
+      });
+    }
   }
-  
+
   async registerServiceWorker() {
-    if (!('serviceWorker' in navigator)) {
-      console.log("❌ Service Worker not supported")
-      return
-    }
-    
+    if (!("serviceWorker" in navigator)) return;
+
     try {
-      // Register the service worker
-      const registration = await navigator.serviceWorker.register('/service-worker.js', {
-        scope: '/'
-      })
-      
-      console.log("✅ Service Worker registered:", registration.scope)
-      
-      // Check for updates on page load
-      registration.update()
-      
-      // Handle updates
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing
-        console.log("🔄 Service Worker update found")
-        
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            console.log("🆕 New Service Worker available")
-            this.showUpdateButton()
+      this.registration = await navigator.serviceWorker.register(
+        "/service-worker.js",
+        { scope: "/" },
+      );
+
+      // Proactively check for updates
+      this.registration.update();
+
+      // Watch for a new SW installing
+      this.registration.addEventListener("updatefound", () => {
+        const newWorker = this.registration.installing;
+        if (!newWorker) return;
+
+        newWorker.addEventListener("statechange", () => {
+          // A new SW is installed and waiting — prompt user to update
+          if (
+            newWorker.state === "installed" &&
+            navigator.serviceWorker.controller
+          ) {
+            this.showUpdateButton();
           }
-        })
-      })
-      
-      // Check if there's an update waiting
-      if (registration.waiting) {
-        console.log("⏳ Service Worker update waiting")
-        this.showUpdateButton()
+        });
+      });
+
+      // A SW may already be waiting from a previous page load
+      if (this.registration.waiting) {
+        this.showUpdateButton();
       }
-      
     } catch (error) {
-      console.error("❌ Service Worker registration failed:", error)
+      console.error("[PWA] Service Worker registration failed:", error);
     }
   }
-  
+
   async install(event) {
-    event.preventDefault()
-    
-    if (!this.deferredPrompt) {
-      console.log("❌ No install prompt available")
-      return
-    }
-    
-    console.log("📱 Showing install prompt")
-    
-    // Show the install prompt
-    this.deferredPrompt.prompt()
-    
-    // Wait for the user to respond
-    const { outcome } = await this.deferredPrompt.userChoice
-    console.log(`👤 User choice: ${outcome}`)
-    
-    if (outcome === 'accepted') {
-      console.log("✅ User accepted the install prompt")
-    } else {
-      console.log("❌ User dismissed the install prompt")
-    }
-    
-    // Clear the deferredPrompt
-    this.deferredPrompt = null
-    this.hideInstallButton()
+    event.preventDefault();
+    if (!this.deferredPrompt) return;
+
+    this.deferredPrompt.prompt();
+    await this.deferredPrompt.userChoice;
+    this.deferredPrompt = null;
+    this.hideInstallButton();
   }
-  
+
   update(event) {
-    event.preventDefault()
-    
-    console.log("🔄 Activating new Service Worker")
-    
-    if (navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' })
+    event.preventDefault();
+
+    // Send SKIP_WAITING to the *waiting* worker (not the current controller)
+    const waiting = this.registration && this.registration.waiting;
+    if (waiting) {
+      waiting.postMessage({ type: "SKIP_WAITING" });
     }
-    
-    // Reload after a short delay to allow the new SW to activate
-    setTimeout(() => {
-      console.log("♻️ Reloading page with new Service Worker")
-      window.location.reload()
-    }, 1000)
+    // controllerchange listener above will auto-reload the page
   }
-  
+
   showInstallButton() {
     if (this.hasInstallButtonTarget) {
-      this.installButtonTarget.classList.remove('hidden')
-      console.log("👁 Install button shown")
+      this.installButtonTarget.classList.remove("hidden");
     }
   }
-  
+
   hideInstallButton() {
     if (this.hasInstallButtonTarget) {
-      this.installButtonTarget.classList.add('hidden')
-      console.log("🙈 Install button hidden")
+      this.installButtonTarget.classList.add("hidden");
     }
   }
-  
+
   showUpdateButton() {
     if (this.hasUpdateButtonTarget) {
-      this.updateButtonTarget.classList.remove('hidden')
-      console.log("👁 Update button shown")
+      this.updateButtonTarget.classList.remove("hidden");
     }
   }
-  
+
   hideUpdateButton() {
     if (this.hasUpdateButtonTarget) {
-      this.updateButtonTarget.classList.add('hidden')
-      console.log("🙈 Update button hidden")
+      this.updateButtonTarget.classList.add("hidden");
     }
   }
-  
+
   disconnect() {
-    // Clean up event listeners if needed
-    console.log("🔌 PWA controller disconnected")
+    // no cleanup needed — global listeners are idempotent
   }
 }
