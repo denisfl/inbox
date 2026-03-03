@@ -973,7 +973,6 @@ export default class extends Controller {
     const token =
       document.querySelector("meta[name='auth-token']")?.content ||
       "development_token";
-    console.log("Auth token:", token); // Debug
     return token;
   }
 

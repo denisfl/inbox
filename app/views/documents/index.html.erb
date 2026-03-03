@@ -104,7 +104,7 @@
             <%= heroicon(:plus, style: 'width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;') %>
             New Note
           <% end %>
-          <a href="https://t.me/inbox_fl_bot" target="_blank" class="btn btn-secondary">
+          <a href="https://t.me/<%= ENV.fetch('TELEGRAM_BOT_NAME', 'your_bot') %>" target="_blank" class="btn btn-secondary">
             <%= heroicon(:device_phone_mobile, style: 'width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;') %>
             Open Telegram Bot
           </a>

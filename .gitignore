@@ -107,3 +107,6 @@ tmp/
 # NEVER commit these files!
 /secrets/*
 !/secrets/.keep
+
+# Kamal secrets (reads master key and other credentials at deploy time)
+/.kamal/secrets
