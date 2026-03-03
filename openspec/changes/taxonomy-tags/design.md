@@ -78,6 +78,7 @@ end
 #### `/tags` — Tag Index
 
 Grid of tag cards, each showing:
+
 - Tag name (colored dot from `tag.color`)
 - Count: "X documents, Y tasks"
 - Click → `/tags/:name`
@@ -94,7 +95,7 @@ Grid of tag cards, each showing:
     <% @tags.each do |tag| %>
       <%= link_to tag_path(tag.name), class: "tag-card" do %>
         <span class="tag-color-dot" style="background:<%= tag.color || 'var(--color-text-tertiary)' %>"></span>
-        <span class="tag-name">#<%= tag.name %></span>
+        <span class="tag-name"><%= tag.name %></span>
         <span class="tag-count">
           <%= tag.documents.count %> docs · <%= tag.tasks.count %> tasks
         </span>
@@ -198,6 +199,7 @@ Add "Tags" link to sidebar (between existing nav items):
 ### CSS
 
 Reuse existing design system variables. New styles:
+
 - `.tags-grid` — CSS grid for tag cards (similar to documents grid)
 - `.tag-card` — Card with color dot, name, count
 - `.tag-color-dot` — Small colored circle (8×8px)

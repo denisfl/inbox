@@ -64,41 +64,35 @@
       <% end %>
     </div>
   <% else %>
-    <div class="empty-state">
-      <% if params[:q].present? %>
-        <%# No search results %>
-        <%= heroicon(:magnifying_glass, class: 'empty-state-icon') %>
-        <h2 class="empty-state-title">No results found</h2>
-        <p class="empty-state-description">
-          We couldn't find any notes matching "<strong><%= params[:q] %></strong>"<br>
-          Try a different search term or clear filters
-        </p>
+    <% if params[:q].present? %>
+      <%# No search results %>
+      <% search_actions = capture do %>
         <div class="empty-state-actions">
-          <%= link_to documents_path, class: "btn btn-secondary" do %>
-            Clear search
-          <% end %>
+          <%= link_to "Clear search", documents_path, class: "btn btn-secondary" %>
         </div>
+      <% end %>
+      <%= render "shared/empty_state",
+            icon: :magnifying_glass,
+            title: "No results found",
+            description: "We couldn't find any notes matching \"#{params[:q]}\". Try a different search term or clear filters.".html_safe,
+            actions: search_actions %>
 
-      <% elsif params[:type].present? || params[:tag].present? || params[:tags].present? %>
-        <%# No results for filters %>
-        <%= heroicon(:funnel, class: 'empty-state-icon') %>
-        <h2 class="empty-state-title">No matches for current filters</h2>
-        <p class="empty-state-description">
-          Try adjusting your filters or browse all notes
-        </p>
+    <% elsif params[:type].present? || params[:tag].present? || params[:tags].present? %>
+      <%# No results for filters %>
+      <% filter_actions = capture do %>
         <div class="empty-state-actions">
-          <%= link_to documents_path, class: "btn btn-secondary" do %>
-            Clear all filters
-          <% end %>
+          <%= link_to "Clear all filters", documents_path, class: "btn btn-secondary" %>
         </div>
+      <% end %>
+      <%= render "shared/empty_state",
+            icon: :funnel,
+            title: "No matches for current filters",
+            description: "Try adjusting your filters or browse all notes",
+            actions: filter_actions %>
 
-      <% else %>
-        <%# No documents at all %>
-        <%= heroicon(:clipboard, class: 'empty-state-icon') %>
-        <h2 class="empty-state-title">No documents yet</h2>
-        <p class="empty-state-description">
-          Start capturing your thoughts by creating a new note or sending messages to your Telegram bot
-        </p>
+    <% else %>
+      <%# No documents at all %>
+      <% doc_actions = capture do %>
         <div class="empty-state-actions">
           <%= link_to new_note_path, class: "btn btn-primary", data: { turbo: false } do %>
             <%= heroicon(:plus, style: 'width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;') %>
@@ -110,7 +104,12 @@
           </a>
         </div>
       <% end %>
-    </div>
+      <%= render "shared/empty_state",
+            icon: :clipboard,
+            title: "No documents yet",
+            description: "Start capturing your thoughts by creating a new note or sending messages to your Telegram bot",
+            actions: doc_actions %>
+    <% end %>
 
     <%# Pagy pagination %>
     <% if @pagy.pages > 1 %>

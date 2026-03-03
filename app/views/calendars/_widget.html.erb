@@ -43,7 +43,9 @@
 
   <%# Empty state %>
   <% if @widget_today.blank? && @widget_tomorrow.blank? && @widget_week.blank? %>
-    <div class="cal-widget-empty">No upcoming events</div>
+    <%= render "shared/empty_state",
+               icon: :calendar,
+               title: "No upcoming events" %>
   <% end %>
 </div>
 

@@ -86,30 +86,25 @@
           <% end %>
         <% end %>
       <% else %>
-        <div class="tasks-empty">
-          <div class="tasks-empty-icon">
-            <%= heroicon(:check_circle, style: 'width: 2.5rem; height: 2.5rem;') %>
+        <%
+          empty_title = case @filter
+                        when "today"     then "No tasks for today"
+                        when "upcoming"  then "No upcoming tasks"
+                        when "inbox"     then "All inbox items sorted"
+                        when "overdue"   then "No overdue tasks"
+                        when "completed" then "No completed tasks yet"
+                        else "No tasks"
+                        end
+        %>
+        <% task_actions = capture do %>
+          <div class="empty-state-actions">
+            <%= link_to "Create task", new_task_path, class: "btn btn-secondary" %>
           </div>
-          <div class="tasks-empty-text">
-            <% case @filter %>
-            <% when "today" %>
-              No tasks for today
-            <% when "upcoming" %>
-              No upcoming tasks
-            <% when "inbox" %>
-              All inbox items sorted
-            <% when "overdue" %>
-              No overdue tasks
-            <% when "completed" %>
-              No completed tasks yet
-            <% else %>
-              No tasks
-            <% end %>
-          </div>
-          <div class="tasks-empty-sub">
-            <%= link_to "Create task", new_task_path %>
-          </div>
-        </div>
+        <% end %>
+        <%= render "shared/empty_state",
+                   icon: :check_circle,
+                   title: empty_title,
+                   actions: task_actions %>
       <% end %>
     </div>
   </div>
@@ -236,37 +231,6 @@
   .tasks-day-date {
     font-size: var(--text-xs);
     color: var(--color-text-tertiary);
-  }
-
-  /* ── Empty state ─────────────────────────────────────────────────── */
-  .tasks-empty {
-    text-align: center;
-    padding: var(--spacing-2xl) var(--spacing-lg);
-  }
-
-  .tasks-empty-icon {
-    color: var(--color-text-tertiary);
-    margin-bottom: var(--spacing-sm);
-  }
-
-  .tasks-empty-text {
-    font-size: var(--text-base);
-    color: var(--color-text-secondary);
-    margin-bottom: var(--spacing-xs);
-  }
-
-  .tasks-empty-sub {
-    font-size: var(--text-sm);
-    color: var(--color-text-tertiary);
-  }
-
-  .tasks-empty-sub a {
-    color: var(--color-primary);
-    text-decoration: none;
-  }
-
-  .tasks-empty-sub a:hover {
-    text-decoration: underline;
   }
 
   /* ── Quick Add ─────────────────────────────────────────────────── */

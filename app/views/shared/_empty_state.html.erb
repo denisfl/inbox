@@ -1,0 +1,16 @@
+<%# Shared empty state: icon (symbol), title (required), description (optional).
+    Without actions: render "shared/empty_state", icon: ..., title: ...
+    With actions: render "shared/empty_state", icon: ..., title: ...,
+                  actions: capture { link_to(...) } %>
+<div class="empty-state">
+  <% if local_assigns[:icon] %>
+    <%= heroicon(icon, class: 'empty-state-icon') %>
+  <% end %>
+  <h2 class="empty-state-title"><%= title %></h2>
+  <% if local_assigns[:description] %>
+    <p class="empty-state-description"><%= description %></p>
+  <% end %>
+  <% if local_assigns[:actions] %>
+    <%= actions %>
+  <% end %>
+</div>
