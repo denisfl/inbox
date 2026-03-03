@@ -1,21 +1,25 @@
-# 📥 Inbox
+# Inbox
 
 A privacy-first personal note-taking system with Telegram bot integration, voice transcription, and calendar sync. Runs on a Raspberry Pi — no cloud required.
 
 [![CI](https://github.com/yourusername/inbox/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/inbox/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+## Why
+
+We live in an interesting time when producing code has become incredibly cheap. You can vibe-code any solution and solve your problem. This project is my personal answer to the shortcomings of modern information capture and storage systems. My current setup is a home server running on a Raspberry Pi where I keep all my notes. I have tried plenty of tools — Evernote, Obsidian, and others. They are great products, but I wanted more flexibility for my specific workflows. So I vibe-coded my own. If it turns out to be useful for someone else, I will consider the world a tiny bit better.
+
 ## Features
 
-- 📱 **Telegram Bot** — capture notes, voice messages, photos, and files from Telegram
-- 🎤 **Voice Transcription** — local audio-to-text via [Whisper](https://github.com/openai/whisper) (no cloud API)
-- 📅 **Google Calendar Sync** — import events and get reminders via Telegram
-- 🏷️ **Tags** — organize documents and tasks with a flexible tagging system
-- ✅ **Tasks** — simple task management with due dates
-- ✍️ **Markdown Editor** — write and preview Markdown with live toggle
-- 🔍 **Search** — full-text search across all documents
-- 🔒 **Privacy** — everything stays on your hardware, single-user design
-- 🤖 **AI Classification** — automatic intent detection via local LLM (Ollama)
+- **Telegram Bot** — capture notes, voice messages, photos, and files from Telegram
+- **Voice Transcription** — local audio-to-text via [Whisper](https://github.com/openai/whisper) (no cloud API)
+- **Google Calendar Sync** — import events and get reminders via Telegram
+- **Tags** — organize documents and tasks with a flexible tagging system
+- **Tasks** — simple task management with due dates
+- **Markdown Editor** — write and preview Markdown with live toggle
+- **Search** — full-text search across all documents
+- **Privacy** — everything stays on your hardware, single-user design
+- **AI Classification** — automatic intent detection via local LLM (Ollama)
 
 ## Screenshots
 
@@ -68,7 +72,7 @@ TELEGRAM_ALLOWED_USER_ID=your_telegram_user_id
 TELEGRAM_WEBHOOK_URL=https://your-domain.com/api/telegram/webhook
 ```
 
-> 💡 To find your Telegram user ID, send a message to [@userinfobot](https://t.me/userinfobot).
+> **Tip:** To find your Telegram user ID, send a message to [@userinfobot](https://t.me/userinfobot).
 
 ### 2. Set up Docker secrets
 
@@ -161,7 +165,7 @@ Inbox collects information from multiple sources, processes it in the background
 
 ```
 ┌─────────────────────┐   ┌─────────────────────┐   ┌─────────────────────┐
-│    📱 Telegram Bot   │   │   🗓 Google Calendar  │   │    ✍️ Web Editor     │
+│    Telegram Bot      │   │   Google Calendar     │   │    Web Editor        │
 │  text / voice / files│   │   OAuth / RPi sync   │   │  web / quick capture │
 └─────────┬───────────┘   └─────────┬───────────┘   └─────────┬───────────┘
           │                         │                          │
@@ -182,7 +186,7 @@ Inbox collects information from multiple sources, processes it in the background
         ┌─────────────┼─────────────┐
         ▼             ▼             ▼
 ┌──────────────┐ ┌──────────┐ ┌──────────┐
-│ 🎤 Whisper    │ │ 🤖 Ollama │ │ 🗓 Google │
+│  Whisper      │ │  Ollama   │ │  Google   │
 │ Transcription │ │ LLM/AI   │ │ Cal API  │
 │ (local, CPU)  │ │ (local)  │ │ (OAuth)  │
 └──────────────┘ └──────────┘ └──────────┘

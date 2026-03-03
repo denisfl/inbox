@@ -49,6 +49,7 @@ Every final report MUST include at the end:
 - Hardcoded placeholders (API keys, defaults)
 - Generic error messages
 - Bare `except:` clauses
+- **Emoji** in code, comments, views, README, or any project files. Use [Heroicons](https://heroicons.com/) for icons or no icons at all.
 
 **REQUIRED**:
 - Explicit error handling (fail fast)

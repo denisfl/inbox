@@ -4,7 +4,7 @@
 
 return if Rails.env.production?
 
-puts "🌱 Seeding development data..."
+puts "Seeding development data..."
 
 # ── Tags ────────────────────────────────────────────────────────────────────
 tags = {}
@@ -23,7 +23,7 @@ tags = {}
     t.color = attrs[:color]
   end
 end
-puts "  ✅ #{Tag.count} tags"
+puts "  Tags: #{Tag.count}"
 
 # ── Documents ───────────────────────────────────────────────────────────────
 documents_data = [
@@ -114,7 +114,7 @@ documents_data.each do |attrs|
     )
   end
 end
-puts "  ✅ #{Document.count} documents"
+puts "  Documents: #{Document.count}"
 
 # ── Tasks ───────────────────────────────────────────────────────────────────
 tasks_data = [
@@ -144,7 +144,7 @@ tasks_data.each do |attrs|
     end
   end
 end
-puts "  ✅ #{Task.count} tasks (#{Task.active.count} active, #{Task.completed.count} completed)"
+puts "  Tasks: #{Task.count} (#{Task.active.count} active, #{Task.completed.count} completed)"
 
 # ── Calendar Events ─────────────────────────────────────────────────────────
 events_data = [
@@ -171,7 +171,7 @@ events_data.each do |attrs|
     end
   end
 end
-puts "  ✅ #{CalendarEvent.count} calendar events"
+puts "  Calendar events: #{CalendarEvent.count}"
 
-puts "\n🎉 Seed data loaded!"
-puts "   📝 #{Document.count} documents | ✅ #{Task.count} tasks | 🗓  #{CalendarEvent.count} events | 🏷  #{Tag.count} tags"
+puts "\nSeed data loaded!"
+puts "   Documents: #{Document.count} | Tasks: #{Task.count} | Events: #{CalendarEvent.count} | Tags: #{Tag.count}"
