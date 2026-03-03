@@ -104,6 +104,17 @@ export default class extends Controller {
     this._hideDropdown()
   }
 
+  /** Add tag from input value (triggered by add button click) */
+  addFromInput() {
+    const name = this.inputTarget.value.trim().toLowerCase().replace(/[^a-z0-9а-яё_-]/gi, "")
+    if (name.length > 0) {
+      this._addTag(name)
+      this.inputTarget.value = ""
+      this._hideDropdown()
+    }
+    this.inputTarget.focus()
+  }
+
   // ── Autocomplete ──────────────────────────────────────────────────────
 
   async _fetchSuggestions(q) {
@@ -122,8 +133,8 @@ export default class extends Controller {
 
       this.dropdownTarget.innerHTML = filtered.map(t =>
         `<div class="tag-dropdown-item" data-tag-name="${t.name}" data-action="click->tag-input#selectSuggestion">
-          <span class="tag-color-dot" style="background:${t.color || 'var(--color-text-tertiary)'}"></span>
-          #${t.name}
+          <span class="tag-hash" style="--hash-tag-color:${t.color || 'var(--color-text-tertiary)'}">#</span>
+          ${t.name}
         </div>`
       ).join("")
       this.dropdownTarget.classList.remove("hidden")
@@ -166,8 +177,8 @@ export default class extends Controller {
     pill.className = "tag-pill"
     pill.dataset.tagName = name
     pill.innerHTML = `
-      <span class="tag-pill-dot" style="background:${color || 'var(--color-text-tertiary)'}"></span>
-      #${name}
+      <span class="tag-hash" style="--hash-tag-color:${color || 'var(--color-text-tertiary)'}">#</span>
+      ${name}
       <button type="button" class="tag-pill-remove" data-action="click->tag-input#removeTag">&times;</button>
     `
     this.pillsTarget.appendChild(pill)

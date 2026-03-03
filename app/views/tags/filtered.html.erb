@@ -6,8 +6,7 @@
     <h1 class="tag-detail-title">
       <% @selected_tags.each do |tag| %>
         <span class="tag-filter-pill" style="font-size: var(--text-base);">
-          <span class="tag-color-dot" style="background:<%= tag_dot_color(tag) %>"></span>
-          #<%= tag.name %>
+          <%= render "shared/tag", tag: tag %>
         </span>
       <% end %>
     </h1>

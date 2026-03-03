@@ -169,8 +169,8 @@ export default class extends Controller {
       <button type="button" class="tag-filter-dropdown-item"
               data-action="click->tag-filter#selectSuggestion"
               data-tag-name="${this._escapeHtml(s.name)}">
-        <span class="tag-color-dot" style="background:${this._escapeHtml(s.color || '#999')}"></span>
-        #${this._escapeHtml(s.name)}
+        <span class="tag-hash" style="--hash-tag-color:${this._escapeHtml(s.color || '#999')}">#</span>
+        ${this._escapeHtml(s.name)}
       </button>
     `).join("")
 

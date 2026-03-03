@@ -56,8 +56,7 @@
     <div class="nav-group-label">Tags</div>
     <% @sidebar_tags.each do |tag| %>
       <%= link_to tag_path(tag.name), class: "nav-item" do %>
-        <div class="nav-dot" style="background:<%= tag_dot_color(tag) %>"></div>
-        #<%= tag.name %>
+        <%= render "shared/tag", tag: tag %>
         <span class="count"><%= tag.docs_count %></span>
       <% end %>
     <% end %>
@@ -183,13 +182,6 @@
   color: var(--color-text-tertiary);
 }
 .nav-item.active .nav-icon { color: var(--color-primary); }
-
-.nav-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  flex-shrink: 0;
-}
 
 .count {
   margin-left: auto;

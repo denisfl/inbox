@@ -5,10 +5,15 @@
 
 /* ── Pills container ── */
 .tag-input-pills {
+  display: contents;
+}
+
+/* ── Inline tag input (pills + input on same row, wrapping) ── */
+.tag-input-inline {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 4px;
-  margin-bottom: 4px;
 }
 
 /* ── Individual pill ── */
@@ -25,13 +30,6 @@
   border-radius: var(--radius-full);
   white-space: nowrap;
   line-height: 1.4;
-}
-
-.tag-pill-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-full);
-  flex-shrink: 0;
 }
 
 .tag-pill-remove {
@@ -55,6 +53,9 @@
 /* ── Input wrapper ── */
 .tag-input-wrapper {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .tag-input-field {
@@ -74,6 +75,31 @@
 }
 .tag-input-field::placeholder {
   color: var(--color-text-tertiary);
+}
+
+/* ── Add button (visible on mobile, shown on focus) ── */
+.tag-input-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+.tag-input-add-btn:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: var(--color-bg-hover);
 }
 
 /* ── Autocomplete dropdown ── */
@@ -106,12 +132,9 @@
   background: var(--color-bg-hover);
 }
 
-/* Reuse dot style from tags page */
-.tag-dropdown-item .tag-color-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-full);
-  flex-shrink: 0;
+/* Reuse hash style in dropdown */
+.tag-dropdown-item .tag-hash {
+  font-size: inherit;
 }
 
 /* ── Task form tag input ── */
@@ -170,11 +193,8 @@
   line-height: 1.4;
 }
 
-.tag-filter-pill .tag-color-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-full);
-  flex-shrink: 0;
+.tag-filter-pill .tag-hash {
+  font-size: inherit;
 }
 
 .tag-filter-pill-remove {
@@ -207,7 +227,9 @@
   border-radius: var(--radius-full);
   cursor: pointer;
   white-space: nowrap;
-  transition: border-color var(--transition-fast), background var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
 }
 .tag-filter-add-btn:hover {
   border-color: var(--color-primary);
@@ -269,11 +291,8 @@
   background: var(--color-bg-hover);
 }
 
-.tag-filter-dropdown-item .tag-color-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-full);
-  flex-shrink: 0;
+.tag-filter-dropdown-item .tag-hash {
+  font-size: inherit;
 }
 
 .tag-filter-clear {
@@ -296,7 +315,6 @@
     width: 120px;
   }
 }
-
 
 /* ── Tags Page ─────────────────────────────────────────────────────────── */
 .tags-page {
@@ -366,7 +384,9 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   text-decoration: none;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 .tag-card:hover {
   border-color: var(--color-primary);
@@ -379,17 +399,18 @@
   gap: var(--spacing-sm);
 }
 
-.tag-color-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  flex-shrink: 0;
+.tag-hash {
+  color: var(--hash-tag-color, var(--color-text-tertiary));
+  font-weight: var(--font-bold);
+  opacity: 0.6;
 }
 
 .tag-name {
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
+  gap: var(--spacing-xs);
+  display: inline-flex;
 }
 
 .tag-card-count {
@@ -399,11 +420,17 @@
 }
 
 @media (max-width: 768px) {
-  .tags-header { flex-direction: column; align-items: stretch; }
-  .tags-search-input { width: 100%; }
-  .tags-grid { grid-template-columns: 1fr; }
+  .tags-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tags-search-input {
+    width: 100%;
+  }
+  .tags-grid {
+    grid-template-columns: 1fr;
+  }
 }
-
 
 /* ── Tag Detail / Filtered Page ────────────────────────────────────────── */
 .tag-detail-page {

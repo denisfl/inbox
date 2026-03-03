@@ -4,8 +4,7 @@
   <header class="tag-detail-header">
     <%= back_link(tags_path, "Tags") %>
     <h1 class="tag-detail-title">
-      <span class="tag-color-dot" style="background:<%= tag_dot_color(@tag) %>"></span>
-      #<%= @tag.name %>
+      <%= render "shared/tag", tag: @tag %>
     </h1>
   </header>
 

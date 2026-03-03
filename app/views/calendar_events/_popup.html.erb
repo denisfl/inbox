@@ -76,8 +76,7 @@
       <div class="event-popup-tags">
         <% ev.tags.each do |t| %>
           <%= link_to tag_path(t.name), class: "tag-pill" do %>
-            <span class="tag-pill-dot" style="background:<%= tag_dot_color(t) %>"></span>
-            #<%= t.name %>
+            <%= render "shared/tag", tag: t %>
           <% end %>
         <% end %>
       </div>

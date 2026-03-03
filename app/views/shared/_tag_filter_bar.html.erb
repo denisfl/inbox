@@ -22,8 +22,7 @@
   <div class="tag-filter-pills" data-tag-filter-target="pills">
     <% selected_tags.each do |tag| %>
       <span class="tag-filter-pill">
-        <span class="tag-color-dot" style="background:<%= tag_dot_color(tag) %>"></span>
-        #<%= tag.name %>
+        <%= render "shared/tag", tag: tag %>
         <button type="button" class="tag-filter-pill-remove"
                 data-action="click->tag-filter#removeTag"
                 data-tag-name="<%= tag.name %>"
