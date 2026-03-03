@@ -8,42 +8,6 @@
     <div class="dash-greeting-title"><%= greeting_text %> — <%= @greeting_subtitle %></div>
   </div>
 
-  <%# ── Stat strip ────────────────────────────────────────────────────────── %>
-  <div class="stat-strip">
-    <div class="stat-card">
-      <div class="stat-label">Tasks today</div>
-      <div class="stat-value stat-accent"><%= @stats[:tasks_today] %></div>
-      <div class="stat-sub">
-        <% if @stats[:tasks_overdue] > 0 %>
-          <%= @stats[:tasks_overdue] %> overdue
-        <% else %>
-          all on track
-        <% end %>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Events today</div>
-      <div class="stat-value"><%= @stats[:events_today] %></div>
-      <div class="stat-sub">
-        <% if @stats[:next_event] %>
-          next: <%= @stats[:next_event].starts_at.strftime("%-H:%M") %>
-        <% else %>
-          no upcoming
-        <% end %>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">New notes</div>
-      <div class="stat-value"><%= @stats[:new_notes] %></div>
-      <div class="stat-sub">since yesterday</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Inbox total</div>
-      <div class="stat-value stat-accent-red"><%= @stats[:inbox_count] %></div>
-      <div class="stat-sub">documents</div>
-    </div>
-  </div>
-
   <%# ── Main grid ─────────────────────────────────────────────────────────── %>
   <div class="dash-grid">
 
@@ -357,42 +321,6 @@
   font-size: var(--text-xl);
   font-weight: var(--font-bold);
   color: var(--color-text-primary);
-}
-
-/* ── Stat strip ── */
-.stat-strip {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-xl);
-}
-.stat-card {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-md);
-}
-.stat-label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary);
-  margin-bottom: 4px;
-}
-.stat-value {
-  font-size: var(--text-2xl);
-  font-weight: var(--font-bold);
-  color: var(--color-text-primary);
-  line-height: 1.2;
-}
-.stat-accent { color: var(--color-primary); }
-.stat-accent-red { color: var(--color-danger); }
-.stat-sub {
-  font-size: 11px;
-  color: var(--color-text-tertiary);
-  margin-top: 2px;
 }
 
 /* ── Main grid ── */
@@ -820,17 +748,8 @@
 }
 
 @media (max-width: 768px) {
-  .stat-strip {
-    grid-template-columns: repeat(2, 1fr);
-  }
   .dash-greeting-title {
     font-size: var(--text-lg);
-  }
-}
-
-@media (max-width: 480px) {
-  .stat-strip {
-    grid-template-columns: 1fr;
   }
 }
 </style>

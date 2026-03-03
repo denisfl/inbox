@@ -9,7 +9,7 @@
         Tasks
       </h1>
 
-      <%= link_to new_task_path, class: "btn btn-success btn-sm" do %>
+      <%= link_to new_task_path, class: "btn btn-primary btn-sm" do %>
         <%= heroicon(:plus, style: 'width: 1rem; height: 1rem;') %>
         New Task
       <% end %>
@@ -98,7 +98,7 @@
         %>
         <% task_actions = capture do %>
           <div class="empty-state-actions">
-            <%= link_to "Create task", new_task_path, class: "btn btn-secondary" %>
+            <%= link_to "Create task", new_task_path, class: "btn btn-primary" %>
           </div>
         <% end %>
         <%= render "shared/empty_state",
