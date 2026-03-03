@@ -131,7 +131,7 @@ tasks_data = [
   { title: "Morning meditation — daily",      due_date: Date.current,             priority: "pinned", tags: %w[health], recurrence_rule: "daily" },
   # Completed tasks
   { title: "Set up CI pipeline",              due_date: 3.days.ago.to_date,       priority: "high",   tags: %w[project work], completed: true, completed_at: 2.days.ago },
-  { title: "Fix Pagy migration",             due_date: 2.days.ago.to_date,       priority: "high",   tags: %w[project], completed: true, completed_at: 1.day.ago },
+  { title: "Fix Pagy migration",             due_date: 2.days.ago.to_date,       priority: "high",   tags: %w[project], completed: true, completed_at: 1.day.ago }
 ]
 
 tasks_data.each do |attrs|
@@ -154,7 +154,7 @@ events_data = [
   { title: "Dentist appointment",   starts_at: (Date.current + 3).to_time.change(hour: 9, min: 30), ends_at: (Date.current + 3).to_time.change(hour: 10, min: 30), color: "4",  tags: %w[health] },
   { title: "Flight to Reykjavik",   starts_at: (Date.current + 60).to_time.change(hour: 7),      ends_at: (Date.current + 60).to_time.change(hour: 12),     color: "7",  all_day: false, tags: %w[travel] },
   { title: "Iceland trip",          starts_at: (Date.current + 60).to_time,                       ends_at: (Date.current + 70).to_time,                      color: "2",  all_day: true, tags: %w[travel] },
-  { title: "Project deadline",      starts_at: (Date.current + 14).to_time.change(hour: 17),     ends_at: (Date.current + 14).to_time.change(hour: 18),    color: "11", tags: %w[work project] },
+  { title: "Project deadline",      starts_at: (Date.current + 14).to_time.change(hour: 17),     ends_at: (Date.current + 14).to_time.change(hour: 18),    color: "11", tags: %w[work project] }
 ]
 
 events_data.each do |attrs|
