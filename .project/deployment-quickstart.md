@@ -14,7 +14,7 @@
 - ✅ Raspberry Pi 5 (8GB RAM, Raspberry Pi OS)
 - ✅ Digital Ocean VPS with WireGuard already running
 - ✅ nginx installed on DO server
-- ✅ Domain: fedosov.me (can add subdomain)
+- ✅ Domain: example.com (can add subdomain)
 
 ---
 
@@ -284,7 +284,7 @@ https://your-domain.com/
 ### Test 2: Telegram Bot
 
 ```bash
-# Open Telegram: @inbox_fl_bot
+# Open Telegram: @your_bot_name
 # Send test message: "Hello from production!"
 # Expected:
 # - Bot replies: "✅ Saved"
@@ -296,7 +296,7 @@ https://your-domain.com/
 ```bash
 # In Telegram:
 # - Record voice message
-# - Send to @inbox_fl_bot
+# - Send to @your_bot_name
 # Expected:
 # - Bot replies: "🎤 Transcribing your voice note..."
 # - After 5-20s: "✅ Transcription complete: <text>"

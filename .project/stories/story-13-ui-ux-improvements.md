@@ -154,7 +154,7 @@ As a user, I want a modern, intuitive, and mobile-friendly interface so that I c
   <h3>Welcome to Inbox!</h3>
   <p>Start capturing your thoughts via Telegram bot</p>
   <div class="empty-actions">
-    <a href="https://t.me/inbox_fl_bot" class="btn btn-primary">
+    <a href="https://t.me/your_bot_name" class="btn btn-primary">
       📱 Open Telegram Bot
     </a>
     <button class="btn btn-secondary">

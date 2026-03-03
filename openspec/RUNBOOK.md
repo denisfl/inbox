@@ -1,7 +1,7 @@
 # Inbox RPi — Runbook
 
 > Версия: 2025  
-> Сервер: `denis@192.168.50.60` (RPi, WireGuard `10.8.0.5`)  
+> Сервер: `user@your-rpi-ip` (RPi, WireGuard `10.8.0.x`)  
 > Репозиторий: `~/inbox`
 
 ---
