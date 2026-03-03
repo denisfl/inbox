@@ -2,7 +2,6 @@
 
 A privacy-first personal note-taking system with Telegram bot integration, voice transcription, and calendar sync. Runs on a Raspberry Pi — no cloud required.
 
-[![CI](https://github.com/yourusername/inbox/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/inbox/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Why
@@ -23,27 +22,27 @@ We live in an interesting time when producing code has become incredibly cheap. 
 
 ## Screenshots
 
-| Dashboard | Documents |
-|:-:|:-:|
+|                  Dashboard                   |                  Documents                   |
+| :------------------------------------------: | :------------------------------------------: |
 | ![Dashboard](docs/screenshots/dashboard.png) | ![Documents](docs/screenshots/documents.png) |
 
-| Tasks | Calendar |
-|:-:|:-:|
+|                Tasks                 |                  Calendar                  |
+| :----------------------------------: | :----------------------------------------: |
 | ![Tasks](docs/screenshots/tasks.png) | ![Calendar](docs/screenshots/calendar.png) |
 
 ## Tech Stack
 
-| Component | Technology |
-|-----------|-----------|
-| Backend | Ruby on Rails 8.1 |
-| Database | SQLite3 |
-| Frontend | Stimulus.js, Tailwind CSS |
-| Asset Pipeline | Propshaft, esbuild, cssbundling-rails |
-| Background Jobs | SolidQueue / Sidekiq |
-| Transcription | faster-whisper (Python) |
-| AI/LLM | Ollama (gemma3 / mistral) |
-| Containers | Docker Compose |
-| Testing | RSpec, FactoryBot, SimpleCov |
+| Component       | Technology                            |
+| --------------- | ------------------------------------- |
+| Backend         | Ruby on Rails 8.1                     |
+| Database        | SQLite3                               |
+| Frontend        | Stimulus.js, Tailwind CSS             |
+| Asset Pipeline  | Propshaft, esbuild, cssbundling-rails |
+| Background Jobs | SolidQueue / Sidekiq                  |
+| Transcription   | faster-whisper (Python)               |
+| AI/LLM          | Ollama (gemma3 / mistral)             |
+| Containers      | Docker Compose                        |
+| Testing         | RSpec, FactoryBot, SimpleCov          |
 
 ## Quick Start (Docker)
 
@@ -143,21 +142,21 @@ bin/brakeman --no-pager        # Security scan
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `SECRET_KEY_BASE` | Yes | Rails secret key (generate with `openssl rand -hex 64`) |
-| `TELEGRAM_BOT_TOKEN` | Yes | Bot token from BotFather |
-| `TELEGRAM_BOT_NAME` | Yes | Bot username (without @) |
-| `TELEGRAM_ALLOWED_USER_ID` | Yes | Your Telegram user ID |
-| `TELEGRAM_WEBHOOK_URL` | Yes | Public URL for webhook |
-| `API_TOKEN` | No | Token for API authentication |
-| `OLLAMA_BASE_URL` | No | Ollama server URL (default: `http://ollama:11434`) |
-| `WHISPER_BASE_URL` | No | Whisper service URL (default: `http://whisper:5000`) |
-| `WHISPER_LANGUAGE` | No | Force transcription language (default: auto-detect) |
-| `GOOGLE_CLIENT_ID` | No | For Google Calendar sync |
-| `GOOGLE_CLIENT_SECRET` | No | For Google Calendar sync |
-| `GOOGLE_REFRESH_TOKEN` | No | For Google Calendar sync |
-| `GOOGLE_CALENDAR_IDS` | No | Comma-separated calendar IDs (default: `primary`) |
+| Variable                   | Required | Description                                             |
+| -------------------------- | -------- | ------------------------------------------------------- |
+| `SECRET_KEY_BASE`          | Yes      | Rails secret key (generate with `openssl rand -hex 64`) |
+| `TELEGRAM_BOT_TOKEN`       | Yes      | Bot token from BotFather                                |
+| `TELEGRAM_BOT_NAME`        | Yes      | Bot username (without @)                                |
+| `TELEGRAM_ALLOWED_USER_ID` | Yes      | Your Telegram user ID                                   |
+| `TELEGRAM_WEBHOOK_URL`     | Yes      | Public URL for webhook                                  |
+| `API_TOKEN`                | No       | Token for API authentication                            |
+| `OLLAMA_BASE_URL`          | No       | Ollama server URL (default: `http://ollama:11434`)      |
+| `WHISPER_BASE_URL`         | No       | Whisper service URL (default: `http://whisper:5000`)    |
+| `WHISPER_LANGUAGE`         | No       | Force transcription language (default: auto-detect)     |
+| `GOOGLE_CLIENT_ID`         | No       | For Google Calendar sync                                |
+| `GOOGLE_CLIENT_SECRET`     | No       | For Google Calendar sync                                |
+| `GOOGLE_REFRESH_TOKEN`     | No       | For Google Calendar sync                                |
+| `GOOGLE_CALENDAR_IDS`      | No       | Comma-separated calendar IDs (default: `primary`)       |
 
 ## How It Works
 
@@ -211,3 +210,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code style, and PR
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+## ❤️ Support the project
+
+If you find Inbox useful, consider supporting development via GitHub Sponsors.
