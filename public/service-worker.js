@@ -1,179 +1,100 @@
 // Service Worker for Inbox PWA
-// Version: 2.1.0 - Network-first for root path
+// Version: 3.0.0 — Network-only for navigation/API, cache only app shell icons for offline.
+// Static assets (JS/CSS) are fingerprinted by Propshaft and cached at the HTTP level.
 
-const CACHE_VERSION = 'inbox-v2.1';
-const OFFLINE_CACHE = 'inbox-offline-v2.1';
+const CACHE_VERSION = "inbox-v3.0";
 
-// Core app shell resources to cache on install
-// Note: Root path (/) is excluded to always fetch fresh document list
+// Minimal app shell — only icons and manifest for offline/install support.
+// HTML, JS, CSS are NOT cached by the SW; Propshaft digest + HTTP headers handle those.
 const APP_SHELL = [
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/apple-touch-icon.png',
-  '/icon.svg'
+  "/manifest.json",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/apple-touch-icon.png",
+  "/icon.svg",
 ];
 
-// Install event - cache app shell
-self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing...');
-  
+// Install — cache only the app shell icons, then activate immediately
+self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION)
-      .then((cache) => {
-        console.log('[Service Worker] Caching app shell');
-        return cache.addAll(APP_SHELL);
-      })
-      .then(() => {
-        console.log('[Service Worker] App shell cached');
-        // Force the waiting service worker to become the active service worker
-        return self.skipWaiting();
-      })
-      .catch((error) => {
-        console.error('[Service Worker] Install failed:', error);
-      })
+    caches
+      .open(CACHE_VERSION)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting()),
   );
 });
 
-// Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activating...');
-  
+// Activate — delete all old caches, take control of clients immediately
+self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames
-            .filter((cacheName) => {
-              // Delete old versions
-              return cacheName !== CACHE_VERSION && cacheName !== OFFLINE_CACHE;
-            })
-            .map((cacheName) => {
-              console.log('[Service Worker] Deleting old cache:', cacheName);
-              return caches.delete(cacheName);
-            })
-        );
-      })
-      .then(() => {
-        console.log('[Service Worker] Activated');
-        // Take control of all clients immediately
-        return self.clients.claim();
-      })
+    caches
+      .keys()
+      .then((names) =>
+        Promise.all(
+          names
+            .filter((name) => name !== CACHE_VERSION)
+            .map((name) => caches.delete(name)),
+        ),
+      )
+      .then(() => self.clients.claim()),
   );
 });
 
-// Fetch event - network-first for dynamic content, cache-first for static assets
-self.addEventListener('fetch', (event) => {
+// Fetch — network-only for everything except cached app shell icons
+self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
+  // Only intercept GET requests to our own origin
+  if (request.method !== "GET" || !url.protocol.startsWith("http")) {
     return;
   }
 
-  // Skip chrome-extension and other non-http(s) requests
-  if (!url.protocol.startsWith('http')) {
-    return;
-  }
-
-  // Determine caching strategy based on URL
-  const isApiRequest = url.pathname.startsWith('/api/');
-  const isDocumentPage = url.pathname.startsWith('/documents');
-  const isRootPath = url.pathname === '/';
-  const isStaticAsset = url.pathname.startsWith('/assets/') || 
-                        url.pathname.startsWith('/packs/') ||
-                        url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2)$/);
-
-  // Network-first strategy for API requests, document pages, and root (document list)
-  if (isApiRequest || isDocumentPage || isRootPath) {
+  // Navigation requests (HTML pages) and API calls — always go to network.
+  // If offline, show a minimal offline message.
+  if (request.mode === "navigate" || url.pathname.startsWith("/api/")) {
     event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
-          // Cache successful responses
-          if (networkResponse && networkResponse.status === 200) {
-            const responseToCache = networkResponse.clone();
-            caches.open(OFFLINE_CACHE).then((cache) => {
-              cache.put(request, responseToCache);
-            });
-          }
-          return networkResponse;
-        })
-        .catch((error) => {
-          console.log('[Service Worker] Network failed, trying cache:', url.pathname);
-          // Fallback to cache if network fails
-          return caches.match(request).then((cachedResponse) => {
-            if (cachedResponse) {
-              console.log('[Service Worker] Serving stale data from cache:', url.pathname);
-              return cachedResponse;
-            }
-            // Return offline response
-            return new Response('Offline - No cached data available', {
+      fetch(request).catch(() => {
+        if (request.mode === "navigate") {
+          return new Response(
+            '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline</title>' +
+              "<style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f9fafb;color:#374151}" +
+              ".box{text-align:center;padding:2rem}.btn{margin-top:1rem;padding:.5rem 1.5rem;background:#2563eb;color:#fff;border:none;border-radius:.375rem;cursor:pointer;font-size:.875rem}" +
+              ".btn:hover{background:#1d4ed8}</style></head>" +
+              '<body><div class="box"><h1>You are offline</h1><p>Check your connection and try again.</p>' +
+              '<button class="btn" onclick="location.reload()">Retry</button></div></body></html>',
+            {
               status: 503,
-              statusText: 'Service Unavailable',
-              headers: new Headers({ 'Content-Type': 'text/plain' })
-            });
-          });
-        })
+              headers: { "Content-Type": "text/html; charset=utf-8" },
+            },
+          );
+        }
+        return new Response("Offline", {
+          status: 503,
+          headers: { "Content-Type": "text/plain" },
+        });
+      }),
     );
     return;
   }
 
-  // Cache-first strategy for static assets
-  event.respondWith(
-    caches.match(request)
-      .then((cachedResponse) => {
-        // Return cached response if available
-        if (cachedResponse) {
-          console.log('[Service Worker] Serving from cache:', url.pathname);
-          return cachedResponse;
-        }
+  // App shell icons — serve from cache, fall back to network
+  const isAppShell = APP_SHELL.some((path) => url.pathname === path);
+  if (isAppShell) {
+    event.respondWith(
+      caches.match(request).then((cached) => cached || fetch(request)),
+    );
+    return;
+  }
 
-        // Otherwise fetch from network
-        console.log('[Service Worker] Fetching from network:', url.pathname);
-        
-        return fetch(request)
-          .then((networkResponse) => {
-            // Cache successful responses
-            if (networkResponse && networkResponse.status === 200) {
-              // Only cache same-origin requests
-              if (url.origin === location.origin) {
-                const responseToCache = networkResponse.clone();
-                
-                caches.open(OFFLINE_CACHE)
-                  .then((cache) => {
-                    cache.put(request, responseToCache);
-                  });
-              }
-            }
-            
-            return networkResponse;
-          })
-          .catch((error) => {
-            console.error('[Service Worker] Fetch failed:', error);
-            
-            // Return offline page for navigation requests
-            if (request.mode === 'navigate') {
-              return caches.match('/');
-            }
-            
-            // For other requests, return error
-            return new Response('Offline', {
-              status: 503,
-              statusText: 'Service Unavailable',
-              headers: new Headers({
-                'Content-Type': 'text/plain'
-              })
-            });
-          });
-      })
-  );
+  // Everything else (static assets, images, fonts) — network only.
+  // Propshaft adds digest hashes to URLs; HTTP cache headers handle caching correctly.
+  // No SW caching needed — avoids stale asset problems after deploys.
 });
 
-// Message event - handle skip waiting
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.log('[Service Worker] Received SKIP_WAITING message');
+// Handle SKIP_WAITING message from the app
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
 });

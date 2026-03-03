@@ -10,6 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="description" content="Capture and organize your thoughts from Telegram">
     <meta name="theme-color" content="#2563eb">
+    <meta name="turbo-cache-control" content="no-preview">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <meta name="auth-token" content="<%= ENV.fetch('API_TOKEN', 'development_token') %>">
