@@ -68,10 +68,10 @@ RSpec.describe "Tags", type: :request do
       expect(response.body).to include("Tagged task")
     end
 
-    it "returns 404 for nonexistent tag" do
+    it "redirects to tags index for nonexistent tag" do
       get tag_path(name: "nonexistent")
 
-      expect(response).to have_http_status(:not_found)
+      expect(response).to redirect_to(tags_path)
     end
   end
 end
