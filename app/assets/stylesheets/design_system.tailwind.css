@@ -343,9 +343,10 @@ body {
 }
 
 .empty-state-icon {
-  font-size: 4rem;
   margin-bottom: var(--spacing-lg);
   opacity: 0.5;
+  width: 3rem;
+  height: 3rem;
 }
 
 .empty-state-title {

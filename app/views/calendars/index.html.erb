@@ -263,13 +263,10 @@
         <%# ── AGENDA VIEW (default) ── %>
         <div class="calendar-agenda">
           <% if @timeline.empty? %>
-            <div class="agenda-empty">
-              <div class="agenda-empty-icon">
-                <%= heroicon(:calendar, style: 'width: 48px; height: 48px;') %>
-              </div>
-              <div class="agenda-empty-text">No events in this period</div>
-              <div class="agenda-empty-sub">Sync Google Calendar or create events to see them here</div>
-            </div>
+            <%= render "shared/empty_state",
+                       icon: :calendar,
+                       title: "No events in this period",
+                       description: "Sync Google Calendar or create events to see them here" %>
           <% else %>
             <% @timeline.each do |date, entries| %>
           <%
@@ -591,16 +588,6 @@
   .calendar-content {
     min-height: 400px;
   }
-
-  .agenda-empty {
-    text-align: center;
-    padding: var(--spacing-2xl) var(--spacing-lg);
-    color: var(--color-text-tertiary);
-  }
-
-  .agenda-empty-icon { font-size: var(--text-3xl); margin-bottom: var(--spacing-sm); }
-  .agenda-empty-text { font-size: var(--text-base); font-weight: var(--font-semibold); margin-bottom: var(--spacing-xs); }
-  .agenda-empty-sub  { font-size: var(--text-sm); }
 
   /* Day group */
   .agenda-day {

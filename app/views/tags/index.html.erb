@@ -36,12 +36,9 @@
       <% end %>
     </div>
   <% else %>
-    <div class="empty-state">
-      <%= heroicon(:tag, class: 'empty-state-icon') %>
-      <h2 class="empty-state-title">No tags yet</h2>
-      <p class="empty-state-description">
-        Tags will appear here when you add them to documents or tasks.
-      </p>
-    </div>
+    <%= render "shared/empty_state",
+               icon: :tag,
+               title: "No tags yet",
+               description: "Tags will appear here when you add them to documents or tasks." %>
   <% end %>
 </div>

@@ -57,12 +57,9 @@
   <% end %>
 
   <% if @documents.empty? && @tasks.empty? && @calendar_events.empty? %>
-    <div class="empty-state">
-      <%= heroicon(:tag, class: 'empty-state-icon') %>
-      <h2 class="empty-state-title">No items with this tag</h2>
-      <p class="empty-state-description">
-        Documents and tasks tagged with <strong>#<%= @tag.name %></strong> will appear here.
-      </p>
-    </div>
+    <%= render "shared/empty_state",
+               icon: :tag,
+               title: "No items with this tag",
+               description: "Documents and tasks tagged with <strong>##{@tag.name}</strong> will appear here.".html_safe %>
   <% end %>
 </div>

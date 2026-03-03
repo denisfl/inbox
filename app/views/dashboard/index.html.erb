@@ -77,9 +77,9 @@
           <% end %>
 
           <% if @tasks_today.empty? && @tasks_completed_today.empty? %>
-            <div class="task-item" style="color:var(--color-text-tertiary);font-size:var(--text-sm)">
-              No tasks for today
-            </div>
+            <%= render "shared/empty_state",
+                       icon: :check_circle,
+                       title: "No tasks for today" %>
           <% end %>
         </div>
 
@@ -122,7 +122,10 @@
           <% end %>
 
           <% if @recent_documents.empty? %>
-            <div class="tl-empty">No notes yet — send something to Telegram</div>
+            <%= render "shared/empty_state",
+                       icon: :document_text,
+                       title: "No notes yet",
+                       description: "Send something to Telegram or create a new note" %>
           <% end %>
         </div>
       </div>
@@ -267,7 +270,9 @@
           <% end %>
 
           <% unless has_any_events %>
-            <div class="tl-empty">No events scheduled</div>
+            <%= render "shared/empty_state",
+                       icon: :calendar,
+                       title: "No events scheduled" %>
           <% end %>
         </div>
       </div>
@@ -305,7 +310,9 @@
           <% end %>
 
           <% if @activities.empty? %>
-            <div class="tl-empty">No activity yet</div>
+            <%= render "shared/empty_state",
+                       icon: :chart_bar,
+                       title: "No activity yet" %>
           <% end %>
         </div>
       </div>
@@ -543,12 +550,6 @@
   background: var(--color-bg-tertiary);
   color: var(--color-text-tertiary);
   border: 1px solid var(--color-border);
-}
-.tl-empty {
-  padding: var(--spacing-md);
-  text-align: center;
-  font-size: var(--text-sm);
-  color: var(--color-text-tertiary);
 }
 
 /* ── Recent notes ── */
