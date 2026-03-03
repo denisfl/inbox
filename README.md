@@ -17,6 +17,16 @@ A privacy-first personal note-taking system with Telegram bot integration, voice
 - 🔒 **Privacy** — everything stays on your hardware, single-user design
 - 🤖 **AI Classification** — automatic intent detection via local LLM (Ollama)
 
+## Screenshots
+
+| Dashboard | Documents |
+|:-:|:-:|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Documents](docs/screenshots/documents.png) |
+
+| Tasks | Calendar |
+|:-:|:-:|
+| ![Tasks](docs/screenshots/tasks.png) | ![Calendar](docs/screenshots/calendar.png) |
+
 ## Tech Stack
 
 | Component | Technology |
@@ -145,26 +155,46 @@ bin/brakeman --no-pager        # Security scan
 | `GOOGLE_REFRESH_TOKEN` | No | For Google Calendar sync |
 | `GOOGLE_CALENDAR_IDS` | No | Comma-separated calendar IDs (default: `primary`) |
 
-## Architecture
+## How It Works
+
+Inbox collects information from multiple sources, processes it in the background, and presents everything through a clean web interface.
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Telegram    │────▶│  Rails App   │────▶│  SQLite DB   │
-│  Bot API     │     │  (Puma)      │     │              │
-└─────────────┘     └──────┬───────┘     └──────────────┘
-                           │
-                    ┌──────┴───────┐
-                    │  Background  │
-                    │  Jobs        │
-                    └──────┬───────┘
-                           │
-              ┌────────────┼────────────┐
-              │            │            │
-        ┌─────▼────┐ ┌────▼─────┐ ┌───▼────┐
-        │ Whisper   │ │ Ollama   │ │ Google │
-        │ (STT)    │ │ (LLM)   │ │ Cal API│
-        └──────────┘ └──────────┘ └────────┘
+┌─────────────────────┐   ┌─────────────────────┐   ┌─────────────────────┐
+│    📱 Telegram Bot   │   │   🗓 Google Calendar  │   │    ✍️ Web Editor     │
+│  text / voice / files│   │   OAuth / RPi sync   │   │  web / quick capture │
+└─────────┬───────────┘   └─────────┬───────────┘   └─────────┬───────────┘
+          │                         │                          │
+          ▼                         ▼                          ▼
+┌─────────────────────┐   ┌─────────────────────┐   ┌─────────────────────┐
+│      Webhook         │   │    GCal Sync Job     │   │   Rails Controller   │
+│  POST /api/telegram  │   │   Sidekiq / cron     │   │   Form / Turbo       │
+└─────────┬───────────┘   └─────────┬───────────┘   └─────────┬───────────┘
+          │                         │                          │
+          └────────────┬────────────┘──────────────────────────┘
+                       ▼
+          ┌───────────────────────┐
+          │     SQLite Database    │
+          │  documents · tasks     │
+          │  calendar_events · tags │
+          └───────────┬───────────┘
+                      │
+        ┌─────────────┼─────────────┐
+        ▼             ▼             ▼
+┌──────────────┐ ┌──────────┐ ┌──────────┐
+│ 🎤 Whisper    │ │ 🤖 Ollama │ │ 🗓 Google │
+│ Transcription │ │ LLM/AI   │ │ Cal API  │
+│ (local, CPU)  │ │ (local)  │ │ (OAuth)  │
+└──────────────┘ └──────────┘ └──────────┘
 ```
+
+### Data Flow
+
+1. **Capture** — Send a text message, voice note, photo, or file to your Telegram bot. Or type directly in the web editor.
+2. **Process** — Voice messages are transcribed locally by Whisper. The AI classifier (Ollama) detects intent: is it a note, a task, or something else?
+3. **Store** — Everything lands in SQLite as a document with Markdown content. Tasks get due dates and priorities. Calendar events sync from Google.
+4. **Organize** — Tag documents and tasks. Pin important notes. Filter by source, tag, or date.
+5. **Access** — Browse, search, and edit from any device through the web UI. Protected by HTTP Basic Auth over HTTPS.
 
 ## Deployment
 
