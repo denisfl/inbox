@@ -1,4 +1,4 @@
-import { Controller } from "@hotwired/stimulus"
+import { Controller } from "@hotwired/stimulus";
 
 /**
  * Tag input controller — add/remove tags with autocomplete.
@@ -18,48 +18,51 @@ import { Controller } from "@hotwired/stimulus"
  *   dropdown   — autocomplete suggestion dropdown
  */
 export default class extends Controller {
-  static targets = ["input", "pills", "dropdown"]
-  static values  = { entityType: String, entityId: Number }
+  static targets = ["input", "pills", "dropdown"];
+  static values = { entityType: String, entityId: Number };
 
   connect() {
-    this._debounceTimer = null
+    this._debounceTimer = null;
     // Close dropdown on outside click
     this._onOutsideClick = (e) => {
-      if (!this.element.contains(e.target)) this._hideDropdown()
-    }
-    document.addEventListener("click", this._onOutsideClick)
+      if (!this.element.contains(e.target)) this._hideDropdown();
+    };
+    document.addEventListener("click", this._onOutsideClick);
   }
 
   disconnect() {
-    document.removeEventListener("click", this._onOutsideClick)
-    if (this._debounceTimer) clearTimeout(this._debounceTimer)
+    document.removeEventListener("click", this._onOutsideClick);
+    if (this._debounceTimer) clearTimeout(this._debounceTimer);
   }
 
   // ── Input events ──────────────────────────────────────────────────────
 
   onInput() {
-    const q = this.inputTarget.value.trim()
+    const q = this.inputTarget.value.trim();
     if (q.length === 0) {
-      this._hideDropdown()
-      return
+      this._hideDropdown();
+      return;
     }
     // Debounce autocomplete
-    clearTimeout(this._debounceTimer)
-    this._debounceTimer = setTimeout(() => this._fetchSuggestions(q), 200)
+    clearTimeout(this._debounceTimer);
+    this._debounceTimer = setTimeout(() => this._fetchSuggestions(q), 200);
   }
 
   onKeydown(event) {
     if (event.key === "Enter") {
-      event.preventDefault()
-      const name = this.inputTarget.value.trim().toLowerCase().replace(/[^a-z0-9а-яё_-]/gi, "")
+      event.preventDefault();
+      const name = this.inputTarget.value
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9а-яё_-]/gi, "");
       if (name.length > 0) {
-        this._addTag(name)
-        this.inputTarget.value = ""
-        this._hideDropdown()
+        this._addTag(name);
+        this.inputTarget.value = "";
+        this._hideDropdown();
       }
     }
     if (event.key === "Escape") {
-      this._hideDropdown()
+      this._hideDropdown();
     }
   }
 
@@ -67,126 +70,139 @@ export default class extends Controller {
 
   async _addTag(name) {
     // Don't add if already present
-    if (this._currentTags().includes(name)) return
+    if (this._currentTags().includes(name)) return;
 
     try {
-      const res = await this._api("POST", this._tagsUrl(), { name })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json()
+      const res = await this._api("POST", this._tagsUrl(), { name });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
 
-      this._appendPill(data.tag.name, data.tag.color)
+      this._appendPill(data.tag.name, data.tag.color);
     } catch (err) {
-      console.error("Failed to add tag:", err)
+      console.error("Failed to add tag:", err);
     }
   }
 
   async removeTag(event) {
-    const pill = event.target.closest(".tag-pill")
-    if (!pill) return
+    const pill = event.target.closest(".tag-pill");
+    if (!pill) return;
 
-    const name = pill.dataset.tagName
+    const name = pill.dataset.tagName;
     try {
-      const res = await this._api("DELETE", `${this._tagsUrl()}/${encodeURIComponent(name)}`)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      pill.remove()
+      const res = await this._api(
+        "DELETE",
+        `${this._tagsUrl()}/${encodeURIComponent(name)}`,
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      pill.remove();
     } catch (err) {
-      console.error("Failed to remove tag:", err)
+      console.error("Failed to remove tag:", err);
     }
   }
 
   selectSuggestion(event) {
-    const item = event.target.closest("[data-tag-name]")
-    if (!item) return
+    const item = event.target.closest("[data-tag-name]");
+    if (!item) return;
 
-    const name = item.dataset.tagName
-    this._addTag(name)
-    this.inputTarget.value = ""
-    this._hideDropdown()
+    const name = item.dataset.tagName;
+    this._addTag(name);
+    this.inputTarget.value = "";
+    this._hideDropdown();
   }
 
   /** Add tag from input value (triggered by add button click) */
   addFromInput() {
-    const name = this.inputTarget.value.trim().toLowerCase().replace(/[^a-z0-9а-яё_-]/gi, "")
+    const name = this.inputTarget.value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9а-яё_-]/gi, "");
     if (name.length > 0) {
-      this._addTag(name)
-      this.inputTarget.value = ""
-      this._hideDropdown()
+      this._addTag(name);
+      this.inputTarget.value = "";
+      this._hideDropdown();
     }
-    this.inputTarget.focus()
+    this.inputTarget.focus();
   }
 
   // ── Autocomplete ──────────────────────────────────────────────────────
 
   async _fetchSuggestions(q) {
     try {
-      const res = await this._api("GET", `/api/tags?q=${encodeURIComponent(q)}`)
-      if (!res.ok) return
-      const tags = await res.json()
+      const res = await this._api(
+        "GET",
+        `/api/tags?q=${encodeURIComponent(q)}`,
+      );
+      if (!res.ok) return;
+      const tags = await res.json();
 
-      const existing = this._currentTags()
-      const filtered = tags.filter(t => !existing.includes(t.name))
+      const existing = this._currentTags();
+      const filtered = tags.filter((t) => !existing.includes(t.name));
 
       if (filtered.length === 0) {
-        this._hideDropdown()
-        return
+        this._hideDropdown();
+        return;
       }
 
-      this.dropdownTarget.innerHTML = filtered.map(t =>
-        `<div class="tag-dropdown-item" data-tag-name="${t.name}" data-action="click->tag-input#selectSuggestion">
-          <span class="tag-hash" style="--hash-tag-color:${t.color || 'var(--color-text-tertiary)'}">#</span>
+      this.dropdownTarget.innerHTML = filtered
+        .map(
+          (t) =>
+            `<div class="tag-dropdown-item" data-tag-name="${t.name}" data-action="click->tag-input#selectSuggestion">
+          <span class="tag-hash" style="--hash-tag-color:${t.color || "var(--color-text-tertiary)"}">#</span>
           ${t.name}
-        </div>`
-      ).join("")
-      this.dropdownTarget.classList.remove("hidden")
+        </div>`,
+        )
+        .join("");
+      this.dropdownTarget.classList.remove("hidden");
     } catch (err) {
-      console.error("Autocomplete error:", err)
+      console.error("Autocomplete error:", err);
     }
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────
 
   _tagsUrl() {
-    const type = this.entityTypeValue
-    const id   = this.entityIdValue
-    if (type === "document")       return `/api/documents/${id}/tags`
-    if (type === "task")           return `/api/tasks/${id}/tags`
-    if (type === "calendar_event") return `/api/calendar_events/${id}/tags`
-    throw new Error(`Unknown entity type: ${type}`)
+    const type = this.entityTypeValue;
+    const id = this.entityIdValue;
+    if (type === "document") return `/api/documents/${id}/tags`;
+    if (type === "task") return `/api/tasks/${id}/tags`;
+    if (type === "calendar_event") return `/api/calendar_events/${id}/tags`;
+    throw new Error(`Unknown entity type: ${type}`);
   }
 
   _api(method, url, body) {
-    const token = document.querySelector('meta[name="auth-token"]')?.content
+    const token = document.querySelector('meta[name="auth-token"]')?.content;
     const opts = {
       method,
-      headers: { "Authorization": `Token token=${token}` }
-    }
+      headers: { Authorization: `Token token=${token}` },
+    };
     if (body !== undefined) {
-      opts.headers["Content-Type"] = "application/json"
-      opts.body = JSON.stringify(body)
+      opts.headers["Content-Type"] = "application/json";
+      opts.body = JSON.stringify(body);
     }
-    return fetch(url, opts)
+    return fetch(url, opts);
   }
 
   _currentTags() {
-    return Array.from(this.pillsTarget.querySelectorAll(".tag-pill"))
-      .map(el => el.dataset.tagName)
+    return Array.from(this.pillsTarget.querySelectorAll(".tag-pill")).map(
+      (el) => el.dataset.tagName,
+    );
   }
 
   _appendPill(name, color) {
-    const pill = document.createElement("span")
-    pill.className = "tag-pill"
-    pill.dataset.tagName = name
+    const pill = document.createElement("span");
+    pill.className = "tag-pill";
+    pill.dataset.tagName = name;
     pill.innerHTML = `
-      <span class="tag-hash" style="--hash-tag-color:${color || 'var(--color-text-tertiary)'}">#</span>
+      <span class="tag-hash" style="--hash-tag-color:${color || "var(--color-text-tertiary)"}">#</span>
       ${name}
       <button type="button" class="tag-pill-remove" data-action="click->tag-input#removeTag">&times;</button>
-    `
-    this.pillsTarget.appendChild(pill)
+    `;
+    this.pillsTarget.appendChild(pill);
   }
 
   _hideDropdown() {
     if (this.hasDropdownTarget) {
-      this.dropdownTarget.classList.add("hidden")
+      this.dropdownTarget.classList.add("hidden");
     }
   }
 }
