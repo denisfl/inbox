@@ -9,6 +9,7 @@ class TagsController < ApplicationController
       @selected_tags = Tag.where(name: tag_names).to_a
       @documents = Document.includes(:blocks, :tags).tagged_with(tag_names).order(updated_at: :desc)
       @tasks = Task.tagged_with(tag_names).includes(:tags).order(completed: :asc, priority: :desc, position: :asc)
+      @calendar_events = CalendarEvent.tagged_with(tag_names).includes(:tags).order(starts_at: :desc)
       render :filtered
     else
       @tags = Tag.alphabetical

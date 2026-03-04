@@ -213,9 +213,9 @@ class CalendarEventsController < ApplicationController
 
     target_date = if this_year_date && this_year_date >= today
                     this_year_date
-                  else
+    else
                     safe_date(today.year + 1, month, day) || this_year_date
-                  end
+    end
 
     return [ nil, nil ] unless target_date
 

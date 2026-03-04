@@ -104,6 +104,10 @@ CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
 # ==================== BUILD STAGE ====================
 FROM production_base AS builder
 
+# Git SHA for version tracking
+ARG GIT_SHA
+ENV GIT_SHA=${GIT_SHA}
+
 # Only install what's needed for build
 RUN apk add --no-cache \
     python3 \
@@ -126,6 +130,10 @@ RUN bundle config unset without && \
 
 # ==================== PRODUCTION STAGE ====================
 FROM production_base AS production
+
+# Git SHA for version tracking
+ARG GIT_SHA
+ENV GIT_SHA=${GIT_SHA}
 
 # Set production bundle config BEFORE any gem operations
 ENV BUNDLE_DEPLOYMENT=true \

@@ -47,6 +47,19 @@ class CalendarEvent < ApplicationRecord
   scope :this_week,   -> { confirmed.where(starts_at: Time.current..7.days.from_now.end_of_day).order(:starts_at) }
   scope :in_range,    ->(from, to) { confirmed.where(starts_at: from..to).order(:starts_at) }
 
+  # Filter by multiple tags (AND — events must have ALL specified tags)
+  scope :tagged_with, ->(tag_names) {
+    return all if tag_names.blank?
+
+    names = Array(tag_names).map { |n| n.to_s.strip.downcase }.reject(&:blank?)
+    return all if names.empty?
+
+    joins(:tags)
+      .where(tags: { name: names })
+      .group("calendar_events.id")
+      .having("COUNT(DISTINCT tags.id) = ?", names.size)
+  }
+
   # Events that need reminder: starting in 10–30 min, not yet reminded
   scope :needs_reminder, -> {
     confirmed

@@ -8,52 +8,10 @@
     </h1>
   </header>
 
-  <% if @documents.any? %>
-    <section class="tag-section">
-      <h2 class="tag-section-title">Documents (<%= @documents.count %>)</h2>
-      <div class="documents-grid">
-        <%= render partial: "documents/card", collection: @documents, as: :document %>
-      </div>
-    </section>
-  <% end %>
-
-  <% if @tasks.any? %>
-    <section class="tag-section">
-      <h2 class="tag-section-title">Tasks (<%= @tasks.count %>)</h2>
-      <div class="task-list">
-        <% @tasks.each do |task| %>
-          <%= render partial: "tasks/task", locals: { task: task } %>
-        <% end %>
-      </div>
-    </section>
-  <% end %>
-
-  <% if @calendar_events.any? %>
-    <section class="tag-section">
-      <h2 class="tag-section-title">Events (<%= @calendar_events.count %>)</h2>
-      <div class="tag-events-list">
-        <% @calendar_events.each do |ev| %>
-          <div class="tag-event-item">
-            <div class="tag-event-color" style="background: <%= ev.display_color %>;"></div>
-            <div class="tag-event-info">
-              <div class="tag-event-title"><%= ev.title %></div>
-              <div class="tag-event-time">
-                <%= ev.starts_at.strftime("%-d %b %Y") %>
-                <% unless ev.all_day? %>
-                  · <%= ev.starts_at.strftime("%-H:%M") %>
-                <% end %>
-              </div>
-            </div>
-            <% if ev.local? %>
-              <%= link_to edit_calendar_event_path(ev), class: "tag-event-edit" do %>
-                <%= heroicon(:pencil, style: 'width: 12px; height: 12px;') %>
-              <% end %>
-            <% end %>
-          </div>
-        <% end %>
-      </div>
-    </section>
-  <% end %>
+  <%= render "shared/tagged_items",
+             documents: @documents,
+             tasks: @tasks,
+             calendar_events: @calendar_events %>
 
   <% if @documents.empty? && @tasks.empty? && @calendar_events.empty? %>
     <%= render "shared/empty_state",

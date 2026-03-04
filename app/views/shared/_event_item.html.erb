@@ -1,0 +1,21 @@
+<%# Shared event item — used on tag pages and anywhere events are listed outside calendar %>
+<div class="event-item">
+  <div class="event-item-color" style="background: <%= event.display_color %>;"></div>
+  <div class="event-item-info">
+    <div class="event-item-title"><%= event.title %></div>
+    <div class="event-item-time">
+      <%= event.starts_at.strftime("%-d %b %Y") %>
+      <% unless event.all_day? %>
+        · <%= event.starts_at.strftime("%-H:%M") %>
+        <% if event.ends_at.present? %>
+          – <%= event.ends_at.strftime("%-H:%M") %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+  <% if event.local? %>
+    <%= link_to edit_calendar_event_path(event), class: "event-item-edit" do %>
+      <%= heroicon(:pencil, style: 'width: 12px; height: 12px;') %>
+    <% end %>
+  <% end %>
+</div>

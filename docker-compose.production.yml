@@ -5,6 +5,8 @@ services:
   web:
     build:
       target: production
+      args:
+        GIT_SHA: ${GIT_SHA:-unknown}
     command: bundle exec rails server -b 0.0.0.0
     # Do NOT mount source code in production — image is self-contained
     volumes:
@@ -43,6 +45,8 @@ services:
   worker:
     build:
       target: production
+      args:
+        GIT_SHA: ${GIT_SHA:-unknown}
     command: bundle exec rails solid_queue:start
     volumes:
       - storage_data:/app/storage
