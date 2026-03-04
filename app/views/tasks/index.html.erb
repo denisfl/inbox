@@ -115,7 +115,8 @@
   .tasks-page {
     max-width: 800px;
     margin: 0 auto;
-    padding: var(--spacing-lg);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
   }
 
   .tasks-container {
@@ -268,10 +269,6 @@
 
   /* ── Mobile ──────────────────────────────────────────────────────── */
   @media (max-width: 640px) {
-    .tasks-page {
-      padding: var(--spacing-sm);
-    }
-
     .tasks-header {
       padding: var(--spacing-sm) var(--spacing-md);
     }
