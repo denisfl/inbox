@@ -83,3 +83,62 @@
 .event-item-edit:hover {
   color: var(--color-primary);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE BOTTOM NAVIGATION
+   Fixed bar at the bottom of the screen, visible only on mobile (< 769px).
+   Height: 56px (--bottom-nav-height).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --bottom-nav-height: 56px;
+}
+
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--bottom-nav-height);
+    background: var(--color-bg-primary);
+    border-top: 1px solid var(--color-border);
+    z-index: var(--z-fixed);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 10px;
+    font-weight: var(--font-medium);
+    color: var(--color-text-tertiary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .bottom-nav-item.active {
+    color: var(--color-primary);
+  }
+
+  .bottom-nav-item:hover {
+    color: var(--color-text-primary);
+  }
+
+  /* Add bottom padding to app-main so content isn't hidden behind nav */
+  .app-main {
+    padding-bottom: calc(
+      var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px)
+    );
+  }
+}

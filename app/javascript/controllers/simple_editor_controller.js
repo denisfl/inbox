@@ -28,13 +28,18 @@ export default class extends Controller {
 
   connect() {
     console.log(
-      "✅ simple-editor connected, documentId:",
+      "simple-editor connected, documentId:",
       this.documentIdValue,
       "blockId:",
       this.blockIdValue,
     );
     this._saveTimer = null;
     this._previewMode = false;
+
+    // Auto-resize textarea to fit content (page scrolls via .app-main)
+    if (this.hasTextareaTarget) {
+      this._autoResize();
+    }
   }
 
   disconnect() {
@@ -46,8 +51,16 @@ export default class extends Controller {
   // ──────────────────────────────────────────────
 
   scheduleAutoSave() {
+    this._autoResize();
     clearTimeout(this._saveTimer);
     this._saveTimer = setTimeout(() => this.saveContent(), 1000);
+  }
+
+  _autoResize() {
+    const ta = this.textareaTarget;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = ta.scrollHeight + "px";
   }
 
   async saveContent() {
