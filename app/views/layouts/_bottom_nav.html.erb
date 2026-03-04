@@ -1,0 +1,22 @@
+<%# Mobile bottom navigation bar — visible on screens < 769px %>
+<nav class="bottom-nav" aria-label="Main navigation">
+  <%= link_to root_path, class: "bottom-nav-item #{'active' if controller_name == 'dashboard'}" do %>
+    <%= heroicon(:squares_2x2, style: 'width: 20px; height: 20px;') %>
+    <span>Home</span>
+  <% end %>
+
+  <%= link_to documents_path, class: "bottom-nav-item #{'active' if controller_name == 'documents'}" do %>
+    <%= heroicon(:document_text, style: 'width: 20px; height: 20px;') %>
+    <span>Docs</span>
+  <% end %>
+
+  <%= link_to tasks_path, class: "bottom-nav-item #{'active' if controller_name == 'tasks'}" do %>
+    <%= heroicon(:clipboard, style: 'width: 20px; height: 20px;') %>
+    <span>Tasks</span>
+  <% end %>
+
+  <%= link_to calendar_path, class: "bottom-nav-item #{'active' if controller_name.in?(%w[calendars calendar_events])}" do %>
+    <%= heroicon(:calendar, style: 'width: 20px; height: 20px;') %>
+    <span>Events</span>
+  <% end %>
+</nav>

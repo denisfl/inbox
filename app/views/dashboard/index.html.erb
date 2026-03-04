@@ -5,7 +5,6 @@
   <%# ── Greeting ──────────────────────────────────────────────────────────── %>
   <div class="dash-greeting">
     <div class="dash-greeting-date"><%= Date.current.strftime("%A · %B %-d, %Y") %></div>
-    <div class="dash-greeting-title"><%= greeting_text %> — <%= @greeting_subtitle %></div>
   </div>
 
   <%# ── Main grid ─────────────────────────────────────────────────────────── %>
@@ -49,14 +48,14 @@
 
       </div>
 
-      <%# ── Recent notes ── %>
+      <%# ── Recent Documents ── %>
       <div class="panel">
         <div class="panel-header">
           <div class="panel-title">
             <%= heroicon(:document_text, style: 'width: 14px; height: 14px;') %>
-            Recent Notes
+            Recent Documents
           </div>
-          <%= link_to documents_path, class: "panel-action" do %>All notes →<% end %>
+          <%= link_to new_note_path, class: "panel-action", data: { turbo: false } do %><%= heroicon(:plus, style: 'width: 12px; height: 12px;') %> Add document<% end %>
         </div>
         <div>
           <% @recent_documents.each do |doc| %>
@@ -100,7 +99,7 @@
     <div class="dash-right">
 
       <%# ── Mini Calendar ── %>
-      <div class="panel">
+      <div class="panel panel-calendar">
         <div class="panel-header">
           <div class="panel-title">
             <%= heroicon(:calendar, style: 'width: 13px; height: 13px;') %>
@@ -160,7 +159,7 @@
             <%= heroicon(:calendar, style: 'width: 13px; height: 13px;') %>
             Events
           </div>
-          <%= link_to calendar_path, class: "panel-action" do %>Calendar →<% end %>
+          <%= link_to new_calendar_event_path, class: "panel-action" do %><%= heroicon(:plus, style: 'width: 12px; height: 12px;') %> Add Event<% end %>
         </div>
         <div class="timeline-list">
           <% has_any_events = @events_today.any? || @events_tomorrow.any? || @events_week.any? || @events_next_week.any? %>
@@ -317,11 +316,6 @@
   color: var(--color-text-tertiary);
   margin-bottom: 4px;
 }
-.dash-greeting-title {
-  font-size: var(--text-xl);
-  font-weight: var(--font-bold);
-  color: var(--color-text-primary);
-}
 
 /* ── Main grid ── */
 .dash-grid {
@@ -362,13 +356,15 @@
 }
 .panel-action {
   font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
   letter-spacing: 0.04em;
   color: var(--color-text-tertiary);
   text-decoration: none;
   transition: color var(--transition-fast);
-  white-space: nowrap;
+  display: inline-flex;
+  gap: var(--spacing-sm);
+  align-items: center;
 }
 .panel-action:hover { color: var(--color-primary); }
 
@@ -744,8 +740,8 @@
 }
 
 @media (max-width: 768px) {
-  .dash-greeting-title {
-    font-size: var(--text-lg);
+  .panel-calendar {
+    display: none;
   }
 }
 </style>

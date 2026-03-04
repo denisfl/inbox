@@ -176,7 +176,6 @@
   .simple-editor-container {
     max-width: 800px;
     margin: 0 auto;
-    min-height: 100vh;
     display: flex;
     flex-direction: column;
     background: var(--color-bg-primary);
@@ -189,10 +188,7 @@
     justify-content: space-between;
     padding: var(--spacing-sm) var(--spacing-lg);
     border-bottom: 1px solid var(--color-border);
-    position: sticky;
-    top: 0;
     background: var(--color-bg-primary);
-    z-index: var(--z-sticky);
   }
 
   .simple-editor-header-left,
@@ -271,17 +267,16 @@
 
   /* Body */
   .simple-editor-body {
-    flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: calc(100vh - 16rem);
     padding: var(--spacing-md) var(--spacing-xl) var(--spacing-2xl);
   }
 
   /* Textarea */
   .simple-editor-textarea {
-    flex: 1;
     width: 100%;
-    min-height: calc(100vh - 200px);
+    min-height: calc(100vh - 20rem);
     font-family: var(--font-mono);
     font-size: var(--text-sm);
     line-height: 1.7;
@@ -290,6 +285,7 @@
     border: none;
     outline: none;
     resize: none;
+    overflow: hidden;
     padding: 0;
     box-sizing: border-box;
   }
@@ -300,7 +296,7 @@
 
   /* Preview pane */
   .simple-editor-preview {
-    min-height: calc(100vh - 200px);
+    min-height: 200px;
     line-height: 1.7;
     word-break: break-word;
   }
@@ -446,5 +442,12 @@
     .simple-editor-body { padding: var(--spacing-sm) var(--spacing-md) var(--spacing-xl); }
     .simple-editor-title { font-size: var(--text-xl); }
     .simple-editor-tags { padding: 0 var(--spacing-md); }
+
+    /* Textarea fills remaining screen space:
+       100dvh - content-padding(32px) - editor-header(40px)
+       - title(48px) - tags(32px) - body-padding(40px) - bottom-nav(56px) */
+    .simple-editor-textarea {
+      min-height: calc(100dvh - 248px - var(--bottom-nav-height, 56px));
+    }
   }
 </style>

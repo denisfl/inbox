@@ -31,19 +31,6 @@
   </head>
 
     <body class="antialiased" data-controller="pwa keyboard sidebar">
-    <%# ── Mobile top bar (visible < 769px) ── %>
-    <div class="mobile-topbar">
-      <button class="btn btn-icon" data-action="click->sidebar#toggle" aria-label="Menu">
-        <%= heroicon(:bars_3, style: 'width: 20px; height: 20px;') %>
-      </button>
-      <%= link_to root_path, class: "sidebar-logo" do %>
-        <%= heroicon(:inbox, style: 'width: 1.25rem; height: 1.25rem;') %>
-        <span>Inbox</span>
-      <% end %>
-      <%= link_to new_note_path, class: "btn btn-primary btn-sm", data: { turbo: false } do %>
-        <%= heroicon(:plus, style: 'width: 14px; height: 14px;') %>
-      <% end %>
-    </div>
 
     <div class="app-layout">
       <%# ── Global sidebar ── %>
@@ -59,6 +46,9 @@
         </div>
       </div>
     </div>
+
+    <%# ── Mobile bottom navigation ── %>
+    <%= render "layouts/bottom_nav" %>
 
     <%# PWA Update Button (shown when new version available) %>
     <div class="pwa-update-banner hidden" data-pwa-target="updateButton">
