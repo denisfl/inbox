@@ -86,10 +86,10 @@
 
 <style>
   .file-block {
-    padding: 16px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    background: #f9f9f9;
+    padding: var(--spacing-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-secondary);
   }
 
   .file-info {
@@ -135,7 +135,7 @@
   }
 
   .audio-btn-play:hover {
-    background: var(--color-primary-dark, #1d4ed8);
+    background: var(--color-primary-hover);
   }
 
   .audio-progress-bar {
@@ -217,14 +217,14 @@
   }
 
   .audio-filename {
-    font-size: 14px;
-    color: #666;
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
     word-break: break-all;
     overflow-wrap: anywhere;
   }
 
   .file-link {
-    color: #2563eb;
+    color: var(--color-primary);
     text-decoration: none;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -237,13 +237,13 @@
   }
 
   .file-icon {
-    color: #666;
+    color: var(--color-text-tertiary);
     flex-shrink: 0;
   }
 
   .file-size {
-    color: #999;
-    font-size: 14px;
+    color: var(--color-text-tertiary);
+    font-size: var(--text-sm);
     white-space: nowrap;
   }
 

@@ -174,7 +174,7 @@
 
 <style>
   .simple-editor-container {
-    max-width: 800px;
+    max-width: 760px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -186,7 +186,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--spacing-sm) var(--spacing-lg);
+    height: 48px;
+    padding: 0 28px;
     border-bottom: 1px solid var(--color-border);
     background: var(--color-bg-primary);
   }
@@ -204,8 +205,8 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: var(--radius-md);
+    padding: 5px 10px;
+    border-radius: var(--radius-base);
     color: var(--color-text-tertiary);
     border: 1px solid var(--color-border);
     background: none;
@@ -221,7 +222,7 @@
   /* Preview toggle button */
   .simple-editor-preview-btn {
     font-size: var(--text-xs);
-    padding: var(--spacing-xs) var(--spacing-sm);
+    padding: 5px 12px;
   }
 
   /* Delete button */
@@ -230,8 +231,8 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: var(--radius-md);
+    padding: 5px 10px;
+    border-radius: var(--radius-base);
     color: var(--color-text-tertiary);
     border: 1px solid var(--color-border);
     background: none;
@@ -246,12 +247,14 @@
 
   /* Title */
   .simple-editor-title-wrapper {
-    padding: var(--spacing-lg) var(--spacing-xl) 0;
+    padding: var(--spacing-xl) 40px 0;
   }
 
   .simple-editor-title {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-bold);
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: var(--font-black);
+    letter-spacing: -0.03em;
     line-height: 1.25;
     margin: 0;
     padding: var(--spacing-xs) 0;
@@ -270,7 +273,7 @@
     display: flex;
     flex-direction: column;
     min-height: calc(100vh - 16rem);
-    padding: var(--spacing-md) var(--spacing-xl) var(--spacing-2xl);
+    padding: var(--spacing-md) 40px 60px;
   }
 
   /* Textarea */
@@ -431,16 +434,16 @@
 
   /* ── Tag input in editor ── */
   .simple-editor-tags {
-    padding: 0 var(--spacing-lg);
+    padding: 0 40px;
     margin-bottom: var(--spacing-sm);
   }
 
   /* Responsive */
   @media (max-width: 640px) {
-    .simple-editor-header { padding: var(--spacing-sm) var(--spacing-md); }
+    .simple-editor-header { padding: 0 var(--spacing-md); }
     .simple-editor-title-wrapper { padding: var(--spacing-md) var(--spacing-md) 0; }
     .simple-editor-body { padding: var(--spacing-sm) var(--spacing-md) var(--spacing-xl); }
-    .simple-editor-title { font-size: var(--text-xl); }
+    .simple-editor-title { font-size: 22px; font-weight: 800; }
     .simple-editor-tags { padding: 0 var(--spacing-md); }
 
     /* Textarea fills remaining screen space:

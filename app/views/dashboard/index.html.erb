@@ -1,113 +1,112 @@
 <% content_for :title, "Inbox — Dashboard" %>
 
-<div class="dashboard">
+<div class="dash-wrap">
 
-  <%# ── Greeting ──────────────────────────────────────────────────────────── %>
-  <div class="dash-greeting">
-    <div class="dash-greeting-date"><%= Date.current.strftime("%A · %B %-d, %Y") %></div>
-  </div>
+  <%# ── Date stamp ── %>
+  <div class="dash-datestamp"><%= Date.current.strftime("%A · %B %-d, %Y") %></div>
 
-  <%# ── Main grid ─────────────────────────────────────────────────────────── %>
-  <div class="dash-grid">
+  <%# ── Two-column layout ── %>
+  <div class="dash-cols">
 
-    <%# ════════ LEFT COLUMN ════════ %>
-    <div class="dash-left">
+    <%# ════════ LEFT: tasks + docs ════════ %>
+    <div class="dash-main">
 
-      <%# ── Tasks today ── %>
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <%= heroicon(:clipboard, style: 'width: 14px; height: 14px;') %>
-            Today's Tasks
-            <span style="font-family:var(--font-mono);font-size:11px;font-weight:400;color:var(--color-text-tertiary)">(<%= @tasks_today.size %>)</span>
+      <%# ── Today's Tasks ── %>
+      <section class="dash-section">
+        <div class="dash-section-head">
+          <div class="dash-section-left">
+            <svg class="progress-ring-svg" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="var(--color-border)" stroke-width="2.5"/>
+              <% total = @tasks_today.size + @tasks_completed_today.size
+                 done = @tasks_completed_today.size
+                 circumference = 56.5
+                 offset = total > 0 ? circumference * (1 - done.to_f / total) : circumference %>
+              <circle cx="12" cy="12" r="9" fill="none" stroke="var(--color-primary)" stroke-width="2.5"
+                stroke-dasharray="<%= circumference %>" stroke-dashoffset="<%= offset.round(1) %>"
+                style="transform:rotate(-90deg);transform-origin:50% 50%"/>
+            </svg>
+            <h2 class="dash-section-title">Today's Tasks</h2>
+            <span class="dash-section-meta"><%= done %> of <%= total %></span>
           </div>
-          <%= link_to tasks_path, class: "panel-action" do %>All tasks →<% end %>
+          <%= link_to tasks_path, class: "dash-section-link" do %>All tasks →<% end %>
         </div>
-        <%= form_with(url: tasks_path, method: :post, class: "task-add") do |f| %>
-          <%= heroicon(:plus, style: 'width: 12px; height: 12px;') %>
-          <input type="text" name="task[title]" class="task-add-input" placeholder="Add task..." autocomplete="off" autofocus>
+
+        <%= form_with(url: tasks_path, method: :post, class: "dash-task-add") do |f| %>
+          <%= heroicon(:plus, style: 'width: 11px; height: 11px;') %>
+          <input type="text" name="task[title]" class="dash-task-add-input" placeholder="Add a task..." autocomplete="off" autofocus>
           <input type="hidden" name="task[due_date]" value="<%= Date.current.to_s %>">
           <input type="hidden" name="redirect_to" value="<%= root_path %>">
         <% end %>
+
         <div class="task-list">
           <% @tasks_today.each do |task| %>
             <%= render "tasks/task", task: task %>
           <% end %>
-
-          <%# Completed today %>
           <% @tasks_completed_today.each do |task| %>
             <%= render "tasks/task", task: task %>
           <% end %>
-
           <% if @tasks_today.empty? && @tasks_completed_today.empty? %>
             <%= render "shared/empty_state",
                        icon: :check_circle,
                        title: "No tasks for today" %>
           <% end %>
         </div>
-
-      </div>
+      </section>
 
       <%# ── Recent Documents ── %>
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <%= heroicon(:document_text, style: 'width: 14px; height: 14px;') %>
-            Recent Documents
+      <section class="dash-section">
+        <div class="dash-section-head">
+          <div class="dash-section-left">
+            <h2 class="dash-section-title">Recent Documents</h2>
+            <span class="dash-section-meta"><%= @sidebar_counts[:documents] %> total</span>
           </div>
-          <%= link_to new_note_path, class: "panel-action", data: { turbo: false } do %><%= heroicon(:plus, style: 'width: 12px; height: 12px;') %> Add document<% end %>
+          <%= link_to documents_path, class: "dash-section-link" do %>All documents →<% end %>
         </div>
-        <div>
-          <% @recent_documents.each do |doc| %>
-            <%
-              preview_text = nil
-              text_block = doc.blocks.find { |b| b.block_type == 'text' }
-              if text_block && text_block.content.present?
-                begin
-                  data = JSON.parse(text_block.content)
-                  raw = data['text'] || data[:text]
-                  preview_text = raw.truncate(80) if raw.present? && raw != doc.title
-                rescue JSON::ParserError
-                end
+
+        <% @recent_documents.each do |doc| %>
+          <%
+            preview_text = nil
+            text_block = doc.blocks.find { |b| b.block_type == 'text' }
+            if text_block && text_block.content.present?
+              begin
+                data = JSON.parse(text_block.content)
+                raw = data['text'] || data[:text]
+                preview_text = raw.truncate(80) if raw.present? && raw != doc.title
+              rescue JSON::ParserError
               end
-            %>
-            <%= link_to edit_document_path(doc), class: "note-row" do %>
-              <div class="note-row-info">
-                <div class="note-row-title"><%= doc.title.truncate(50) %></div>
-                <% if preview_text %>
-                  <div class="note-row-preview"><%= preview_text %></div>
-                <% end %>
-              </div>
-              <div class="note-row-meta">
-                <span class="note-time"><%= time_ago_short(doc.created_at) %></span>
-              </div>
+            end
+          %>
+          <%= link_to edit_document_path(doc), class: "dash-doc" do %>
+            <span class="dash-doc-title"><%= doc.title.truncate(50) %></span>
+            <% if preview_text %>
+              <span class="dash-doc-preview"><%= preview_text %></span>
             <% end %>
+            <span class="dash-doc-time"><%= time_ago_short(doc.created_at) %></span>
           <% end %>
+        <% end %>
 
-          <% if @recent_documents.empty? %>
-            <%= render "shared/empty_state",
-                       icon: :document_text,
-                       title: "No notes yet",
-                       description: "Send something to Telegram or create a new note" %>
-          <% end %>
-        </div>
-      </div>
+        <% if @recent_documents.empty? %>
+          <%= render "shared/empty_state",
+                     icon: :document_text,
+                     title: "No notes yet",
+                     description: "Send something to Telegram or create a new note" %>
+        <% end %>
+      </section>
 
-    </div><%# .dash-left %>
+    </div><%# .dash-main %>
 
-    <%# ════════ RIGHT COLUMN ════════ %>
-    <div class="dash-right">
+    <%# ════════ RIGHT: calendar + events + activity ════════ %>
+    <div class="dash-aside">
 
       <%# ── Mini Calendar ── %>
-      <div class="panel panel-calendar">
-        <div class="panel-header">
-          <div class="panel-title">
-            <%= heroicon(:calendar, style: 'width: 13px; height: 13px;') %>
-            <%= @cal_date.strftime("%B %Y") %>
+      <section class="dash-section dash-section--aside panel-calendar">
+        <div class="dash-section-head">
+          <div class="dash-section-left">
+            <h2 class="dash-section-title"><%= @cal_date.strftime("%B %Y") %></h2>
           </div>
-          <div style="display:flex;gap:2px">
-            <%= link_to root_path(cal_month: (@cal_date - 1.month).strftime("%Y-%m")), class: "mini-cal-nav-btn" do %><%= heroicon(:chevron_left, style: 'width: 12px; height: 12px;') %><% end %>
-            <%= link_to root_path(cal_month: (@cal_date + 1.month).strftime("%Y-%m")), class: "mini-cal-nav-btn" do %><%= heroicon(:chevron_right, style: 'width: 12px; height: 12px;') %><% end %>
+          <div style="display:flex;gap:3px">
+            <%= link_to root_path(cal_month: (@cal_date - 1.month).strftime("%Y-%m")), class: "cal-nav-btn" do %><%= heroicon(:chevron_left, style: 'width: 12px; height: 12px;') %><% end %>
+            <%= link_to root_path(cal_month: (@cal_date + 1.month).strftime("%Y-%m")), class: "cal-nav-btn" do %><%= heroicon(:chevron_right, style: 'width: 12px; height: 12px;') %><% end %>
           </div>
         </div>
         <div class="mini-cal">
@@ -126,12 +125,10 @@
               prev_month_end = @cal_month_start - 1.day
             %>
 
-            <%# Previous month trailing days %>
             <% first_wday.times do |i| %>
               <div class="cal-day other-month"><%= prev_month_end.day - first_wday + i + 1 %></div>
             <% end %>
 
-            <%# Current month days %>
             <% (1..days_in_month).each do |day| %>
               <%
                 is_today = day == @cal_date.day && @cal_month_start.month == Date.current.month && @cal_month_start.year == Date.current.year
@@ -143,146 +140,124 @@
               <div class="<%= classes.join(' ') %>"><%= day %></div>
             <% end %>
 
-            <%# Next month leading days %>
             <% remaining = (7 - (first_wday + days_in_month) % 7) % 7 %>
             <% remaining.times do |i| %>
               <div class="cal-day other-month"><%= i + 1 %></div>
             <% end %>
           </div>
         </div>
-      </div>
+      </section>
 
-      <%# ── Events (unified: today + upcoming) ── %>
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <%= heroicon(:calendar, style: 'width: 13px; height: 13px;') %>
-            Events
+      <%# ── Events ── %>
+      <section class="dash-section dash-section--aside">
+        <div class="dash-section-head">
+          <div class="dash-section-left">
+            <h2 class="dash-section-title">Events</h2>
           </div>
-          <%= link_to new_calendar_event_path, class: "panel-action" do %><%= heroicon(:plus, style: 'width: 12px; height: 12px;') %> Add Event<% end %>
+          <%= link_to new_calendar_event_path, class: "dash-section-link" do %>+ Add<% end %>
         </div>
-        <div class="timeline-list">
-          <% has_any_events = @events_today.any? || @events_tomorrow.any? || @events_week.any? || @events_next_week.any? %>
 
-          <% if @events_today.any? %>
-            <div class="tl-section-label">Today</div>
-            <% @events_today.each do |event| %>
-              <div class="tl-item">
-                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
-                <div class="tl-time"><%= event.time_label %></div>
-                <div class="tl-info">
-                  <div class="tl-title"><%= event.all_day? ? "All day: #{event.title}" : event.title %></div>
-                  <% if event.duration_label %>
-                    <div class="tl-dur"><%= event.duration_label %></div>
-                  <% end %>
-                </div>
-                <% badge = event_source_badge(event) %>
-                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
-              </div>
-            <% end %>
-          <% end %>
+        <% has_any_events = @events_today.any? || @events_tomorrow.any? || @events_week.any? || @events_next_week.any? %>
 
-          <% if @events_tomorrow.any? %>
-            <div class="tl-section-label">Tomorrow</div>
-            <% @events_tomorrow.each do |event| %>
-              <div class="tl-item">
-                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
-                <div class="tl-time"><%= event.time_label %></div>
-                <div class="tl-info">
-                  <div class="tl-title"><%= event.all_day? ? "All day: #{event.title}" : event.title %></div>
-                  <% if event.duration_label %>
-                    <div class="tl-dur"><%= event.duration_label %></div>
-                  <% end %>
-                </div>
-                <% badge = event_source_badge(event) %>
-                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
-              </div>
-            <% end %>
-          <% end %>
-
-          <% if @events_week.any? %>
-            <div class="tl-section-label">This week</div>
-            <% @events_week.each do |event| %>
-              <div class="tl-item">
-                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
-                <div class="tl-time"><%= event.time_label %></div>
-                <div class="tl-info">
-                  <div class="tl-title"><%= event.title %></div>
-                  <div class="tl-dur"><%= event.duration_label %><%= " · #{event.starts_at.strftime('%a %b %-d')}" %></div>
-                </div>
-                <% badge = event_source_badge(event) %>
-                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
-              </div>
-            <% end %>
-          <% end %>
-
-          <% if @events_next_week.any? %>
-            <div class="tl-section-label">Next week</div>
-            <% @events_next_week.each do |event| %>
-              <div class="tl-item">
-                <div class="tl-bar" style="background:<%= event.display_color %>"></div>
-                <div class="tl-time"><%= event.time_label %></div>
-                <div class="tl-info">
-                  <div class="tl-title"><%= event.title %></div>
-                  <div class="tl-dur"><%= event.duration_label %><%= " · #{event.starts_at.strftime('%a %b %-d')}" %></div>
-                </div>
-                <% badge = event_source_badge(event) %>
-                <div class="<%= badge[:class] %>"><%= badge[:text] %></div>
-              </div>
-            <% end %>
-          <% end %>
-
-          <% unless has_any_events %>
-            <%= render "shared/empty_state",
-                       icon: :calendar,
-                       title: "No events scheduled" %>
-          <% end %>
-        </div>
-      </div>
-
-      <%# ── Activity (desktop only) ── %>
-      <div class="panel panel-activity">
-        <div class="panel-header">
-          <div class="panel-title">
-            <%= heroicon(:chart_bar, style: 'width: 13px; height: 13px;') %>
-            Activity
-          </div>
-        </div>
-        <div>
-          <% @activities.each do |act| %>
-            <div class="activity-item">
-              <div class="activity-icon <%= "activity-icon--#{act[:icon_type]}" %>">
-                <% case act[:icon_type] %>
-                <% when :telegram %>
-                  <%= heroicon(:paper_airplane, style: 'width: 11px; height: 11px;') %>
-                <% when :task_done %>
-                  <%= heroicon(:check_circle, style: 'width: 11px; height: 11px;') %>
-                <% when :task_new %>
-                  <%= heroicon(:plus_circle, style: 'width: 11px; height: 11px;') %>
-                <% when :voice %>
-                  <%= heroicon(:microphone, style: 'width: 11px; height: 11px;') %>
-                <% when :calendar %>
-                  <%= heroicon(:calendar, style: 'width: 11px; height: 11px;') %>
-                <% else %>
-                  <%= heroicon(:document_text, style: 'width: 11px; height: 11px;') %>
+        <% if @events_today.any? %>
+          <div class="dash-ev-group">Today</div>
+          <% @events_today.each do |event| %>
+            <div class="dash-ev">
+              <div class="dash-ev-bar" style="background:<%= event.display_color %>"></div>
+              <div class="dash-ev-time"><%= event.time_label %></div>
+              <div class="dash-ev-body">
+                <div class="dash-ev-title"><%= event.all_day? ? "All day: #{event.title}" : event.title %></div>
+                <% if event.duration_label %>
+                  <div class="dash-ev-sub"><%= event.duration_label %></div>
                 <% end %>
               </div>
-              <div class="activity-text"><%= act[:text].html_safe %></div>
-              <div class="activity-time"><%= time_ago_short(act[:time]) %></div>
+              <% badge = event_source_badge(event) %>
+              <span class="<%= badge[:class] %>"><%= badge[:text] %></span>
             </div>
           <% end %>
+        <% end %>
 
-          <% if @activities.empty? %>
-            <%= render "shared/empty_state",
-                       icon: :chart_bar,
-                       title: "No activity yet" %>
+        <% if @events_tomorrow.any? %>
+          <div class="dash-ev-group">Tomorrow</div>
+          <% @events_tomorrow.each do |event| %>
+            <div class="dash-ev">
+              <div class="dash-ev-bar" style="background:<%= event.display_color %>"></div>
+              <div class="dash-ev-time"><%= event.time_label %></div>
+              <div class="dash-ev-body">
+                <div class="dash-ev-title"><%= event.all_day? ? "All day: #{event.title}" : event.title %></div>
+                <% if event.duration_label %>
+                  <div class="dash-ev-sub"><%= event.duration_label %></div>
+                <% end %>
+              </div>
+              <% badge = event_source_badge(event) %>
+              <span class="<%= badge[:class] %>"><%= badge[:text] %></span>
+            </div>
           <% end %>
-        </div>
-      </div>
+        <% end %>
 
-    </div><%# .dash-right %>
-  </div><%# .dash-grid %>
-</div><%# .dashboard %>
+        <% if @events_week.any? %>
+          <div class="dash-ev-group">This week</div>
+          <% @events_week.each do |event| %>
+            <div class="dash-ev">
+              <div class="dash-ev-bar" style="background:<%= event.display_color %>"></div>
+              <div class="dash-ev-time"><%= event.time_label %></div>
+              <div class="dash-ev-body">
+                <div class="dash-ev-title"><%= event.title %></div>
+                <div class="dash-ev-sub"><%= event.duration_label %><%= " · #{event.starts_at.strftime('%a %b %-d')}" %></div>
+              </div>
+              <% badge = event_source_badge(event) %>
+              <span class="<%= badge[:class] %>"><%= badge[:text] %></span>
+            </div>
+          <% end %>
+        <% end %>
+
+        <% if @events_next_week.any? %>
+          <div class="dash-ev-group">Next week</div>
+          <% @events_next_week.each do |event| %>
+            <div class="dash-ev">
+              <div class="dash-ev-bar" style="background:<%= event.display_color %>"></div>
+              <div class="dash-ev-time"><%= event.time_label %></div>
+              <div class="dash-ev-body">
+                <div class="dash-ev-title"><%= event.title %></div>
+                <div class="dash-ev-sub"><%= event.duration_label %><%= " · #{event.starts_at.strftime('%a %b %-d')}" %></div>
+              </div>
+              <% badge = event_source_badge(event) %>
+              <span class="<%= badge[:class] %>"><%= badge[:text] %></span>
+            </div>
+          <% end %>
+        <% end %>
+
+        <% unless has_any_events %>
+          <%= render "shared/empty_state",
+                     icon: :calendar,
+                     title: "No events scheduled" %>
+        <% end %>
+      </section>
+
+      <%# ── Activity ── %>
+      <section class="dash-section dash-section--aside panel-activity">
+        <div class="dash-section-head">
+          <div class="dash-section-left">
+            <h2 class="dash-section-title">Activity</h2>
+          </div>
+        </div>
+        <% @activities.each do |act| %>
+          <div class="dash-act">
+            <div class="dash-act-dot dash-act-dot--<%= act[:icon_type] %>"></div>
+            <div class="dash-act-text"><%= act[:text].html_safe %></div>
+            <div class="dash-act-time"><%= time_ago_short(act[:time]) %></div>
+          </div>
+        <% end %>
+        <% if @activities.empty? %>
+          <%= render "shared/empty_state",
+                     icon: :chart_bar,
+                     title: "No activity yet" %>
+        <% end %>
+      </section>
+
+    </div><%# .dash-aside %>
+  </div><%# .dash-cols %>
+</div><%# .dash-wrap %>
 
 <%# ── Flash messages ── %>
 <% if flash[:notice] %>
@@ -294,327 +269,321 @@
 
 <style>
 /* ═══════════════════════════════════════════════════════════════════════════
-   DASHBOARD STYLES
+   DASHBOARD STYLES — flat, type-driven layout
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.dashboard {
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;
+/* ── Wrapper ── */
+.dash-wrap {
+margin: 0 auto;
+  padding: 36px 40px 60px;
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--color-bg-primary);
 }
 
-/* ── Greeting ── */
-.dash-greeting {
-  margin-bottom: var(--spacing-lg);
-}
-.dash-greeting-date {
+/* ── Date stamp ── */
+.dash-datestamp {
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-quaternary);
+  margin-bottom: 32px;
+}
+
+/* ── Two-column grid ── */
+.dash-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 0 56px;
+  align-items: start;
+}
+.dash-main { display: flex; flex-direction: column; min-width: 0; }
+.dash-aside { display: flex; flex-direction: column; min-width: 0; }
+
+/* ── Section ── */
+.dash-section {
+  padding-bottom: 40px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--color-border-soft);
+  min-width: 0;
+  overflow: hidden;
+}
+.dash-section:last-child { border-bottom: none; }
+.dash-section--aside {
+  padding-bottom: 28px;
   margin-bottom: 4px;
 }
 
-/* ── Main grid ── */
-.dash-grid {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: var(--spacing-lg);
-  align-items: start;
-  overflow: hidden;
-}
-.dash-left, .dash-right {
+.dash-section-head {
   display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.dash-section-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.progress-ring-svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.dash-section-title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+.dash-section-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-quaternary);
+}
+.dash-section-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--transition-fast);
+}
+.dash-section-link:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
 }
 
-/* ── Panel (card wrapper) ── */
-.panel {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-.panel-header {
+/* ── Task add ── */
+.dash-task-add {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--color-border);
+  gap: 8px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--color-border-soft);
+  color: var(--color-text-quaternary);
+  margin-bottom: 2px;
 }
-.panel-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
+.dash-task-add-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font: 14px var(--font-sans);
   color: var(--color-text-primary);
+  outline: none;
 }
-.panel-action {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  font-weight: var(--font-bold);
-  letter-spacing: 0.04em;
-  color: var(--color-text-tertiary);
-  text-decoration: none;
-  transition: color var(--transition-fast);
-  display: inline-flex;
-  gap: var(--spacing-sm);
-  align-items: center;
+.dash-task-add-input::placeholder {
+  color: var(--color-text-quaternary);
 }
-.panel-action:hover { color: var(--color-primary); }
 
 /* ── Task list (dashboard compact overrides) ── */
 .task-list .task-item-actions {
   display: none;
 }
 
-/* ── Task add form ── */
-.task-add {
+/* ── Doc row ── */
+.dash-doc {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--text-sm);
-  color: var(--color-text-tertiary);
-  cursor: pointer;
-  transition: color var(--transition-fast), background var(--transition-fast);
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border-soft);
   text-decoration: none;
-  border-top: 1px solid var(--color-border);
+  color: inherit;
+  cursor: pointer;
+  border-radius: 4px;
+  margin: 0 -6px;
+  padding-left: 6px;
+  padding-right: 6px;
+  transition: background var(--transition-fast);
+  min-width: 0;
 }
-.task-add:hover {
-  color: var(--color-primary);
-  background: var(--color-bg-secondary);
-}
-.task-add-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-size: var(--text-sm);
+.dash-doc:last-child { border-bottom: none; }
+.dash-doc:hover { background: var(--color-bg-hover); }
+.dash-doc-title {
+  font-size: 15px;
+  font-weight: 500;
   color: var(--color-text-primary);
-  outline: none;
-  font-family: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 52%;
 }
-.task-add-input::placeholder {
-  color: var(--color-text-tertiary);
+.dash-doc-preview {
+  font-size: 13px;
+  color: var(--color-text-quaternary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+.dash-doc-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-quaternary);
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: 12px;
 }
 
-/* ── Timeline / Event list ── */
-.timeline-list {
-  padding: 0;
-}
-.tl-section-label {
-  padding: 6px 16px 2px;
+/* ── Event group label ── */
+.dash-ev-group {
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-quaternary);
+  padding: 10px 0 4px;
 }
-.tl-item {
+.dash-ev-group:first-of-type { padding-top: 0; }
+
+/* ── Event row ── */
+.dash-ev {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-bottom: 1px solid var(--color-bg-tertiary);
-  font-size: var(--text-sm);
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border-soft);
+  cursor: pointer;
 }
-.tl-item:last-child { border-bottom: none; }
-
-.tl-bar {
+.dash-ev:last-of-type { border-bottom: none; }
+.dash-ev:hover .dash-ev-title { color: var(--color-primary); }
+.dash-ev-bar {
   width: 3px;
-  height: 28px;
   border-radius: 2px;
+  align-self: stretch;
+  min-height: 20px;
   flex-shrink: 0;
 }
-.tl-time {
+.dash-ev-time {
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 600;
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
   min-width: 36px;
   flex-shrink: 0;
 }
-.tl-info { flex: 1; min-width: 0; }
-.tl-title {
-  font-weight: var(--font-medium);
+.dash-ev-body { flex: 1; min-width: 0; overflow: hidden; }
+.dash-ev-title {
+  font-size: 13.5px;
+  font-weight: 500;
   color: var(--color-text-primary);
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  transition: color var(--transition-fast);
 }
-.tl-dur {
-  font-size: 11px;
-  color: var(--color-text-tertiary);
+.dash-ev-sub {
+  font-size: 11.5px;
+  color: var(--color-text-quaternary);
+  margin-top: 1px;
 }
+
+/* Event source badges (reused from tl-src) */
 .tl-src {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 700;
   padding: 2px 6px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   flex-shrink: 0;
-  letter-spacing: 0.02em;
 }
 .tl-src.gcal {
-  background: #e8f0fe;
-  color: #1a73e8;
-  border: 1px solid #c5d9f7;
+  background: var(--color-blue-soft);
+  color: var(--color-blue);
+  border: 1px solid color-mix(in srgb, var(--color-blue) 25%, var(--color-border));
 }
 .tl-src.manual {
   background: var(--color-bg-tertiary);
   color: var(--color-text-tertiary);
   border: 1px solid var(--color-border);
 }
+.tl-src.ical {
+  background: var(--color-blue-soft);
+  color: var(--color-blue);
+  border: 1px solid color-mix(in srgb, var(--color-blue) 25%, var(--color-border));
+}
 
-/* ── Recent notes ── */
-.note-row {
+/* ── Activity ── */
+.dash-act {
   display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-bottom: 1px solid var(--color-bg-tertiary);
-  text-decoration: none;
-  color: inherit;
-  transition: background var(--transition-fast);
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--color-border-soft);
+  font-size: var(--text-xs);
+  min-width: 0;
 }
-.note-row:hover { background: var(--color-bg-secondary); }
-.note-row:last-child { border-bottom: none; }
-
-.note-row-info { flex: 1; min-width: 0; }
-.note-row-title {
-  font-weight: var(--font-medium);
-  font-size: var(--text-sm);
-  color: var(--color-text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.note-row-preview {
-  font-size: 13px;
-  color: var(--color-text-tertiary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-top: 1px;
-}
-.note-row-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
+.dash-act:last-child { border-bottom: none; }
+.dash-act-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   flex-shrink: 0;
 }
-.note-time {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-text-tertiary);
-}
-
-/* ── Quick Capture ── */
-.quick-capture {
-  background: var(--color-bg-primary);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-md);
-}
-.qc-label {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary);
-  margin-bottom: var(--spacing-sm);
-}
-.qc-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
-.qc-input {
-  width: 100%;
-  padding: 8px 10px;
-  font-size: var(--text-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-base);
-  background: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-  outline: none;
-  transition: border-color var(--transition-fast);
-}
-.qc-input:focus {
-  border-color: var(--color-primary);
-  background: var(--color-bg-primary);
-}
-.qc-types {
-  display: flex;
-  gap: 4px;
-}
-.qc-type {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 3px 10px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-secondary);
-  color: var(--color-text-tertiary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-.qc-type:hover {
-  border-color: var(--color-border-hover);
+.dash-act-dot--telegram,
+.dash-act-dot--task_new,
+.dash-act-dot--calendar { background: var(--color-blue); }
+.dash-act-dot--task_done { background: var(--color-primary); }
+.dash-act-dot--voice { background: var(--color-accent); }
+.dash-act-text {
+  flex: 1;
   color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.qc-type.active {
-  background: var(--color-text-primary);
-  color: var(--color-bg-primary);
-  border-color: var(--color-text-primary);
+.dash-act-text strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+.dash-act-time {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--color-text-quaternary);
+  flex-shrink: 0;
 }
 
 /* ── Mini calendar ── */
-.mini-cal { padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md); }
+.mini-cal { padding: 10px 14px 14px; }
 .mini-cal .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 0;
   text-align: center;
+  margin-top: 8px;
 }
 .cal-dow {
-  font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
-  color: var(--color-text-tertiary);
-  padding: 4px 0;
+  color: var(--color-text-quaternary);
+  padding: 0 0 5px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 .cal-day {
   font-size: 12px;
-  padding: 4px 0;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-primary);
-  cursor: default;
+  padding: 4px 1px;
+  border-radius: 4px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
   position: relative;
-  font-weight: var(--font-medium);
+  transition: background var(--transition-fast);
 }
-.cal-day.other-month {
-  color: var(--color-text-tertiary);
-  opacity: 0.4;
-}
+.cal-day:hover { background: var(--color-bg-secondary); }
+.cal-day.other-month { color: var(--color-text-quaternary); }
 .cal-day.today {
   background: var(--color-primary);
   color: white;
   font-weight: var(--font-bold);
-  border-radius: var(--radius-base);
+  border-radius: 6px;
 }
 .cal-day.has-event::after {
   content: '';
@@ -622,80 +591,29 @@
   bottom: 1px;
   left: 50%;
   transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
+  width: 3px;
+  height: 3px;
   border-radius: var(--radius-full);
   background: var(--color-primary);
 }
 .cal-day.today.has-event::after {
-  background: white;
+  background: color-mix(in srgb, var(--color-bg-primary) 60%, transparent);
 }
-.mini-cal-nav-btn {
-  width: 22px;
-  height: 22px;
+.cal-nav-btn {
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: 4px;
   background: var(--color-bg-secondary);
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
   cursor: pointer;
-  font-size: 12px;
-  transition: all var(--transition-fast);
+  transition: background var(--transition-fast);
   text-decoration: none;
 }
-.mini-cal-nav-btn:hover {
-  background: var(--color-bg-hover);
-  color: var(--color-text-primary);
-}
-
-/* ── Activity feed ── */
-.activity-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-bottom: 1px solid var(--color-bg-tertiary);
-  font-size: var(--text-sm);
-}
-.activity-item:last-child { border-bottom: none; }
-
-.activity-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-base);
-  background: var(--color-bg-tertiary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.activity-icon--telegram { background: #dce8f7; }
-.activity-icon--task_done { background: #d8eddf; }
-.activity-icon--task_new { background: #e0eaff; }
-.activity-icon--voice { background: #d8eddf; }
-
-.activity-text {
-  flex: 1;
-  min-width: 0;
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.activity-text strong {
-  color: var(--color-text-primary);
-  font-weight: var(--font-semibold);
-}
-.activity-time {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-text-tertiary);
-  flex-shrink: 0;
-}
+.cal-nav-btn:hover { background: var(--color-border); }
 
 /* ── Flash messages ── */
 .flash-notice, .flash-alert {
@@ -709,14 +627,8 @@
   z-index: var(--z-tooltip);
   animation: flash-in 0.3s ease, flash-out 0.3s ease 3s forwards;
 }
-.flash-notice {
-  background: var(--color-secondary);
-  color: white;
-}
-.flash-alert {
-  background: var(--color-danger);
-  color: white;
-}
+.flash-notice { background: var(--color-secondary); color: white; }
+.flash-alert { background: var(--color-danger); color: white; }
 @keyframes flash-in {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -728,10 +640,10 @@
 
 /* ── Responsive ── */
 @media (max-width: 1100px) {
-  .dash-grid {
+  .dash-cols {
     grid-template-columns: 100%;
   }
-  .dash-right {
+  .dash-aside {
     order: -1;
   }
   .panel-activity {
@@ -740,6 +652,9 @@
 }
 
 @media (max-width: 768px) {
+  .dash-wrap {
+    padding: 20px 16px 40px;
+  }
   .panel-calendar {
     display: none;
   }
