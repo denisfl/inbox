@@ -32,10 +32,17 @@ class ApplicationController < ActionController::Base
       documents: Document.count,
       tasks:     Task.active.count
     }
-    @sidebar_tags = Tag.joins(:document_tags)
-                       .select("tags.*, COUNT(document_tags.id) as docs_count")
+    @sidebar_tags = Tag.left_joins(:document_tags, :task_tags, :calendar_event_tags)
+                       .select(
+                         "tags.*",
+                         "COUNT(DISTINCT document_tags.id) as docs_count",
+                         "COUNT(DISTINCT task_tags.id) as tasks_count",
+                         "COUNT(DISTINCT calendar_event_tags.id) as events_count",
+                         "COUNT(DISTINCT document_tags.id) + COUNT(DISTINCT task_tags.id) + COUNT(DISTINCT calendar_event_tags.id) as total_count"
+                       )
                        .group("tags.id")
-                       .order("docs_count DESC")
+                       .having("COUNT(DISTINCT document_tags.id) + COUNT(DISTINCT task_tags.id) + COUNT(DISTINCT calendar_event_tags.id) > 0")
+                       .order("total_count DESC")
                        .limit(10)
   end
 

@@ -19,38 +19,16 @@
     preserve: {}
   } %>
 
-  <% if @documents.any? %>
-    <section class="tag-section">
-      <h2 class="tag-section-title">Documents (<%= @documents.count %>)</h2>
-      <div class="documents-grid">
-        <%= render partial: "documents/card", collection: @documents, as: :document %>
-      </div>
-    </section>
-  <% end %>
+  <%= render "shared/tagged_items",
+             documents: @documents,
+             tasks: @tasks,
+             calendar_events: @calendar_events %>
 
-  <% if @tasks.any? %>
-    <section class="tag-section">
-      <h2 class="tag-section-title">Tasks (<%= @tasks.count %>)</h2>
-      <div class="task-list">
-        <% @tasks.each do |task| %>
-          <%= render partial: "tasks/task", locals: { task: task } %>
-        <% end %>
-      </div>
-    </section>
-  <% end %>
-
-  <% if @documents.empty? && @tasks.empty? %>
-    <div class="empty-state">
-      <%= heroicon(:funnel, class: 'empty-state-icon') %>
-      <h2 class="empty-state-title">No items match all selected tags</h2>
-      <p class="empty-state-description">
-        Try removing a tag filter to broaden the results.
-      </p>
-      <div class="empty-state-actions">
-        <%= link_to tags_path, class: "btn btn-secondary" do %>
-          Clear all tags
-        <% end %>
-      </div>
-    </div>
+  <% if @documents.empty? && @tasks.empty? && @calendar_events.empty? %>
+    <%= render "shared/empty_state",
+               icon: :funnel,
+               title: "No items match all selected tags",
+               description: "Try removing a tag filter to broaden the results.",
+               actions: capture { content_tag(:div, link_to("Clear all tags", tags_path, class: "btn btn-secondary"), class: "empty-state-actions") } %>
   <% end %>
 </div>

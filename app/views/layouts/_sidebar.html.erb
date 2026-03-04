@@ -57,7 +57,7 @@
     <% @sidebar_tags.each do |tag| %>
       <%= link_to tag_path(tag.name), class: "nav-item" do %>
         <%= render "shared/tag", tag: tag %>
-        <span class="count"><%= tag.docs_count %></span>
+        <span class="count"><%= tag.total_count > 1000 ? "1000+" : tag.total_count %></span>
       <% end %>
     <% end %>
   <% end %>
