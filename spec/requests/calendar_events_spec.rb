@@ -221,11 +221,9 @@ RSpec.describe "CalendarEvents", type: :request do
       }.to change(CalendarEvent, :count).by(1)
 
       event = CalendarEvent.last
-      # Note: icalendar 2.12 Values::Date inherits DateTime, so is_a?(DateTime) is true
-      # and the all_day detection `is_a?(Date) && !is_a?(DateTime)` always returns false.
-      # The event is still imported correctly with proper start/end times.
       expect(event.source).to eq("ical")
       expect(event.title).to eq("All day event")
+      expect(event.all_day).to eq(true)
 
       temp_file.close
       temp_file.unlink
@@ -323,6 +321,226 @@ RSpec.describe "CalendarEvents", type: :request do
       result = controller.send(:normalize_ical_time, "not-a-time")
 
       expect(result).to be_nil
+    end
+  end
+
+  describe "importing macOS birthday calendar (RRULE:FREQ=YEARLY)" do
+    it "imports birthday events projected to current/next year" do
+      # macOS exports birthdays with old DTSTART + RRULE:FREQ=YEARLY
+      ics_content = <<~ICS
+        BEGIN:VCALENDAR
+        CALSCALE:GREGORIAN
+        PRODID:-//Apple Inc.//macOS 14.5//EN
+        VERSION:2.0
+        BEGIN:VEVENT
+        CREATED:20260225T173927Z
+        DTEND;VALUE=DATE:19840923
+        DTSTAMP:20260304T080617Z
+        DTSTART;VALUE=DATE:19840922
+        RRULE:FREQ=YEARLY
+        SUMMARY:Test Birthday Person
+        UID:birthday-test-uid-1@example.com
+        END:VEVENT
+        END:VCALENDAR
+      ICS
+
+      temp_file = Tempfile.new([ "birthdays", ".ics" ])
+      temp_file.write(ics_content)
+      temp_file.rewind
+
+      file = Rack::Test::UploadedFile.new(temp_file.path, "text/calendar")
+
+      expect {
+        post import_ical_path, params: { ical_file: file }
+      }.to change(CalendarEvent, :count).by(1)
+
+      event = CalendarEvent.last
+      expect(event.title).to eq("Test Birthday Person")
+      expect(event.all_day).to eq(true)
+      expect(event.source).to eq("ical")
+      # Event should be in current or next year, not 1984
+      expect(event.starts_at.year).to be >= Date.current.year
+      expect(event.starts_at.month).to eq(9)
+      expect(event.starts_at.day).to eq(22)
+      # Description should include birth year info
+      expect(event.description).to include("Born: 1984")
+
+      temp_file.close
+      temp_file.unlink
+    end
+
+    it "imports multiple birthday events from one calendar" do
+      ics_content = <<~ICS
+        BEGIN:VCALENDAR
+        VERSION:2.0
+        BEGIN:VEVENT
+        DTSTART;VALUE=DATE:19840922
+        DTEND;VALUE=DATE:19840923
+        RRULE:FREQ=YEARLY
+        SUMMARY:Person A
+        UID:bday-a@example.com
+        END:VEVENT
+        BEGIN:VEVENT
+        DTSTART;VALUE=DATE:19900305
+        DTEND;VALUE=DATE:19900306
+        RRULE:FREQ=YEARLY
+        SUMMARY:Person B
+        UID:bday-b@example.com
+        END:VEVENT
+        BEGIN:VEVENT
+        DTSTART;VALUE=DATE:16040228
+        DTEND;VALUE=DATE:16040229
+        RRULE:FREQ=YEARLY
+        SUMMARY:Person C (no birth year)
+        UID:bday-c@example.com
+        END:VEVENT
+        END:VCALENDAR
+      ICS
+
+      temp_file = Tempfile.new([ "multi_bday", ".ics" ])
+      temp_file.write(ics_content)
+      temp_file.rewind
+
+      file = Rack::Test::UploadedFile.new(temp_file.path, "text/calendar")
+
+      expect {
+        post import_ical_path, params: { ical_file: file }
+      }.to change(CalendarEvent, :count).by(3)
+
+      events = CalendarEvent.order(:starts_at).last(3)
+      events.each do |e|
+        expect(e.starts_at.year).to be >= Date.current.year
+        expect(e.all_day).to eq(true)
+      end
+
+      # Person C (year 1604) should NOT have birth year in description
+      person_c = events.find { |e| e.title.include?("Person C") }
+      expect(person_c.description).to be_nil
+
+      # Person A (year 1984) SHOULD have birth year
+      person_a = events.find { |e| e.title.include?("Person A") }
+      expect(person_a.description).to include("Born: 1984")
+
+      temp_file.close
+      temp_file.unlink
+    end
+  end
+
+  describe "importing timezone-aware events" do
+    it "imports Microsoft Exchange meeting with TZID" do
+      ics_content = <<~ICS
+        BEGIN:VCALENDAR
+        METHOD:REQUEST
+        PRODID:Microsoft Exchange Server 2010
+        VERSION:2.0
+        BEGIN:VTIMEZONE
+        TZID:Central Europe Standard Time
+        BEGIN:STANDARD
+        DTSTART:16010101T030000
+        TZOFFSETFROM:+0200
+        TZOFFSETTO:+0100
+        RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=-1SU;BYMONTH=10
+        END:STANDARD
+        BEGIN:DAYLIGHT
+        DTSTART:16010101T020000
+        TZOFFSETFROM:+0100
+        TZOFFSETTO:+0200
+        RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=-1SU;BYMONTH=3
+        END:DAYLIGHT
+        END:VTIMEZONE
+        BEGIN:VEVENT
+        DTSTART;TZID=Central Europe Standard Time:20260225T113000
+        DTEND;TZID=Central Europe Standard Time:20260225T115000
+        SUMMARY:Team Call
+        UID:ms-exchange-test@example.com
+        STATUS:CONFIRMED
+        LOCATION:Microsoft Teams Meeting
+        END:VEVENT
+        END:VCALENDAR
+      ICS
+
+      temp_file = Tempfile.new([ "exchange", ".ics" ])
+      temp_file.write(ics_content)
+      temp_file.rewind
+
+      file = Rack::Test::UploadedFile.new(temp_file.path, "text/calendar")
+
+      expect {
+        post import_ical_path, params: { ical_file: file }
+      }.to change(CalendarEvent, :count).by(1)
+
+      event = CalendarEvent.last
+      expect(event.title).to eq("Team Call")
+      expect(event.all_day).to eq(false)
+      expect(event.starts_at).to be_present
+      expect(event.ends_at).to be_present
+      expect(event.source).to eq("ical")
+
+      temp_file.close
+      temp_file.unlink
+    end
+
+    it "imports Google Calendar invite with TZID" do
+      ics_content = <<~ICS
+        BEGIN:VCALENDAR
+        PRODID:-//Google Inc//Google Calendar 70.9054//EN
+        VERSION:2.0
+        BEGIN:VTIMEZONE
+        TZID:Asia/Tbilisi
+        BEGIN:STANDARD
+        TZOFFSETFROM:+0400
+        TZOFFSETTO:+0400
+        TZNAME:GMT+4
+        DTSTART:19700101T000000
+        END:STANDARD
+        END:VTIMEZONE
+        BEGIN:VEVENT
+        DTSTART;TZID=Asia/Tbilisi:20260224T140000
+        DTEND;TZID=Asia/Tbilisi:20260224T153000
+        SUMMARY:Interview Call
+        UID:google-cal-test@example.com
+        STATUS:CONFIRMED
+        END:VEVENT
+        END:VCALENDAR
+      ICS
+
+      temp_file = Tempfile.new([ "gcal", ".ics" ])
+      temp_file.write(ics_content)
+      temp_file.rewind
+
+      file = Rack::Test::UploadedFile.new(temp_file.path, "text/calendar")
+
+      expect {
+        post import_ical_path, params: { ical_file: file }
+      }.to change(CalendarEvent, :count).by(1)
+
+      event = CalendarEvent.last
+      expect(event.title).to eq("Interview Call")
+      expect(event.all_day).to eq(false)
+      expect(event.source).to eq("ical")
+
+      temp_file.close
+      temp_file.unlink
+    end
+  end
+
+  describe "ical_date_only? helper" do
+    let(:controller) { CalendarEventsController.new }
+
+    it "returns true for Icalendar::Values::Date" do
+      require "icalendar"
+      dt = Icalendar::Values::Date.new("20260420")
+      expect(controller.send(:ical_date_only?, dt)).to eq(true)
+    end
+
+    it "returns false for Icalendar::Values::DateTime" do
+      require "icalendar"
+      dt = Icalendar::Values::DateTime.new("20260420T100000Z")
+      expect(controller.send(:ical_date_only?, dt)).to eq(false)
+    end
+
+    it "returns false for nil" do
+      expect(controller.send(:ical_date_only?, nil)).to eq(false)
     end
   end
 end
