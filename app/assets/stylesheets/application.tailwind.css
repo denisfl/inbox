@@ -19,7 +19,6 @@ body {
   min-width: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  background: var(--color-bg-secondary);
 }
 
 .main-content {

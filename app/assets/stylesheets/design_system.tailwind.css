@@ -1,38 +1,38 @@
 /* Design System Variables — warm, comfortable, focused */
 :root {
   /* Primary accent — forest green, confident */
-  --color-primary: #2a7a4b;
-  --color-primary-hover: #1f5e38;
+  --color-primary: #2d6a4f;
+  --color-primary-hover: #1f5239;
   --color-primary-soft: #eaf4ee;
   --color-primary-dim: #d4e8db;
-  --color-secondary: #2a7a4b; /* Alias for primary green */
-  --color-accent: #b45309; /* Warm amber */
-  --color-danger: #c0392b; /* Deep rose */
+  --color-secondary: #2d6a4f; /* Alias for primary green */
+  --color-accent: #92610a; /* Warm amber */
+  --color-danger: #9b2c2c; /* Deep rose */
   --color-success: var(--color-primary);
 
   /* Supporting colors — used sparingly */
-  --color-blue: #2563c8;
+  --color-blue: #2c5f9e;
   --color-blue-soft: #eef3fc;
   --color-amber-soft: #fef3c7;
   --color-rose-soft: #fdf0ef;
 
   /* Warm neutrals — the whole vibe lives here */
   --color-bg-primary: #ffffff; /* Panels — pure white for readability */
-  --color-bg-secondary: #f5f3ef; /* App background — warm parchment */
-  --color-bg-tertiary: #f5f3ef; /* Inputs, inset areas */
+  --color-bg-secondary: #f0ece4; /* App background — warm parchment */
+  --color-bg-tertiary: #e8e3da; /* Inputs, inset areas */
   --color-bg-hover: #f7f6f3;
-  --color-bg-sidebar: var(--color-bg-secondary);
+  --color-bg-sidebar: #f5f3ef;
 
   /* Text — warm dark, not cold black */
-  --color-text-primary: #1a1614;
-  --color-text-secondary: #4a4540;
-  --color-text-tertiary: #8a8480;
-  --color-text-quaternary: #b8b4b0;
+  --color-text-primary: #1e1a16;
+  --color-text-secondary: #4a4238;
+  --color-text-tertiary: #887e72;
+  --color-text-quaternary: #b0a898;
 
   /* Borders — almost invisible, just enough */
-  --color-border: #e8e4df;
-  --color-border-hover: #b0aca8;
-  --color-border-soft: #f0ede8;
+  --color-border: #ddd8cf;
+  --color-border-hover: #c0bab0;
+  --color-border-soft: #e8e3da;
 
   /* Shadows — warm, not cold grey */
   --shadow-sm:
@@ -102,7 +102,7 @@ body {
   font-size: var(--text-base);
   line-height: 1.55;
   color: var(--color-text-primary);
-  background-color: var(--color-bg-secondary);
+  background-color: var(--color-bg-sidebar);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

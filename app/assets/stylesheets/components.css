@@ -21,6 +21,8 @@
 .task-list {
   padding: 0;
   overflow: hidden;
+  background: var(--color-bg-primary);
+}
 
 /* ── Events list ── */
 .events-list {
