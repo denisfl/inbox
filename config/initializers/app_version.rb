@@ -9,7 +9,7 @@ Rails.application.config.after_initialize do
     `git rev-parse --short HEAD 2>/dev/null`.strip.presence
   }
 
-  full = [version, git_sha.present? ? "(#{git_sha})" : nil].compact.join(" ")
+  full = [ version, git_sha.present? ? "(#{git_sha})" : nil ].compact.join(" ")
 
   Rails.application.config.app_version = full
 end
