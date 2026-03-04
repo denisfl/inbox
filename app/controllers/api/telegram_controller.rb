@@ -10,14 +10,14 @@ module Api
     before_action :validate_user_authorization
 
     def webhook
-      Rails.logger.info("Telegram webhook received: #{params.inspect}")
+      Rails.logger.info("Telegram webhook received")
 
       # Parse raw JSON body directly to avoid params.permit! mass assignment warning
       update_hash = request.raw_post.present? ? JSON.parse(request.raw_post) : {}
-      update = Telegram::Bot::Types::Update.new(update_hash)
 
-      # Process message asynchronously to respond within 60s requirement
-      TelegramMessageHandler.new(update).handle
+      # Respond immediately to prevent Telegram retries (60s timeout).
+      # Process asynchronously via background job.
+      ProcessTelegramUpdateJob.perform_later(update_hash)
 
       head :ok
     rescue StandardError => e
