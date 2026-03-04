@@ -12,7 +12,7 @@ code.hljs {
 }
 
 .hljs {
-  color: #24292e;
+  color: var(--color-text-primary);
   background: var(--color-bg-secondary);
 }
 .hljs-doctag,
@@ -92,7 +92,7 @@ code.hljs {
 /* Code block styling in markdown preview */
 .markdown-preview pre {
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-soft);
   margin: var(--spacing-md) 0;
 }
 
@@ -103,8 +103,8 @@ code.hljs {
 }
 
 .markdown-preview :not(pre) > code {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-base);
   padding: 2px 6px;
   font-family: var(--font-mono);

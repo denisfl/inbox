@@ -9,7 +9,7 @@
     <meta name="application-name" content="Inbox">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="description" content="Capture and organize your thoughts from Telegram">
-    <meta name="theme-color" content="#2563eb">
+    <meta name="theme-color" content="#2a7a4b">
     <meta name="turbo-cache-control" content="no-preview">
     <meta name="app-version" content="<%= Rails.application.config.app_version %>">
     <%= csrf_meta_tags %>
@@ -24,6 +24,11 @@
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <%# Google Fonts: Inter (body), Lato (display), JetBrains Mono (code) %>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
 
     <%# Load design system variables first, then compiled Tailwind CSS, then extras %>
     <%= stylesheet_link_tag "design_system.tailwind", "application", "components", "tasks", "events", "highlight", "tags", "pagy.tailwind", "data-turbo-track": "reload" %>
