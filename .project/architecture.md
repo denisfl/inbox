@@ -58,9 +58,9 @@ Parakeet: v3 (nemo-parakeet-tdt-0.6b-v3 via onnx-asr)
 
 ### AI & ML
 
-| Component               | Technology                 | Version | Purpose               |
-| ----------------------- | -------------------------- | ------- | --------------------- |
-| **Audio Transcription** | Parakeet v3 / onnx-asr     | 0.6b-v3 | Voice-to-text (local) |
+| Component               | Technology             | Version | Purpose               |
+| ----------------------- | ---------------------- | ------- | --------------------- |
+| **Audio Transcription** | Parakeet v3 / onnx-asr | 0.6b-v3 | Voice-to-text (local) |
 
 ### DevOps & Containerization
 
@@ -349,16 +349,16 @@ POST /api/documents
 
 ### HTTP Status Codes
 
-| Code    | Meaning       | Usage                        |
-| ------- | ------------- | ---------------------------- |
-| **200** | OK            | Successful GET, PATCH        |
-| **201** | Created       | Successful POST              |
-| **204** | No Content    | Successful DELETE            |
-| **400** | Bad Request   | Invalid parameters           |
-| **401** | Unauthorized  | Missing API token            |
-| **404** | Not Found     | Document/block not found     |
-| **422** | Unprocessable | Validation failed            |
-| **500** | Server Error  | Rails error                  |
+| Code    | Meaning       | Usage                             |
+| ------- | ------------- | --------------------------------- |
+| **200** | OK            | Successful GET, PATCH             |
+| **201** | Created       | Successful POST                   |
+| **204** | No Content    | Successful DELETE                 |
+| **400** | Bad Request   | Invalid parameters                |
+| **401** | Unauthorized  | Missing API token                 |
+| **404** | Not Found     | Document/block not found          |
+| **422** | Unprocessable | Validation failed                 |
+| **500** | Server Error  | Rails error                       |
 | **503** | Unavailable   | Service (Redis, Transcriber) down |
 
 ### Pagination Convention
@@ -805,12 +805,12 @@ Response:
 
 ### Performance Budgets
 
-| Metric                | Target              | Alert   |
-| --------------------- | ------------------- | ------- |
-| API Response          | <100ms p95          | >200ms  |
-| Page Load             | <500ms              | >1000ms |
-| DB Query              | <50ms p95           | >100ms  |
-| Parakeet Transcription| <2min per min audio | >5min   |
+| Metric                 | Target              | Alert   |
+| ---------------------- | ------------------- | ------- |
+| API Response           | <100ms p95          | >200ms  |
+| Page Load              | <500ms              | >1000ms |
+| DB Query               | <50ms p95           | >100ms  |
+| Parakeet Transcription | <2min per min audio | >5min   |
 
 ### Scaling Targets
 

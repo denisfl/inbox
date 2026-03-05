@@ -65,16 +65,16 @@ A **personal note-taking system** running on Raspberry Pi with:
 
 ### 1. Technology Stack (Locked Versions)
 
-| Component               | Choice          | Version | Reason                               |
-| ----------------------- | --------------- | ------- | ------------------------------------ |
-| **Framework**           | Rails           | 8.0.x   | Full-featured, rapid development     |
-| **Language**            | Ruby            | 3.3.1   | Productive, readable                 |
-| **Database**            | SQLite          | 3.43+   | Zero-config, perfect for single user |
-| **Frontend**            | Stimulus JS     | 3.x     | Lightweight, Rails-native            |
-| **Queue**               | Sidekiq + Redis | 7.x     | Reliable background jobs             |
+| Component               | Choice                 | Version | Reason                                     |
+| ----------------------- | ---------------------- | ------- | ------------------------------------------ |
+| **Framework**           | Rails                  | 8.0.x   | Full-featured, rapid development           |
+| **Language**            | Ruby                   | 3.3.1   | Productive, readable                       |
+| **Database**            | SQLite                 | 3.43+   | Zero-config, perfect for single user       |
+| **Frontend**            | Stimulus JS            | 3.x     | Lightweight, Rails-native                  |
+| **Queue**               | Sidekiq + Redis        | 7.x     | Reliable background jobs                   |
 | **Audio Transcription** | Parakeet v3 / onnx-asr | 0.6b-v3 | Local transcription, privacy, 25 languages |
-| **Deployment**          | Docker          | 20.10+  | Containerization                     |
-| **Target**              | Raspberry Pi 5  | —       | Affordable, runs at home             |
+| **Deployment**          | Docker                 | 20.10+  | Containerization                           |
+| **Target**              | Raspberry Pi 5         | —       | Affordable, runs at home                   |
 
 **Version Policy:** ⚠️ Downgrading is **FORBIDDEN**. Upgrades allowed after testing.
 
@@ -379,13 +379,13 @@ CLOUD_BACKUP_PROVIDER=gdrive
 
 ## Project Timeline
 
-| Phase       | Duration | Focus                         | Status         |
-| ----------- | -------- | ----------------------------- | -------------- |
-| **Phase 0** | Week 1   | Bootstrap, setup, database    | ⏳ Planning    |
-| **Phase 1** | Week 1-2 | Rails API, models, testing    | 📋 Not Started |
-| **Phase 2** | Week 2-3 | Web editor, UI/UX             | 📋 Not Started |
-| **Phase 3** | Week 3-4 | Telegram, Parakeet v3 transcription | ✅ Done |
-| **Phase 4** | Week 4+  | Deployment, monitoring, docs  | 📋 Not Started |
+| Phase       | Duration | Focus                               | Status         |
+| ----------- | -------- | ----------------------------------- | -------------- |
+| **Phase 0** | Week 1   | Bootstrap, setup, database          | ⏳ Planning    |
+| **Phase 1** | Week 1-2 | Rails API, models, testing          | 📋 Not Started |
+| **Phase 2** | Week 2-3 | Web editor, UI/UX                   | 📋 Not Started |
+| **Phase 3** | Week 3-4 | Telegram, Parakeet v3 transcription | ✅ Done        |
+| **Phase 4** | Week 4+  | Deployment, monitoring, docs        | 📋 Not Started |
 
 **Total Timeline:** 4-5 weeks to MVP
 
