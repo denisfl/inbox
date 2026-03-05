@@ -96,7 +96,7 @@ RAILS_ENV=production
 SECRET_KEY_BASE=$(openssl rand -hex 64)
 TELEGRAM_BOT_TOKEN=<YOUR_BOT_TOKEN>
 TELEGRAM_WEBHOOK_URL=https://your-domain.com/api/telegram/webhook
-WHISPER_BASE_URL=http://whisper:5000
+TRANSCRIBER_URL=http://transcriber:5000
 
 # Build images
 docker compose build --pull
@@ -109,7 +109,7 @@ docker compose up -d
 
 # Verify all healthy
 docker compose ps
-# Expected: web, worker, whisper, redis, ollama all "healthy"
+# Expected: web, worker, transcriber, redis all "healthy"
 
 # Test local access
 curl http://localhost:3000/up
@@ -319,7 +319,7 @@ docker compose ps
 # View logs
 docker compose logs web --tail=50 --follow
 docker compose logs worker --tail=50 --follow
-docker compose logs whisper --tail=20
+docker compose logs transcriber --tail=20
 
 # Check Sidekiq jobs
 docker compose exec web bin/rails console
@@ -399,8 +399,8 @@ docker compose logs web --tail=100 | grep telegram
 ### Issue: Transcription not working
 
 ```bash
-# Check Whisper service
-docker compose exec whisper curl http://localhost:5000/health
+# Check transcription service
+docker compose exec transcriber curl http://localhost:5000/health
 
 # Check worker logs
 docker compose logs worker --tail=50
@@ -457,7 +457,7 @@ docker compose exec web bin/rails console
 If you encounter issues or have questions during deployment:
 
 1. Check [Story 12](.project/stories/story-12-production-deployment.md) for detailed explanations
-2. Review error logs (nginx, Rails, Sidekiq, Whisper)
+2. Review error logs (nginx, Rails, Sidekiq, Transcriber)
 3. Ask for help with specific error messages
 
 ---

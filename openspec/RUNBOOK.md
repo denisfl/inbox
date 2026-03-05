@@ -9,11 +9,10 @@
 ## Структура контейнеров
 
 ```
-inbox-ollama-1    – LLM-сервер (gemma3:4b)
-inbox-redis-1     – брокер очередей
-inbox-whisper-1   – Speech-to-Text
-inbox-web-1       – Rails web (порт 3000)
-inbox-worker-1    – SolidQueue background jobs
+inbox-redis-1         – брокер очередей
+inbox-transcriber-1   – Speech-to-Text (Parakeet v3)
+inbox-web-1           – Rails web (порт 3000)
+inbox-worker-1        – Sidekiq background jobs
 ```
 
 Проверить статус:
@@ -66,35 +65,7 @@ docker compose exec web rails db:rollback
 
 ---
 
-## 3. Обновление языковой модели Ollama
-
-Скачать новую модель (пример: `gemma3:4b`):
-
-```bash
-docker compose exec ollama ollama pull gemma3:4b
-```
-
-Посмотреть установленные модели:
-
-```bash
-docker compose exec ollama ollama list
-```
-
-Перезапуск Ollama после смены модели:
-
-```bash
-docker compose restart ollama
-```
-
-После смены модели нужно перезапустить worker (он использует Ollama):
-
-```bash
-docker compose restart worker
-```
-
----
-
-## 4. Перезапуск отдельных сервисов
+## 3. Перезапуск отдельных сервисов
 
 ```bash
 # Только web
@@ -103,8 +74,8 @@ docker compose restart web
 # Только worker (background jobs)
 docker compose restart worker
 
-# Только whisper
-docker compose restart whisper
+# Только transcriber
+docker compose restart transcriber
 
 # Все сразу
 docker compose restart
@@ -112,17 +83,17 @@ docker compose restart
 
 ---
 
-## 5. Просмотр логов
+## 4. Просмотр логов
 
 ```bash
 # Текущие логи web
 docker compose logs web --tail=50 -f
 
-# Логи worker (SolidQueue jobs)
+# Логи worker (Sidekiq jobs)
 docker compose logs worker --tail=50 -f
 
-# Логи whisper
-docker compose logs whisper --tail=30
+# Логи transcriber
+docker compose logs transcriber --tail=30
 
 # Все сервисы сразу
 docker compose logs --tail=20
@@ -219,27 +190,23 @@ CalendarEvent.order(:start_at).limit(10)
 
 # Проверить тег
 Tag.find_by(name: 'todo')
-
-# Запустить классификатор вручную
-result = IntentClassifierService.classify("купить хлеб")
-puts result.inspect
 ```
 
 ---
 
-## 11. Whisper — смена языка
+## 11. Transcriber — смена языка
 
-По умолчанию Whisper определяет язык автоматически.  
+По умолчанию Parakeet v3 определяет язык автоматически (25 языков, включая русский и английский).  
 Принудительно задать язык (в `.env.production`):
 
 ```
-WHISPER_LANGUAGE=ru
+TRANSCRIBER_LANGUAGE=ru
 ```
 
 После — пересоздать контейнер:
 
 ```bash
-docker compose up -d whisper
+docker compose up -d transcriber
 ```
 
 ---

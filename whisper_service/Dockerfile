@@ -1,7 +1,7 @@
-# Use Debian Bookworm for better ARM64 package support and PyTorch availability
+# Use Debian Bookworm for better ARM64 package support
 FROM python:3.12-bookworm
 
-# Install minimal dependencies (only curl)
+# Install minimal dependencies (only curl and ffmpeg for audio conversion)
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     curl \
@@ -21,10 +21,10 @@ RUN curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-arm64-stati
 # Upgrade pip and install setuptools
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Install faster-whisper instead of openai-whisper
-# faster-whisper is 4-8x faster, uses less memory, and has identical accuracy
-# Perfect for Raspberry Pi 5 - optimized for CPU inference with INT8 quantization
-RUN pip install --no-cache-dir "faster-whisper==1.1.0" flask gunicorn requests
+# Install onnx-asr with CPU support for Parakeet v3 transcription
+# onnx-asr uses ONNX Runtime for fast CPU inference (~18x real-time)
+# Includes auto-punctuation and capitalization
+RUN pip install --no-cache-dir "onnx-asr[cpu,hub]" flask gunicorn requests
 
 # Create app directory
 WORKDIR /app

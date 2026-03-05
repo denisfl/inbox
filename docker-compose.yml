@@ -11,21 +11,6 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # Ollama - AI classification (mistral 4.1GB model)
-  ollama:
-    image: ollama/ollama:latest
-    volumes:
-      - ollama_data:/root/.ollama
-    environment:
-      - OLLAMA_HOST=0.0.0.0
-    healthcheck:
-      test: ["CMD-SHELL", "ollama list || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    # Ollama serves automatically, no custom command needed
-
   # PostgreSQL database (optional - using SQLite by default)
   # db:
   #   image: postgres:16-alpine
@@ -57,13 +42,12 @@ services:
       - log_data:/app/log
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - OLLAMA_BASE_URL=http://ollama:11434
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_BOT_NAME=${TELEGRAM_BOT_NAME}
       - TELEGRAM_ALLOWED_USER_ID=${TELEGRAM_ALLOWED_USER_ID}
       - TELEGRAM_WEBHOOK_URL=${TELEGRAM_WEBHOOK_URL}
       - API_TOKEN=${API_TOKEN}
-      - WHISPER_BASE_URL=http://whisper:5000
+      - TRANSCRIBER_URL=http://transcriber:5000
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN}
@@ -72,8 +56,6 @@ services:
       - RAILS_HOSTS=${RAILS_HOSTS}
     depends_on:
       redis:
-        condition: service_healthy
-      ollama:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/up"]
@@ -97,10 +79,9 @@ services:
       - log_data:/app/log
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - OLLAMA_BASE_URL=http://ollama:11434
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - API_TOKEN=${API_TOKEN}
-      - WHISPER_BASE_URL=http://whisper:5000
+      - TRANSCRIBER_URL=http://transcriber:5000
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN}
@@ -125,15 +106,15 @@ services:
       - telegram_bot_token
       - telegram_webhook_secret_token
 
-  # Whisper - Audio transcription service
-  whisper:
+  # Parakeet v3 - Audio transcription service (onnx-asr)
+  transcriber:
     build:
       context: ./whisper_service
     volumes:
       - ./tmp/audio:/tmp/audio
-      - whisper_models:/root/.cache/huggingface
+      - transcriber_models:/root/.cache/huggingface
     environment:
-      - WHISPER_MODEL_SIZE=base
+      - PARAKEET_MODEL=nemo-parakeet-tdt-0.6b-v3
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 10s
@@ -144,12 +125,11 @@ services:
 
 volumes:
   redis_data:
-  ollama_data:
   node_modules:
   db_data:
   storage_data:
   log_data:
-  whisper_models:
+  transcriber_models:
   # postgres_data:  # Uncomment if using PostgreSQL
 
 secrets:

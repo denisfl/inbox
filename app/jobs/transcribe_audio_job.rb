@@ -14,47 +14,46 @@ class TranscribeAudioJob < ApplicationJob
     # Download audio file from ActiveStorage
     audio_file = audio_block.file.download
 
-    # Create temporary file for Whisper API
+    # Create temporary file for transcription API
     temp_file = Tempfile.new([ "voice", ".ogg" ])
     begin
       temp_file.binmode
       temp_file.write(audio_file)
       temp_file.rewind
 
-      # Call Whisper API
-      whisper_language = ENV["WHISPER_LANGUAGE"].presence
+      # Call Parakeet v3 transcription API
+      # Parakeet handles punctuation and capitalization natively — no LLM needed
+      transcriber_language = ENV["TRANSCRIBER_LANGUAGE"].presence
       form_data = { audio: HTTP::FormData::File.new(temp_file.path) }
-      form_data[:language] = whisper_language if whisper_language
+      form_data[:language] = transcriber_language if transcriber_language
 
-      response = HTTP.timeout(300).post(
-        "#{ENV.fetch('WHISPER_BASE_URL', 'http://whisper:5000')}/transcribe",
+      response = HTTP.timeout(600).post(
+        "#{ENV.fetch('TRANSCRIBER_URL', 'http://transcriber:5000')}/transcribe",
         form: form_data
       )
 
       unless response.status.success?
-        Rails.logger.error("Whisper API error: #{response.status} - #{response.body}")
-        raise "Whisper API returned #{response.status}"
+        Rails.logger.error("Transcription API error: #{response.status} - #{response.body}")
+        raise "Transcription API returned #{response.status}"
       end
 
       data = JSON.parse(response.body)
-      raw_transcription = data["text"]
-      detected_language = data["language"].presence
+      transcription = data["text"].to_s.strip
 
-      # LLM correction pass (best-effort — falls back to raw on any error)
-      transcription = correct_transcription(raw_transcription, detected_language)
+      if transcription.blank?
+        Rails.logger.warn("Empty transcription for document #{document_id}")
+        transcription = "(empty transcription)"
+      end
 
-      # Intent classification (best-effort — falls back to note on any error)
-      intent_result = classify_intent(transcription)
-
-      # Update document title, type, and add transcription block
+      # Update document title and save as note
       document.update!(
         title: transcription.truncate(50),
-        document_type: intent_result.intent
+        document_type: "note"
       )
 
-      # Build block content with raw text and detected language for reference
-      block_content = { text: transcription, raw_text: raw_transcription }
-      block_content[:language] = detected_language if detected_language
+      # Build block content
+      block_content = { text: transcription }
+      block_content[:language] = data["language"] if data["language"].present?
 
       # Add transcription text block before audio file
       document.blocks.create!(
@@ -66,21 +65,18 @@ class TranscribeAudioJob < ApplicationJob
       # Update audio block position
       audio_block.update!(position: 1)
 
-      # Tag document based on intent
-      apply_intent_tags(document, intent_result)
-
-      # Notify user via Telegram with intent-aware message
+      # Notify user via Telegram
       if document.telegram_chat_id.present?
-        notify_telegram_user(document, transcription, intent_result)
+        notify_telegram_user(document, transcription)
       end
 
-      Rails.logger.info("Transcribed document #{document.id} as #{intent_result.intent}: #{transcription.truncate(100)}")
+      Rails.logger.info("Transcribed document #{document.id}: #{transcription.truncate(100)}")
     ensure
       temp_file.close
       temp_file.unlink
     end
   rescue HTTP::TimeoutError => e
-    Rails.logger.error("Whisper timeout for document #{document_id}: #{e.message}")
+    Rails.logger.error("Transcription timeout for document #{document_id}: #{e.message}")
     raise # Retry via Sidekiq
   rescue StandardError => e
     Rails.logger.error("Transcription failed for document #{document_id}: #{e.class} - #{e.message}")
@@ -99,134 +95,13 @@ class TranscribeAudioJob < ApplicationJob
 
   private
 
-  def correct_transcription(raw_text, detected_language = nil)
-    model = ENV.fetch("OLLAMA_CORRECTION_MODEL", "gemma3:4b")
-
-    # Determine language context for the prompt.
-    # Default/priority is Russian; fall back to Russian when language is unknown.
-    lang_label = case detected_language
-    when "en" then "English"
-    else "Russian"
-    end
-
-    prompt = <<~PROMPT
-      TASK: Fix obvious speech recognition errors in the #{lang_label} text below.
-
-      OUTPUT RULES (MANDATORY):
-      - Output ONLY the corrected text, nothing else
-      - No explanations, no options, no comments, no formatting, no prefixes
-      - Keep original punctuation and capitalization.
-      - If a word looks wrong but you are not 100% sure, keep it as-is.
-      - Fix only clear phonetic transcription errors (1-2 character typos).
-      - You MAY merge words that are obviously split incorrectly by the transcriber (e.g. "Зап. Ишем" → "Запишем", "за пишем" → "запишем").
-      - You MAY split one word into two if it is obviously two words joined (e.g. "купитьмолоко" → "купить молоко").
-
-      EXAMPLES OF CORRECT BEHAVIOR:
-      #{correction_examples(detected_language)}
-
-      TEXT TO FIX:
-      #{raw_text}
-    PROMPT
-
-    timeout_seconds = ENV.fetch("OLLAMA_CORRECTION_TIMEOUT", "3600").to_i
-    response = HTTP.timeout(timeout_seconds).post(
-      "#{ENV.fetch('OLLAMA_BASE_URL', 'http://ollama:11434')}/api/generate",
-      json: { model: model, prompt: prompt, stream: false }
-    )
-
-    unless response.status.success?
-      Rails.logger.warn("Ollama correction returned #{response.status} — using raw transcription")
-      return raw_text
-    end
-
-    data = JSON.parse(response.body)
-    corrected = data["response"]&.strip.presence
-
-    # Safety check: if response is suspiciously long vs input, it's likely chatty — discard
-    if corrected && corrected.length > raw_text.length * 1.5
-      Rails.logger.warn("Ollama correction response too long (#{corrected.length} vs #{raw_text.length}) — using raw")
-      return raw_text
-    end
-
-    corrected || raw_text
-  rescue StandardError => e
-    Rails.logger.warn("Transcription correction error (using raw): #{e.message}")
-    raw_text
-  end
-
-  def correction_examples(detected_language)
-    if detected_language == "en"
-      <<~EXAMPLES
-        Input:  "i went to the stor to buy bred and milke"
-        Output: "i went to the stor to buy bred and milke"
-        (explanation: uncertain words kept as-is)
-
-        Input:  "the meeting is schedled for monday"
-        Output: "the meeting is scheduled for monday"
-        (explanation: "schedled" → "scheduled" — clear typo)
-
-        Input:  "please send the reprot by tomorrow"
-        Output: "please send the report by tomorrow"
-        (explanation: "reprot" → "report" — clear typo)
-
-        Input:  "let me know if you can make it. Tues day."
-        Output: "let me know if you can make it. Tuesday."
-        (explanation: "Tues day" → "Tuesday" — clearly split word, merge it)
-      EXAMPLES
-    else
-      <<~EXAMPLES
-        Input:  "встреча в понедельник в десять чесов"
-        Output: "встреча в понедельник в десять часов"
-        (explanation: "чесов" → "часов" — clear typo)
-
-        Input:  "нужно купить хлеп и малако"
-        Output: "нужно купить хлеп и малако"
-        (explanation: uncertain words kept as-is)
-
-        Input:  "он сказал чо это невозможно"
-        Output: "он сказал чо это невозможно"
-        (explanation: "чо" might be intentional slang — keep as-is)
-
-        Input:  "Зап. Ишем это."
-        Output: "Запишем это."
-        (explanation: "Зап. Ишем" → "Запишем" — clearly split word, merge it)
-      EXAMPLES
-    end
-  end
-
-  def classify_intent(text)
-    IntentClassifierService.classify(text)
-  rescue StandardError => e
-    Rails.logger.warn("Intent classification failed (using note): #{e.message}")
-    IntentClassifierService::Result.new(intent: "note", confidence: 0.0, title: text.truncate(80), due_at: nil, body: text)
-  end
-
-  def apply_intent_tags(document, intent_result)
-    return unless %w[todo event].include?(intent_result.intent)
-
-    tag = Tag.find_or_create_by!(name: intent_result.intent)
-    document.tags << tag unless document.tags.include?(tag)
-  rescue StandardError => e
-    Rails.logger.warn("Failed to apply intent tag: #{e.message}")
-  end
-
-  def notify_telegram_user(document, transcription, intent_result = nil)
+  def notify_telegram_user(document, transcription)
     bot = Telegram::Bot::Client.new(ENV["TELEGRAM_BOT_TOKEN"])
     preview = transcription.truncate(100)
 
-    message = case intent_result&.intent
-    when "todo"
-                "✅ Задача добавлена: #{intent_result.title.truncate(80)}\n\n#{preview}"
-    when "event"
-                time_str = intent_result.due_at ? intent_result.due_at.strftime("%d.%m %H:%M") : "??"
-                "📅 Событие сохранено: #{intent_result.title.truncate(60)} на #{time_str}\n\n#{preview}"
-    else
-                "📝 Заметка сохранена\n\n#{preview}"
-    end
-
     bot.api.send_message(
       chat_id: document.telegram_chat_id,
-      text: message
+      text: "Note saved\n\n#{preview}"
     )
   rescue StandardError => e
     Rails.logger.error("Failed to notify Telegram user: #{e.message}")
