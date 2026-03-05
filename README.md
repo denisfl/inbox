@@ -140,21 +140,21 @@ bin/brakeman --no-pager        # Security scan
 
 ## Environment Variables
 
-| Variable                   | Required | Description                                              |
-| -------------------------- | -------- | -------------------------------------------------------- |
-| `SECRET_KEY_BASE`          | Yes      | Rails secret key (generate with `openssl rand -hex 64`)  |
-| `TELEGRAM_BOT_TOKEN`       | Yes      | Bot token from BotFather                                 |
-| `TELEGRAM_BOT_NAME`        | Yes      | Bot username (without @)                                 |
-| `TELEGRAM_ALLOWED_USER_ID` | Yes      | Your Telegram user ID                                    |
-| `TELEGRAM_WEBHOOK_URL`     | Yes      | Public URL for webhook                                   |
-| `API_TOKEN`                | No       | Token for API authentication                             |
-| `GIT_SHA`                  | No       | Git commit SHA, baked at build time for version tracking |
+| Variable                   | Required | Description                                                    |
+| -------------------------- | -------- | -------------------------------------------------------------- |
+| `SECRET_KEY_BASE`          | Yes      | Rails secret key (generate with `openssl rand -hex 64`)        |
+| `TELEGRAM_BOT_TOKEN`       | Yes      | Bot token from BotFather                                       |
+| `TELEGRAM_BOT_NAME`        | Yes      | Bot username (without @)                                       |
+| `TELEGRAM_ALLOWED_USER_ID` | Yes      | Your Telegram user ID                                          |
+| `TELEGRAM_WEBHOOK_URL`     | Yes      | Public URL for webhook                                         |
+| `API_TOKEN`                | No       | Token for API authentication                                   |
+| `GIT_SHA`                  | No       | Git commit SHA, baked at build time for version tracking       |
 | `TRANSCRIBER_URL`          | No       | Transcription service URL (default: `http://transcriber:5000`) |
-| `TRANSCRIBER_LANGUAGE`     | No       | Force transcription language (default: auto-detect)      |
-| `GOOGLE_CLIENT_ID`         | No       | For Google Calendar sync                                 |
-| `GOOGLE_CLIENT_SECRET`     | No       | For Google Calendar sync                                 |
-| `GOOGLE_REFRESH_TOKEN`     | No       | For Google Calendar sync                                 |
-| `GOOGLE_CALENDAR_IDS`      | No       | Comma-separated calendar IDs (default: `primary`)        |
+| `TRANSCRIBER_LANGUAGE`     | No       | Force transcription language (default: auto-detect)            |
+| `GOOGLE_CLIENT_ID`         | No       | For Google Calendar sync                                       |
+| `GOOGLE_CLIENT_SECRET`     | No       | For Google Calendar sync                                       |
+| `GOOGLE_REFRESH_TOKEN`     | No       | For Google Calendar sync                                       |
+| `GOOGLE_CALENDAR_IDS`      | No       | Comma-separated calendar IDs (default: `primary`)              |
 
 ## How It Works
 
