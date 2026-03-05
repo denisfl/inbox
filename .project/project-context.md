@@ -16,7 +16,7 @@ A **personal note-taking system** running on Raspberry Pi with:
 
 - Block-based editor (like Craft.do, Logseq)
 - Telegram bot integration for quick capture
-- Local audio transcription (OpenAI Whisper)
+- Local audio transcription (Parakeet v3 via onnx-asr)
 - Simple, modern interface
 - Complete privacy (no cloud)
 - Single user
@@ -72,8 +72,7 @@ A **personal note-taking system** running on Raspberry Pi with:
 | **Database**            | SQLite          | 3.43+   | Zero-config, perfect for single user |
 | **Frontend**            | Stimulus JS     | 3.x     | Lightweight, Rails-native            |
 | **Queue**               | Sidekiq + Redis | 7.x     | Reliable background jobs             |
-| **AI (Classification)** | Ollama          | Latest  | Local LLM, no cloud                  |
-| **Audio**               | Whisper         | Latest  | Local transcription, privacy         |
+| **Audio Transcription** | Parakeet v3 / onnx-asr | 0.6b-v3 | Local transcription, privacy, 25 languages |
 | **Deployment**          | Docker          | 20.10+  | Containerization                     |
 | **Target**              | Raspberry Pi 5  | —       | Affordable, runs at home             |
 
@@ -91,8 +90,8 @@ A **personal note-taking system** running on Raspberry Pi with:
 
 - 100% local processing (no cloud)
 - SQLite local database
-- Whisper runs on-device
-- Ollama inference local
+- Parakeet v3 transcription runs on-device
+- No cloud API keys required
 - Optional HTTPS for local network
 
 **Minimal Dependencies**
@@ -107,8 +106,7 @@ A **personal note-taking system** running on Raspberry Pi with:
 - API response: <100ms (p95)
 - Page load: <500ms
 - DB query: <50ms (p95)
-- Ollama inference: <10s (p95)
-- Whisper: <1min per audio minute
+- Parakeet v3 transcription: <2min per audio minute
 
 ### 3. Deployment Strategy
 
@@ -125,8 +123,7 @@ A **personal note-taking system** running on Raspberry Pi with:
 - web (Rails + Puma)
 - worker (Sidekiq)
 - redis (Cache + queue)
-- ollama (AI classification)
-- whisper (Audio transcription)
+- transcriber (Parakeet v3 audio transcription)
 ```
 
 ### 4. Quality Standards
@@ -156,59 +153,43 @@ A **personal note-taking system** running on Raspberry Pi with:
 
 ## Technical Decisions (Resolved)
 
-### 1. ✅ Ollama Model Selection
+### 1. ~~Ollama Model Selection~~ (REMOVED)
 
-**Decision:** **mistral** (4.1GB)
+**Decision:** Ollama/LLM classification has been **removed** from the project.
 
 **Rationale:**
 
-- Raspberry Pi 5 8GB has sufficient memory (4.1GB model + 2GB system + 1-2GB Rails/Redis)
-- Quality over speed for single-user system
-- Async classification allows slower inference
-- User prioritized accuracy
+- Parakeet v3 handles punctuation and capitalization natively
+- No need for LLM post-processing or intent classification
+- Simplifies architecture and reduces memory usage
+- All messages saved as notes directly
+
+---
+
+### 2. Audio Transcription Engine
+
+**Decision:** **Parakeet v3** (nemo-parakeet-tdt-0.6b-v3 via onnx-asr)
+
+**Rationale:**
+
+- ONNX Runtime for fast CPU inference (~18x real-time)
+- Supports 25 languages with automatic detection
+- Automatic punctuation and capitalization
+- No LLM post-processing needed
+- FFmpeg converts any audio format (WebM, OGG, MP3) to WAV
 
 **Configuration:**
 
 ```bash
-OLLAMA_MODEL=mistral
-OLLAMA_MAX_MEMORY=4GB
+TRANSCRIBER_URL=http://transcriber:5000
+# TRANSCRIBER_LANGUAGE=ru  # Optional: force language
 ```
 
 **Expected Performance:**
 
-- Inference time: 5-15s per classification (acceptable for background job)
-- Memory usage: ~4.5GB peak
-- CPU: 40-60% during classification
-
-**Fallback:** If performance issues arise, can switch to `orca-mini` (1.3GB, 3-5s inference)
-
----
-
-### 2. ✅ Whisper Model Size
-
-**Decision:** **base** (1.5GB, Russian language)
-
-**Rationale:**
-
-- 8GB RPi 5 can handle 1.5GB model
-- Russian language transcription requires better model
-- Accuracy critical for voice notes
-- Async processing (Sidekiq) allows longer transcription time
-
-**Configuration:**
-
-```python
-WHISPER_MODEL_SIZE=base
-WHISPER_LANGUAGE=ru
-```
-
-**Expected Performance:**
-
-- Transcription: ~1-2 minutes per audio minute
-- Memory: ~2GB during transcription
-- Accuracy: 90%+ for clear Russian audio
-
-**Fallback:** If memory issues, can use `small` (460MB) instead of `tiny` to preserve quality
+- Transcription: ~1-2 minutes per audio minute on RPi5
+- Memory: ~1-2GB during transcription
+- Accuracy: High for clear audio in supported languages
 
 ---
 
@@ -364,8 +345,8 @@ CLOUD_BACKUP_PROVIDER=gdrive
 
 ## Open Questions & Pending Decisions
 
-~~1. Ollama Model Selection~~ ✅ **RESOLVED:** mistral (4.1GB)
-~~2. Whisper Model Size~~ ✅ **RESOLVED:** base (1.5GB)
+~~1. Ollama Model Selection~~ REMOVED (no longer using Ollama)
+~~2. Whisper Model Size~~ REPLACED with Parakeet v3
 ~~3. Database Future~~ ✅ **RESOLVED:** SQLite for MVP
 ~~4. Authentication Level~~ ✅ **RESOLVED:** Minimal token-based
 ~~5. Cloud Backup~~ ✅ **RESOLVED:** Local + optional encrypted cloud
@@ -391,7 +372,7 @@ CLOUD_BACKUP_PROVIDER=gdrive
 - Local network is trusted (no HTTPS required)
 - Privacy is critical (no cloud services)
 - User comfortable with Docker
-- Russian language audio transcription needed
+- Audio transcription via Parakeet v3 (25 languages, auto-detect)
 - Telegram bot for mobile capture
 
 ---
@@ -403,7 +384,7 @@ CLOUD_BACKUP_PROVIDER=gdrive
 | **Phase 0** | Week 1   | Bootstrap, setup, database    | ⏳ Planning    |
 | **Phase 1** | Week 1-2 | Rails API, models, testing    | 📋 Not Started |
 | **Phase 2** | Week 2-3 | Web editor, UI/UX             | 📋 Not Started |
-| **Phase 3** | Week 3-4 | Telegram, Whisper integration | 📋 Not Started |
+| **Phase 3** | Week 3-4 | Telegram, Parakeet v3 transcription | ✅ Done |
 | **Phase 4** | Week 4+  | Deployment, monitoring, docs  | 📋 Not Started |
 
 **Total Timeline:** 4-5 weeks to MVP

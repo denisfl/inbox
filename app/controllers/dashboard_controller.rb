@@ -107,7 +107,7 @@ class DashboardController < ApplicationController
     # Recent documents (last 14 days)
     Document.where("created_at > ?", 14.days.ago)
             .includes(:tags)
-            .order(created_at: :desc).limit(10).each do |doc|
+            .order(created_at: :desc).limit(20).each do |doc|
       title_esc = ERB::Util.html_escape(doc.title.truncate(40))
       tag_names = doc.tags.map(&:name)
       text = if tag_names.include?("telegram")
@@ -124,7 +124,7 @@ class DashboardController < ApplicationController
     Task.where(completed: false)
         .where("created_at > ?", 14.days.ago)
         .order(created_at: :desc)
-        .limit(5)
+        .limit(15)
         .each do |task|
       title_esc = ERB::Util.html_escape(task.title.truncate(40))
       activities << {
@@ -155,7 +155,7 @@ class DashboardController < ApplicationController
                  .select("DATE(synced_at) as sync_date, COUNT(*) as cnt, MAX(synced_at) as last_sync")
                  .group("DATE(synced_at)")
                  .order("sync_date DESC")
-                 .limit(3)
+                 .limit(10)
                  .each do |row|
       sync_time = row.last_sync.is_a?(String) ? Time.zone.parse(row.last_sync) : row.last_sync
       activities << {

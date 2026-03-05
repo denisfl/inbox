@@ -12,6 +12,7 @@ We live in an interesting time when producing code has become incredibly cheap. 
 
 - **Telegram Bot** -- capture notes, voice messages, photos, and files from Telegram
 - **Voice Transcription** -- local audio-to-text via [Parakeet v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) (no cloud API, 25 languages)
+- **Audio Recording** -- record voice notes directly in the browser, auto-transcribed
 - **Google Calendar Sync** -- import events and get reminders via Telegram
 - **Tags** -- organize documents and tasks with a flexible tagging system
 - **Tasks** -- simple task management with due dates
@@ -191,7 +192,7 @@ Inbox collects information from multiple sources, processes it in the background
 
 ### Data Flow
 
-1. **Capture** -- Send a text message, voice note, photo, or file to your Telegram bot. Or type directly in the web editor.
+1. **Capture** -- Send a text message, voice note, photo, or file to your Telegram bot. Type directly in the web editor, or record audio from the browser.
 2. **Process** -- Voice messages are transcribed locally by Parakeet v3 with automatic punctuation and capitalization. All messages are saved as notes.
 3. **Store** -- Everything lands in SQLite as a document with Markdown content. Tasks get due dates and priorities. Calendar events sync from Google.
 4. **Organize** — Tag documents and tasks. Pin important notes. Filter by source, tag, or date.
