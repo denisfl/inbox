@@ -39,3 +39,9 @@ application.register("tag-input", TagInputController);
 
 import TagFilterController from "./tag_filter_controller";
 application.register("tag-filter", TagFilterController);
+
+import AudioPlayerController from "./audio_player_controller";
+application.register("audio-player", AudioPlayerController);
+
+import AudioRecorderController from "./audio_recorder_controller";
+application.register("audio-recorder", AudioRecorderController);

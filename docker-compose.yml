@@ -110,6 +110,8 @@ services:
   transcriber:
     build:
       context: ./whisper_service
+    ports:
+      - "5001:5000"
     volumes:
       - ./tmp/audio:/tmp/audio
       - transcriber_models:/root/.cache/huggingface

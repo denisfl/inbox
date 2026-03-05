@@ -97,6 +97,12 @@ RSpec.configure do |config|
 
   # Include ActiveSupport time helpers (travel_to, freeze_time, etc.)
   config.include ActiveSupport::Testing::TimeHelpers
+
+  # Use test queue adapter for ActiveJob (enables have_enqueued_job matchers)
+  config.include ActiveJob::TestHelper
+  config.before(:each) do
+    ActiveJob::Base.queue_adapter = :test
+  end
 end
 
 # Shoulda Matchers configuration

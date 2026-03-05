@@ -10,6 +10,7 @@ import os
 import tempfile
 import logging
 import time
+import subprocess
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -32,6 +33,36 @@ def get_model():
         model = onnx_asr.load_model(MODEL_NAME)
         logger.info("onnx-asr model loaded successfully")
     return model
+
+
+def convert_to_wav(input_path):
+    """Convert any audio format to 16kHz mono WAV using ffmpeg.
+
+    Parakeet/onnx-asr requires WAV (RIFF) format.
+    Browser MediaRecorder produces WebM (Opus), Telegram sends OGG (Opus).
+    """
+    wav_path = input_path + ".wav"
+    try:
+        result = subprocess.run(
+            [
+                "ffmpeg", "-y",
+                "-i", input_path,
+                "-ar", "16000",     # 16kHz sample rate (required by Parakeet)
+                "-ac", "1",         # mono
+                "-sample_fmt", "s16",  # 16-bit PCM
+                wav_path
+            ],
+            capture_output=True,
+            text=True,
+            timeout=120
+        )
+        if result.returncode != 0:
+            logger.error(f"ffmpeg conversion failed: {result.stderr}")
+            raise RuntimeError(f"ffmpeg failed: {result.stderr[:500]}")
+        logger.info(f"Converted audio to WAV: {wav_path}")
+        return wav_path
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("ffmpeg conversion timed out")
 
 
 @app.route("/health", methods=["GET"])
@@ -78,6 +109,10 @@ def transcribe():
 
         logger.info(f"Transcribing file: {audio_file.filename}, language hint: {language or 'auto'}")
 
+        # Convert to WAV format (Parakeet/onnx-asr requires RIFF/WAV)
+        # Browser records WebM/Opus, Telegram sends OGG/Opus
+        wav_path = convert_to_wav(tmp_path)
+
         # Get model instance (lazy-loaded on first request)
         parakeet = get_model()
 
@@ -85,12 +120,13 @@ def transcribe():
 
         # Transcribe with Parakeet v3
         # Returns text with automatic punctuation and capitalization
-        transcription = parakeet.recognize(tmp_path)
+        transcription = parakeet.recognize(wav_path)
 
         elapsed = time.time() - start_time
 
-        # Clean up temporary file
+        # Clean up temporary files
         os.unlink(tmp_path)
+        os.unlink(wav_path)
 
         # Handle result — onnx-asr returns a string directly
         if isinstance(transcription, str):

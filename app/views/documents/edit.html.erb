@@ -51,6 +51,24 @@
                data-action="change->simple-editor#handleFileChange">
       </label>
 
+      <%# Record audio %>
+      <div class="simple-editor-record-group"
+           data-controller="audio-recorder"
+           data-audio-recorder-document-id-value="<%= @document.id %>">
+        <button type="button"
+                class="simple-editor-upload-btn"
+                title="Record audio"
+                data-action="click->audio-recorder#toggleRecording"
+                data-audio-recorder-target="recordBtn">
+          <%= heroicon :microphone, width: 16, height: 16 %>
+        </button>
+        <div class="simple-editor-recording-indicator hidden"
+             data-audio-recorder-target="recordingIndicator">
+          <span class="recording-dot"></span>
+          <span data-audio-recorder-target="timer">0:00</span>
+        </div>
+      </div>
+
       <%# Preview / Edit toggle %>
       <button type="button"
               class="btn btn-sm simple-editor-preview-btn"
@@ -98,7 +116,7 @@
                 Your browser does not support audio playback.
               </audio>
               <div class="simple-editor-audio-filename">
-                🎙 <%= ab.file.filename %>
+                <%= heroicon(:microphone, style: 'width:14px;height:14px;display:inline-block;vertical-align:middle') %> <%= ab.file.filename %>
               </div>
             </div>
             <button type="button" class="simple-editor-attachment-delete"
@@ -121,7 +139,7 @@
               <%= image_tag url_for(ib.image), alt: ib.image.filename.to_s,
                     class: "simple-editor-image-preview" %>
               <div class="simple-editor-image-filename">
-                📷 <%= ib.image.filename %> · <%= number_to_human_size(ib.image.byte_size) %>
+                <%= heroicon(:photo, style: 'width:14px;height:14px;display:inline-block;vertical-align:middle') %> <%= ib.image.filename %> · <%= number_to_human_size(ib.image.byte_size) %>
               </div>
             </div>
             <button type="button" class="simple-editor-attachment-delete"
@@ -436,6 +454,42 @@
   .simple-editor-tags {
     padding: 0 40px;
     margin-bottom: var(--spacing-sm);
+  }
+
+  /* Audio recorder */
+  .simple-editor-record-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .simple-editor-upload-btn.is-recording {
+    color: var(--color-danger);
+    border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border));
+    background: color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-primary));
+  }
+
+  .simple-editor-recording-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--text-xs);
+    color: var(--color-danger);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .recording-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-danger);
+    display: inline-block;
+    animation: pulse-recording 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse-recording {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.3; }
   }
 
   /* Responsive */
