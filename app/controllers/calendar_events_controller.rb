@@ -130,15 +130,20 @@ class CalendarEventsController < ApplicationController
         all_day   = ical_date_only?(vevent.dtstart)
         yearly    = ical_yearly_recurrence?(vevent)
 
+        # Detect implicit yearly events: birthdays/anniversaries from Apple Contacts
+        # exports often lack RRULE but have dates far in the past (birth years).
+        # Treat all-day events with starts_at before (current_year - 1) as yearly.
+        implicit_yearly = !yearly && all_day && starts_at.year < Time.current.year - 1
+
         # For yearly recurring events (birthdays, anniversaries):
         # project the date into the current or next year so it appears on the calendar.
-        if yearly && all_day
+        if (yearly || implicit_yearly) && all_day
           starts_at, ends_at = project_yearly_event(vevent.dtstart, vevent.dtend)
         end
 
         # Build description — append original year for birthdays if known
         description = vevent.description.to_s.presence
-        if yearly
+        if yearly || implicit_yearly
           original_year = extract_ical_year(vevent.dtstart)
           if original_year && original_year > 1900 && original_year < Time.current.year
             age = Time.current.year - original_year

@@ -69,6 +69,17 @@
         </div>
       </div>
 
+      <%# Transcribe button (visible only when audio blocks exist) %>
+      <% if audio_blocks.any? %>
+        <button type="button"
+                class="simple-editor-upload-btn"
+                title="Transcribe audio"
+                data-action="click->simple-editor#transcribeAudio"
+                data-simple-editor-target="transcribeBtn">
+          <%= heroicon(:language, width: 16, height: 16) %>
+        </button>
+      <% end %>
+
       <%# Preview / Edit toggle %>
       <button type="button"
               class="btn btn-sm simple-editor-preview-btn"
@@ -130,17 +141,17 @@
       </div>
     <% end %>
 
-    <%# ── Image blocks ──────────────────────────────────────────────── %>
+    <%# ── Image blocks (rendered as file links) ─────────────────────── %>
     <% if image_blocks.any? %>
-      <div class="simple-editor-images-section">
+      <div class="simple-editor-files-section">
         <% image_blocks.each do |ib| %>
           <div class="simple-editor-attachment" data-block-id="<%= ib.id %>">
-            <div class="simple-editor-image-wrapper">
-              <%= image_tag url_for(ib.image), alt: ib.image.filename.to_s,
-                    class: "simple-editor-image-preview" %>
-              <div class="simple-editor-image-filename">
-                <%= heroicon(:photo, style: 'width:14px;height:14px;display:inline-block;vertical-align:middle') %> <%= ib.image.filename %> · <%= number_to_human_size(ib.image.byte_size) %>
-              </div>
+            <div class="simple-editor-file-info">
+              <%= heroicon(:photo, style: "width:16px;height:16px;color:var(--color-text-tertiary);flex-shrink:0") %>
+              <a href="<%= url_for(ib.image) %>" target="_blank" class="simple-editor-file-link">
+                <%= ib.image.filename %>
+              </a>
+              <span class="simple-editor-file-size"><%= number_to_human_size(ib.image.byte_size) %></span>
             </div>
             <button type="button" class="simple-editor-attachment-delete"
                     title="Remove image"
@@ -176,9 +187,17 @@
       </div>
     <% end %>
 
-    <%# Transcription pending indicator %>
+    <%# Transcribe button — shown when audio blocks exist but no text block yet %>
     <% if text_block.nil? && audio_blocks.any? %>
-      <div class="simple-editor-transcription-pending" id="transcription-pending">
+      <div class="simple-editor-transcribe-action" id="transcribe-action">
+        <button type="button" class="btn btn-primary simple-editor-transcribe-btn"
+                id="transcribe-btn"
+                onclick="startTranscription()">
+          <%= heroicon(:document_text, style: "width:16px;height:16px") %>
+          Transcribe
+        </button>
+      </div>
+      <div class="simple-editor-transcription-pending hidden" id="transcription-pending">
         <div class="transcription-pending-spinner"></div>
         <span>Transcribing audio...</span>
       </div>
@@ -198,30 +217,58 @@
   </main>
 </div>
 
-<%# Poll for transcription completion when pending %>
+<%# Manual transcription: trigger + poll %>
 <% if text_block.nil? && audio_blocks.any? %>
 <script>
-(function() {
+function startTranscription() {
   var docId = <%= @document.id %>;
   var token = document.querySelector('meta[name="auth-token"]')?.content;
-  var interval = setInterval(function() {
-    fetch("/api/documents/" + docId, {
-      headers: { "Authorization": "Token token=" + token }
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      var hasText = (data.blocks || []).some(function(b) { return b.block_type === "text"; });
-      if (hasText) {
-        clearInterval(interval);
-        window.location.reload();
-      }
-    })
-    .catch(function() {}); // ignore errors, keep polling
-  }, 3000);
+  var btn = document.getElementById("transcribe-btn");
+  var actionDiv = document.getElementById("transcribe-action");
+  var pendingDiv = document.getElementById("transcription-pending");
 
-  // Stop polling after 10 minutes
-  setTimeout(function() { clearInterval(interval); }, 600000);
-})();
+  // Disable button, show spinner
+  btn.disabled = true;
+  btn.textContent = "Starting...";
+
+  fetch("/api/documents/" + docId + "/transcribe", {
+    method: "POST",
+    headers: { "Authorization": "Token token=" + token }
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  })
+  .then(function() {
+    // Hide button, show pending indicator
+    actionDiv.classList.add("hidden");
+    pendingDiv.classList.remove("hidden");
+
+    // Start polling for completion
+    var interval = setInterval(function() {
+      fetch("/api/documents/" + docId, {
+        headers: { "Authorization": "Token token=" + token }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var hasText = (data.blocks || []).some(function(b) { return b.block_type === "text"; });
+        if (hasText) {
+          clearInterval(interval);
+          window.location.reload();
+        }
+      })
+      .catch(function() {});
+    }, 3000);
+
+    // Stop polling after 10 minutes
+    setTimeout(function() { clearInterval(interval); }, 600000);
+  })
+  .catch(function(err) {
+    btn.disabled = false;
+    btn.textContent = "Transcribe";
+    console.error("Transcription request failed:", err);
+  });
+}
 </script>
 <% end %>
 
@@ -329,6 +376,20 @@
     padding: var(--spacing-md) 40px 60px;
   }
 
+  /* Transcribe button */
+  .simple-editor-transcribe-action {
+    padding: var(--spacing-md);
+  }
+  .simple-editor-transcribe-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+  .simple-editor-transcribe-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
   /* Transcription pending indicator */
   .simple-editor-transcription-pending {
     display: flex;
@@ -365,6 +426,8 @@
     overflow: hidden;
     padding: 0;
     box-sizing: border-box;
+    /* Modern browsers: auto-grow natively without JS resize */
+    field-sizing: content;
   }
 
   .simple-editor-textarea::placeholder {
@@ -432,37 +495,8 @@
     border-color: color-mix(in srgb, var(--color-danger) 25%, var(--color-border));
   }
 
-  /* Image blocks */
-  .simple-editor-images-section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-lg);
-  }
 
-  .simple-editor-image-wrapper {
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-sm);
-    overflow: hidden;
-  }
-
-  .simple-editor-image-preview {
-    max-width: 100%;
-    max-height: 300px;
-    object-fit: contain;
-    border-radius: var(--radius-base);
-    display: block;
-  }
-
-  .simple-editor-image-filename {
-    font-size: var(--text-xs);
-    color: var(--color-text-tertiary);
-    margin-top: var(--spacing-xs);
-  }
-
-  /* File blocks (non-audio) */
+  /* File blocks (non-audio, images) */
   .simple-editor-files-section {
     display: flex;
     flex-direction: column;

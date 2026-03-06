@@ -190,9 +190,30 @@ body {
   margin: 0.2em 0;
 }
 
-/* Task list checkboxes */
+.markdown-preview li ul {
+  margin-left: 1.4rem;
+  margin-top: 0;
+}
+/* Task list checkboxes — flex layout so text wraps past checkbox */
+.markdown-preview .task-list-item {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.4em;
+  align-items: baseline;
+  margin-left: -1.5em;
+}
+.markdown-preview .task-list-item > input[type="checkbox"] {
+  flex-shrink: 0;
+}
+/* Nested lists inside a task item: force to own line, indent */
+.markdown-preview .task-list-item > ul,
+.markdown-preview .task-list-item > ol {
+  flex-basis: 100%;
+  padding-left: 1.5em;
+  margin: 0.2em 0 0;
+}
 .markdown-preview input[type="checkbox"] {
-  margin-right: 0.4em;
   cursor: pointer;
   accent-color: var(--color-primary);
 }

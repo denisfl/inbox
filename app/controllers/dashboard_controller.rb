@@ -12,7 +12,7 @@ class DashboardController < ApplicationController
 
     # ── Recent documents ─────────────────────────────────────────────────────
     @recent_documents = Document.includes(:blocks, :tags)
-                                .order(created_at: :desc).limit(5)
+                                .order(created_at: :desc).limit(20)
 
     # ── Stats strip ──────────────────────────────────────────────────────────
     next_event = CalendarEvent.today

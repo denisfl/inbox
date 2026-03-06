@@ -305,7 +305,7 @@
                         <span class="agenda-entry-duration"><%= ev.duration_label %></span>
                       <% end %>
                       <% if ev.description.present? %>
-                        <div class="agenda-entry-desc"><%= truncate(ev.description, length: 80) %></div>
+                        <div class="agenda-entry-desc markdown-preview"><%= render_markdown(ev.description) %></div>
                       <% end %>
                     </div>
                     <div class="agenda-entry-actions">
@@ -363,7 +363,7 @@
                         <span class="agenda-entry-duration"><%= task.due_time.strftime("%H:%M") %></span>
                       <% end %>
                       <% if task.description.present? %>
-                        <div class="agenda-entry-desc"><%= truncate(task.description, length: 80) %></div>
+                        <div class="agenda-entry-desc markdown-preview"><%= render_markdown(task.description) %></div>
                       <% end %>
                     </div>
                     <div class="agenda-entry-source agenda-entry-source--task">
@@ -708,9 +708,27 @@
     font-size: var(--text-xs);
     color: var(--color-text-tertiary);
     margin-top: var(--spacing-xs);
-    white-space: nowrap;
     overflow: hidden;
+  }
+
+  /* Plain text excerpts: single line with ellipsis */
+  .agenda-entry-desc:not(.markdown-preview) {
+    white-space: nowrap;
     text-overflow: ellipsis;
+  }
+
+  /* Rendered markdown: compact, max 3 lines */
+  .agenda-entry-desc.markdown-preview {
+    max-height: 3.6em;
+    line-height: 1.2;
+  }
+  .agenda-entry-desc.markdown-preview p {
+    margin: 0;
+  }
+  .agenda-entry-desc.markdown-preview ul,
+  .agenda-entry-desc.markdown-preview ol {
+    margin: 0;
+    padding-left: 1.2em;
   }
 
   .agenda-entry-source {

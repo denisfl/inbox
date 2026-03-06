@@ -147,11 +147,9 @@ RSpec.describe TelegramMessageHandler do
       before do
         stub_bot_get_file(file_path: "voices/voice_123.ogg")
         stub_file_download(content: "fake ogg data")
-        # Prevent actual job execution in test
-        allow(TranscribeAudioJob).to receive(:perform_later)
       end
 
-      it "creates a document with file block and queues transcription" do
+      it "creates a document with file block (no auto-transcription)" do
         update = build_update(voice: voice)
 
         expect {
@@ -161,7 +159,6 @@ RSpec.describe TelegramMessageHandler do
         doc = Document.last
         expect(doc.blocks.where(block_type: "file").count).to eq(1)
         expect(doc.tags.map(&:name)).to include("telegram", "audio")
-        expect(TranscribeAudioJob).to have_received(:perform_later)
       end
     end
 

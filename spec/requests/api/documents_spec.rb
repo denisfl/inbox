@@ -305,7 +305,7 @@ RSpec.describe "Api::Documents", type: :request do
       expect(json["filename"]).to eq("test_upload.txt")
     end
 
-    it "uploads an audio file, creates file block, and enqueues TranscribeAudioJob" do
+    it "uploads an audio file and creates file block" do
       audio = Rack::Test::UploadedFile.new(
         Rails.root.join("spec/fixtures/files/test_audio.webm"),
         "audio/webm"
@@ -315,7 +315,7 @@ RSpec.describe "Api::Documents", type: :request do
         post "/api/documents/#{document.id}/upload",
              params: { file: audio },
              headers: { "Authorization" => "Token token=#{token}" }
-      }.to have_enqueued_job(TranscribeAudioJob)
+      }.not_to have_enqueued_job(TranscribeAudioJob)
 
       expect(response).to have_http_status(:success)
       json = JSON.parse(response.body)
