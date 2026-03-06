@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "telegram/bot"
+
 class ProcessTelegramUpdateJob < ApplicationJob
   queue_as :default
   sidekiq_options retry: 1 # Only 1 retry — Telegram will also retry the webhook
