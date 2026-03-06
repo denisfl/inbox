@@ -176,11 +176,19 @@
       </div>
     <% end %>
 
+    <%# Transcription pending indicator %>
+    <% if text_block.nil? && audio_blocks.any? %>
+      <div class="simple-editor-transcription-pending" id="transcription-pending">
+        <div class="transcription-pending-spinner"></div>
+        <span>Transcribing audio...</span>
+      </div>
+    <% end %>
+
     <%# Edit mode (default): hidden when there is no text block and audio-only document %>
     <textarea class="simple-editor-textarea<%= ' hidden' if text_block.nil? && audio_blocks.any? %>"
               data-simple-editor-target="textarea"
               data-action="input->simple-editor#scheduleAutoSave"
-              placeholder="Write in Markdown…"
+              placeholder="Write in Markdown..."
               spellcheck="true"
               autocomplete="off"><%= text_block&.content_hash&.dig("text") %></textarea>
 
@@ -189,6 +197,33 @@
          data-simple-editor-target="preview"></div>
   </main>
 </div>
+
+<%# Poll for transcription completion when pending %>
+<% if text_block.nil? && audio_blocks.any? %>
+<script>
+(function() {
+  var docId = <%= @document.id %>;
+  var token = document.querySelector('meta[name="auth-token"]')?.content;
+  var interval = setInterval(function() {
+    fetch("/api/documents/" + docId, {
+      headers: { "Authorization": "Token token=" + token }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var hasText = (data.blocks || []).some(function(b) { return b.block_type === "text"; });
+      if (hasText) {
+        clearInterval(interval);
+        window.location.reload();
+      }
+    })
+    .catch(function() {}); // ignore errors, keep polling
+  }, 3000);
+
+  // Stop polling after 10 minutes
+  setTimeout(function() { clearInterval(interval); }, 600000);
+})();
+</script>
+<% end %>
 
 <style>
   .simple-editor-container {
@@ -292,6 +327,27 @@
     flex-direction: column;
     min-height: calc(100vh - 16rem);
     padding: var(--spacing-md) 40px 60px;
+  }
+
+  /* Transcription pending indicator */
+  .simple-editor-transcription-pending {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+  }
+  .transcription-pending-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: transcription-spin 0.8s linear infinite;
+  }
+  @keyframes transcription-spin {
+    to { transform: rotate(360deg); }
   }
 
   /* Textarea */
