@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "telegram/bot"
+
 class TranscribeAudioJob < ApplicationJob
   queue_as :default
   sidekiq_options retry: 3
