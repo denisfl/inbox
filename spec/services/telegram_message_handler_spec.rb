@@ -4,7 +4,6 @@ require "rails_helper"
 
 RSpec.describe TelegramMessageHandler do
   include_context "telegram_stub"
-  include_context "ollama_stub"
 
   let(:chat_id) { 12345 }
   let(:message_id) { 99 }
@@ -47,34 +46,51 @@ RSpec.describe TelegramMessageHandler do
 
   describe "#handle" do
     context "with text message" do
-      it "creates a document via IntentClassifier and IntentRouter" do
-        stub_ollama_classify(intent: "note", confidence: 0.9, title: "Hello")
-
+      it "creates a note document directly" do
         update = build_update(text: "Hello world")
 
         expect {
           described_class.new(update).handle
         }.to change(Document, :count).by(1)
+
+        doc = Document.last
+        expect(doc.document_type).to eq("note")
+        expect(doc.title).to eq("Hello world")
       end
 
-      it "creates a task for todo intent" do
-        stub_ollama_classify(intent: "todo", confidence: 0.95, title: "Buy milk")
+      it "saves text content in a block" do
+        update = build_update(text: "My note content")
+        described_class.new(update).handle
 
-        update = build_update(text: "need to buy milk")
+        doc = Document.last
+        text_block = doc.blocks.find_by(block_type: "text")
+        expect(text_block).to be_present
+        expect(JSON.parse(text_block.content)["text"]).to eq("My note content")
+      end
 
-        expect {
-          described_class.new(update).handle
-        }.to change(Task, :count).by(1)
+      it "auto-tags with telegram" do
+        update = build_update(text: "tagged message")
+        described_class.new(update).handle
+
+        doc = Document.last
+        expect(doc.tags.map(&:name)).to include("telegram")
       end
 
       it "updates telegram_message_id on the created document" do
-        stub_ollama_classify(intent: "note", confidence: 0.9, title: "Test")
-
         update = build_update(text: "test message")
         described_class.new(update).handle
 
         doc = Document.last
         expect(doc.telegram_message_id).to eq(message_id)
+      end
+
+      it "truncates long titles" do
+        long_text = "A" * 200
+        update = build_update(text: long_text)
+        described_class.new(update).handle
+
+        doc = Document.last
+        expect(doc.title.length).to be <= 80
       end
     end
 
@@ -245,9 +261,7 @@ RSpec.describe TelegramMessageHandler do
 
     context "when handler raises" do
       it "sends error reply and does not propagate" do
-        stub_ollama_classify(intent: "note", confidence: 0.9, title: "Test")
-
-        allow(IntentRouter).to receive(:dispatch).and_raise(StandardError, "boom")
+        allow(Document).to receive(:create!).and_raise(StandardError, "boom")
 
         update = build_update(text: "test")
 

@@ -28,12 +28,12 @@ class TelegramMessageHandler
     when :document
       handle_document
     else
-      send_reply("❌ Unsupported message type")
+      send_reply("Unsupported message type")
     end
   rescue StandardError => e
     Rails.logger.error("Message handling error: #{e.class} - #{e.message}")
     Rails.logger.error(e.backtrace.join("\n"))
-    send_reply("❌ Error processing message: #{e.message}")
+    send_reply("Error processing message: #{e.message}")
   end
 
   private
@@ -48,16 +48,32 @@ class TelegramMessageHandler
   end
 
   def handle_text
-    result = IntentClassifierService.classify(message.text)
-    doc = IntentRouter.dispatch(result, message.chat.id)
+    text = message.text.to_s.strip
+    return if text.blank?
 
-    # Update telegram_message_id after creation (IntentRouter doesn't have access to it)
-    # Only for Document records — Tasks don't have telegram fields
-    if doc&.persisted? && doc.respond_to?(:telegram_message_id)
-      doc.update_columns(telegram_message_id: message.message_id)
-    end
+    # Save directly as a note — no LLM classification
+    title = text.lines.first.to_s.strip.truncate(80)
+    title = "Note #{Time.current.to_i}" if title.blank?
 
-    Rails.logger.info("Created #{result.intent} document: #{doc&.id} (confidence: #{result.confidence})")
+    doc = Document.create!(
+      title: title,
+      document_type: "note",
+      telegram_chat_id: message.chat.id,
+      telegram_message_id: message.message_id
+    )
+
+    doc.blocks.create!(
+      block_type: "text",
+      position: 0,
+      content: { text: text }.to_json
+    )
+
+    # Auto-tag as telegram
+    telegram_tag = Tag.find_or_create_by!(name: "telegram")
+    doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
+
+    send_reply("Note saved")
+    Rails.logger.info("Created note document: #{doc.id} from text message")
   end
 
   def handle_photo
@@ -111,7 +127,7 @@ class TelegramMessageHandler
       )
     end
 
-    send_reply("✅ Photo saved")
+    send_reply("Photo saved")
     Rails.logger.info("Created photo document: #{doc.id}")
   end
 
@@ -124,7 +140,7 @@ class TelegramMessageHandler
     downloaded_file = download_file(file_url)
 
     # Add timestamp to ensure unique slug
-    title = "🎤 Voice #{Time.current.to_i}"
+    title = "Voice #{Time.current.to_i}"
 
     doc = Document.create!(
       title: title,
@@ -156,7 +172,7 @@ class TelegramMessageHandler
     # Queue transcription job
     TranscribeAudioJob.perform_later(doc.id, file_block.file.blob.key)
 
-    send_reply("🎤 Transcribing your voice note...")
+    send_reply("Transcribing your voice note...")
     Rails.logger.info("Created voice document: #{doc.id}, queued transcription")
   end
 
@@ -170,7 +186,7 @@ class TelegramMessageHandler
 
     filename = message.audio.file_name || "audio_#{message.audio.file_id}"
     # Add timestamp to ensure unique slug
-    title = "🎵 #{filename} #{Time.current.to_i}"
+    title = "Audio: #{filename} #{Time.current.to_i}"
 
     doc = Document.create!(
       title: title.truncate(50),
@@ -199,7 +215,7 @@ class TelegramMessageHandler
     audio_tag = Tag.find_or_create_by!(name: "audio")
     doc.tags << audio_tag unless doc.tags.include?(audio_tag)
 
-    send_reply("🎵 Audio file saved")
+    send_reply("Audio file saved")
     Rails.logger.info("Created audio document: #{doc.id}")
   end
 
@@ -250,7 +266,7 @@ class TelegramMessageHandler
       )
     end
 
-    send_reply("✅ Document saved")
+    send_reply("Document saved")
     Rails.logger.info("Created document: #{doc.id}")
   end
 
@@ -260,7 +276,7 @@ class TelegramMessageHandler
     URI.parse(url).open
   rescue StandardError => e
     Rails.logger.error("Failed to download file from #{url}: #{e.message}")
-    raise "❌ Failed to download file: #{e.message}"
+    raise "Failed to download file: #{e.message}"
   end
 
   def send_reply(text)

@@ -10,15 +10,15 @@ We live in an interesting time when producing code has become incredibly cheap. 
 
 ## Features
 
-- **Telegram Bot** — capture notes, voice messages, photos, and files from Telegram
-- **Voice Transcription** — local audio-to-text via [Whisper](https://github.com/openai/whisper) (no cloud API)
-- **Google Calendar Sync** — import events and get reminders via Telegram
-- **Tags** — organize documents and tasks with a flexible tagging system
-- **Tasks** — simple task management with due dates
-- **Markdown Editor** — write and preview Markdown with live toggle
-- **Search** — full-text search across all documents
-- **Privacy** — everything stays on your hardware, single-user design
-- **AI Classification** — automatic intent detection via local LLM (Ollama)
+- **Telegram Bot** -- capture notes, voice messages, photos, and files from Telegram
+- **Voice Transcription** -- local audio-to-text via [Parakeet v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) (no cloud API, 25 languages)
+- **Audio Recording** -- record voice notes directly in the browser, auto-transcribed
+- **Google Calendar Sync** -- import events and get reminders via Telegram
+- **Tags** -- organize documents and tasks with a flexible tagging system
+- **Tasks** -- simple task management with due dates
+- **Markdown Editor** -- write and preview Markdown with live toggle
+- **Search** -- full-text search across all documents
+- **Privacy** -- everything stays on your hardware, single-user design
 
 ## Screenshots
 
@@ -39,8 +39,7 @@ We live in an interesting time when producing code has become incredibly cheap. 
 | Frontend        | Stimulus.js, Tailwind CSS             |
 | Asset Pipeline  | Propshaft, esbuild, cssbundling-rails |
 | Background Jobs | SolidQueue / Sidekiq                  |
-| Transcription   | faster-whisper (Python)               |
-| AI/LLM          | Ollama (gemma3 / mistral)             |
+| Transcription   | Parakeet v3 / onnx-asr (Python)       |
 | Containers      | Docker Compose                        |
 | Testing         | RSpec, FactoryBot, SimpleCov          |
 
@@ -142,22 +141,21 @@ bin/brakeman --no-pager        # Security scan
 
 ## Environment Variables
 
-| Variable                   | Required | Description                                              |
-| -------------------------- | -------- | -------------------------------------------------------- |
-| `SECRET_KEY_BASE`          | Yes      | Rails secret key (generate with `openssl rand -hex 64`)  |
-| `TELEGRAM_BOT_TOKEN`       | Yes      | Bot token from BotFather                                 |
-| `TELEGRAM_BOT_NAME`        | Yes      | Bot username (without @)                                 |
-| `TELEGRAM_ALLOWED_USER_ID` | Yes      | Your Telegram user ID                                    |
-| `TELEGRAM_WEBHOOK_URL`     | Yes      | Public URL for webhook                                   |
-| `API_TOKEN`                | No       | Token for API authentication                             |
-| `GIT_SHA`                  | No       | Git commit SHA, baked at build time for version tracking |
-| `OLLAMA_BASE_URL`          | No       | Ollama server URL (default: `http://ollama:11434`)       |
-| `WHISPER_BASE_URL`         | No       | Whisper service URL (default: `http://whisper:5000`)     |
-| `WHISPER_LANGUAGE`         | No       | Force transcription language (default: auto-detect)      |
-| `GOOGLE_CLIENT_ID`         | No       | For Google Calendar sync                                 |
-| `GOOGLE_CLIENT_SECRET`     | No       | For Google Calendar sync                                 |
-| `GOOGLE_REFRESH_TOKEN`     | No       | For Google Calendar sync                                 |
-| `GOOGLE_CALENDAR_IDS`      | No       | Comma-separated calendar IDs (default: `primary`)        |
+| Variable                   | Required | Description                                                    |
+| -------------------------- | -------- | -------------------------------------------------------------- |
+| `SECRET_KEY_BASE`          | Yes      | Rails secret key (generate with `openssl rand -hex 64`)        |
+| `TELEGRAM_BOT_TOKEN`       | Yes      | Bot token from BotFather                                       |
+| `TELEGRAM_BOT_NAME`        | Yes      | Bot username (without @)                                       |
+| `TELEGRAM_ALLOWED_USER_ID` | Yes      | Your Telegram user ID                                          |
+| `TELEGRAM_WEBHOOK_URL`     | Yes      | Public URL for webhook                                         |
+| `API_TOKEN`                | No       | Token for API authentication                                   |
+| `GIT_SHA`                  | No       | Git commit SHA, baked at build time for version tracking       |
+| `TRANSCRIBER_URL`          | No       | Transcription service URL (default: `http://transcriber:5000`) |
+| `TRANSCRIBER_LANGUAGE`     | No       | Force transcription language (default: auto-detect)            |
+| `GOOGLE_CLIENT_ID`         | No       | For Google Calendar sync                                       |
+| `GOOGLE_CLIENT_SECRET`     | No       | For Google Calendar sync                                       |
+| `GOOGLE_REFRESH_TOKEN`     | No       | For Google Calendar sync                                       |
+| `GOOGLE_CALENDAR_IDS`      | No       | Comma-separated calendar IDs (default: `primary`)              |
 
 ## How It Works
 
@@ -186,17 +184,17 @@ Inbox collects information from multiple sources, processes it in the background
         ┌─────────────┼─────────────┐
         ▼             ▼             ▼
 ┌──────────────┐ ┌──────────┐ ┌──────────┐
-│  Whisper      │ │  Ollama   │ │  Google   │
-│ Transcription │ │ LLM/AI   │ │ Cal API  │
-│ (local, CPU)  │ │ (local)  │ │ (OAuth)  │
+│  Parakeet v3  │ │  Redis   │ │  Google   │
+│ Transcription │ │  Cache   │ │ Cal API  │
+│ (local, CPU)  │ │ + Queue  │ │ (OAuth)  │
 └──────────────┘ └──────────┘ └──────────┘
 ```
 
 ### Data Flow
 
-1. **Capture** — Send a text message, voice note, photo, or file to your Telegram bot. Or type directly in the web editor.
-2. **Process** — Voice messages are transcribed locally by Whisper. The AI classifier (Ollama) detects intent: is it a note, a task, or something else?
-3. **Store** — Everything lands in SQLite as a document with Markdown content. Tasks get due dates and priorities. Calendar events sync from Google.
+1. **Capture** -- Send a text message, voice note, photo, or file to your Telegram bot. Type directly in the web editor, or record audio from the browser.
+2. **Process** -- Voice messages are transcribed locally by Parakeet v3 with automatic punctuation and capitalization. All messages are saved as notes.
+3. **Store** -- Everything lands in SQLite as a document with Markdown content. Tasks get due dates and priorities. Calendar events sync from Google.
 4. **Organize** — Tag documents and tasks. Pin important notes. Filter by source, tag, or date.
 5. **Access** — Browse, search, and edit from any device through the web UI. Protected by HTTP Basic Auth over HTTPS.
 
@@ -212,6 +210,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code style, and PR
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
-## ❤️ Support the project
+## Support the project
 
 If you find Inbox useful, consider supporting development via GitHub Sponsors.

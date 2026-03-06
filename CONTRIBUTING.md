@@ -87,7 +87,7 @@ app/
 config/              # Rails configuration
 db/                  # Migrations and schema
 spec/                # RSpec tests
-whisper_service/     # Python Whisper transcription service
+whisper_service/     # Python Parakeet v3 transcription service
 openspec/            # Feature specifications
 ```
 
@@ -135,7 +135,7 @@ If you prefer Docker:
 docker compose up -d
 ```
 
-This starts: web server, Redis, Ollama (AI), and Whisper (transcription).
+This starts: web server, Redis, and transcription service (Parakeet v3).
 
 ## Questions?
 

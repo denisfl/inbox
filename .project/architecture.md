@@ -8,7 +8,7 @@
 - **Backend**: Yes (Rails 8 API)
 - **Database**: Yes (SQLite3)
 - **Authentication**: Minimal (Optional token or session)
-- **AI/ML**: Yes (Ollama for classification, Whisper for transcription)
+- **AI/ML**: Yes (Parakeet v3 for transcription via onnx-asr)
 - **Container**: Yes (Docker for development and deployment)
 
 ---
@@ -25,8 +25,7 @@ Rails: 8.0.x (do not downgrade)
 SQLite: 3.43+ (do not downgrade)
 Redis: 7.x (do not downgrade)
 Node.js: 22+ (do not downgrade)
-Ollama: latest (pinned in docker-compose)
-Whisper: latest pip install (pinned in Dockerfile)
+Parakeet: v3 (nemo-parakeet-tdt-0.6b-v3 via onnx-asr)
 ```
 
 ---
@@ -52,18 +51,16 @@ Whisper: latest pip install (pinned in Dockerfile)
 | Component           | Technology   | Version  | Purpose                 |
 | ------------------- | ------------ | -------- | ----------------------- |
 | **Framework**       | Stimulus JS  | 3.x      | Interactivity           |
-| **CSS Framework**   | Tailwind CSS | 4.x      | Styling                 |
+| **CSS Framework**   | Tailwind CSS | 3.x      | Styling                 |
 | **Template Engine** | ERB          | Built-in | HTML rendering          |
-| **Build Tool**      | importmap    | Rails 8  | No build process needed |
-| **Package Manager** | npm          | 9+       | Node package management |
+| **Build Tool**      | esbuild      | Latest   | JS bundling             |
+| **Package Manager** | pnpm         | Latest   | Node package management |
 
 ### AI & ML
 
-| Component               | Technology                 | Version | Purpose               |
-| ----------------------- | -------------------------- | ------- | --------------------- |
-| **Audio Transcription** | OpenAI Whisper             | Latest  | Voice-to-text         |
-| **Note Classification** | Ollama                     | Latest  | Local LLM inference   |
-| **Models**              | mistral/neural-chat/llama2 | Latest  | Classification models |
+| Component               | Technology             | Version | Purpose               |
+| ----------------------- | ---------------------- | ------- | --------------------- |
+| **Audio Transcription** | Parakeet v3 / onnx-asr | 0.6b-v3 | Voice-to-text (local) |
 
 ### DevOps & Containerization
 
@@ -206,16 +203,10 @@ TELEGRAM_WEBHOOK_URL=https://your-domain.com/api/telegram/webhook
 API_TOKEN=<random secure token for API access>
 API_TOKEN_ROTATION_DAYS=90
 
-# Ollama AI (FINALIZED: mistral 4.1GB for accuracy)
-OLLAMA_BASE_URL=http://ollama:11434
-OLLAMA_MODEL=mistral
-OLLAMA_MAX_MEMORY=4GB
-OLLAMA_TIMEOUT=30  # seconds for classification
-
-# Whisper Audio (FINALIZED: base 1.5GB for Russian accuracy)
-WHISPER_MODEL_SIZE=base
-WHISPER_LANGUAGE=ru
-WHISPER_TIMEOUT=300  # seconds for transcription (5 min max)
+# Audio Transcription (Parakeet v3 via onnx-asr)
+# Use http://localhost:5001 for local dev (bin/dev), http://transcriber:5000 in Docker
+TRANSCRIBER_URL=http://transcriber:5000
+# TRANSCRIBER_LANGUAGE=ru  # Uncomment to force language; default: auto-detect
 
 # Sidekiq
 SIDEKIQ_CONCURRENCY=2
@@ -306,11 +297,6 @@ GET    /documents/search?q=<query>              # Full-text search
 GET    /documents/search?tag=<tag>              # Filter by tag
 GET    /documents/search?category=<category>    # Filter by category
 
-# Classification (Ollama)
-POST   /documents/:id/classify                  # Auto-classify document
-POST   /documents/:id/extract-tags              # Extract tags with AI
-GET    /documents/:id/summary                   # Generate AI summary
-
 # Telegram
 POST   /telegram/webhook                        # Receive Telegram messages
 ```
@@ -344,8 +330,6 @@ POST /api/documents
   "source": "web",
   "blocks": [...],
   "tags": ["work", "important"],
-  "category": "Work",  // From Ollama classification
-  "priority": "High",  // From Ollama classification
   "created_at": "2024-01-01T12:00:00Z"
 }
 ```
@@ -365,17 +349,17 @@ POST /api/documents
 
 ### HTTP Status Codes
 
-| Code    | Meaning       | Usage                        |
-| ------- | ------------- | ---------------------------- |
-| **200** | OK            | Successful GET, PATCH        |
-| **201** | Created       | Successful POST              |
-| **204** | No Content    | Successful DELETE            |
-| **400** | Bad Request   | Invalid parameters           |
-| **401** | Unauthorized  | Missing API token            |
-| **404** | Not Found     | Document/block not found     |
-| **422** | Unprocessable | Validation failed            |
-| **500** | Server Error  | Rails error                  |
-| **503** | Unavailable   | Service (Redis, Ollama) down |
+| Code    | Meaning       | Usage                             |
+| ------- | ------------- | --------------------------------- |
+| **200** | OK            | Successful GET, PATCH             |
+| **201** | Created       | Successful POST                   |
+| **204** | No Content    | Successful DELETE                 |
+| **400** | Bad Request   | Invalid parameters                |
+| **401** | Unauthorized  | Missing API token                 |
+| **404** | Not Found     | Document/block not found          |
+| **422** | Unprocessable | Validation failed                 |
+| **500** | Server Error  | Rails error                       |
+| **503** | Unavailable   | Service (Redis, Transcriber) down |
 
 ### Pagination Convention
 
@@ -423,7 +407,7 @@ Rails.logger.error("Transcription failed: #{error.message}")
 /var/log/notesvault/
 ├── production.log          # Main Rails logs
 ├── sidekiq.log             # Background job logs
-├── ollama.log              # AI service logs
+├── transcriber.log         # Audio transcription service logs
 └── access.log              # HTTP request logs (optional)
 ```
 
@@ -449,8 +433,8 @@ class MetricsCollector
   # Job processing time
   measure :job_processing_time, "time taken to process background job"
 
-  # Ollama inference time
-  measure :ollama_inference_time, "time taken for AI classification"
+  # Transcription time
+  measure :transcription_time, "time taken for audio transcription"
 
   # Queue depth
   gauge :sidekiq_queue_depth, "number of pending background jobs"
@@ -502,8 +486,7 @@ class HealthController < ApplicationController
       web: "ok",
       database: check_database,
       redis: check_redis,
-      ollama: check_ollama,
-      whisper: check_whisper
+      transcriber: check_transcriber
     }
 
     all_ok = status.values.all? { |v| v == "ok" }
@@ -528,16 +511,10 @@ class HealthController < ApplicationController
     "down"
   end
 
-  def check_ollama
-    # Check if Ollama is responding
-    "ok"
-  rescue
-    "down"
-  end
-
-  def check_whisper
-    # Check if Whisper model is loaded
-    "ok"
+  def check_transcriber
+    # Check if Parakeet v3 transcription service is responding
+    response = HTTP.timeout(5).get("#{ENV.fetch('TRANSCRIBER_URL', 'http://transcriber:5000')}/health")
+    response.status.success? ? "ok" : "down"
   rescue
     "down"
   end
@@ -744,14 +721,14 @@ end
 
 - Rails in development mode
 - SQLite with eager logs
-- Ollama lightweight models
+- Transcriber service via Docker
 - Auto-reload on file changes
 
 **Production (Raspberry Pi Docker):**
 
 - Rails in production mode
 - SQLite with backups
-- Full Ollama models
+- Transcriber service (Parakeet v3)
 - Systemd service management
 
 ### Deployment Process
@@ -810,8 +787,7 @@ Response:
   "web": "ok",
   "database": "ok",
   "redis": "ok",
-  "ollama": "ok",
-  "whisper": "ok"
+  "transcriber": "ok"
 }
 ```
 
@@ -829,13 +805,12 @@ Response:
 
 ### Performance Budgets
 
-| Metric                | Target              | Alert   |
-| --------------------- | ------------------- | ------- |
-| API Response          | <100ms p95          | >200ms  |
-| Page Load             | <500ms              | >1000ms |
-| DB Query              | <50ms p95           | >100ms  |
-| Ollama Inference      | <10s p95            | >30s    |
-| Whisper Transcription | <1min per min audio | >5min   |
+| Metric                 | Target              | Alert   |
+| ---------------------- | ------------------- | ------- |
+| API Response           | <100ms p95          | >200ms  |
+| Page Load              | <500ms              | >1000ms |
+| DB Query               | <50ms p95           | >100ms  |
+| Parakeet Transcription | <2min per min audio | >5min   |
 
 ### Scaling Targets
 
@@ -889,19 +864,15 @@ CREATE INDEX idx_document_metadata_text ON document_metadata(full_text_index);
 
 ### 1. AI Model Configuration
 
-**Ollama Model: mistral (4.1GB)**
+**Audio Transcription: Parakeet v3 (nemo-parakeet-tdt-0.6b-v3)**
 
-- Chosen for accuracy over speed
-- Raspberry Pi 5 8GB sufficient (4.1GB model + 2GB system + 1-2GB Rails/Redis)
-- Async classification allows 5-15s inference time
-- Memory peak: ~4.5GB
-
-**Whisper Model: base (1.5GB, Russian)**
-
-- Better accuracy for Russian language transcription
-- Async processing via Sidekiq (1-2 min per audio minute)
-- Expected accuracy: 90%+ for clear audio
-- Memory during transcription: ~2GB
+- Local CPU inference via onnx-asr (ONNX Runtime)
+- Supports 25 languages with automatic language detection
+- Automatic punctuation and capitalization (no LLM post-processing needed)
+- FFmpeg converts any audio format (WebM, OGG, MP3) to WAV before transcription
+- Runs in Docker container with gunicorn
+- Memory usage: ~1-2GB during transcription
+- Performance on RPi5: ~18x real-time
 
 ### 2. Data Persistence
 
@@ -933,7 +904,7 @@ CREATE INDEX idx_document_metadata_text ON document_metadata(full_text_index);
 ## Summary
 
 ✅ **Stack:** Rails 8 + Stimulus JS + SQLite + Docker  
-✅ **AI:** Ollama (mistral 4.1GB) + Whisper (base 1.5GB)  
+✅ **AI:** Parakeet v3 / onnx-asr (local transcription, 25 languages)  
 ✅ **Deployment:** Docker Compose on Raspberry Pi 5 (8GB)  
 ✅ **Quality:** 80%+ test coverage, RSpec + Rubocop  
 ✅ **Observability:** Logging, metrics, health checks  

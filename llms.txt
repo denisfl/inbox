@@ -1,0 +1,47 @@
+# Inbox
+
+> A privacy-first personal note-taking system with Telegram bot integration, voice transcription, and calendar sync. Self-hosted on Raspberry Pi -- no cloud required. Built with Ruby on Rails 8.1, SQLite3, Stimulus.js, and Tailwind CSS.
+
+Inbox is a single-user, block-based note-taking app designed for privacy and local data ownership. It captures information from multiple sources (web editor, Telegram bot, voice recordings), processes it with local AI transcription (Parakeet v3 / onnx-asr), and stores everything in SQLite. The system runs entirely on a Raspberry Pi with Docker Compose.
+
+Key capabilities:
+- Telegram bot captures text, voice messages, photos, and files
+- In-browser audio recording with automatic transcription via MediaRecorder API
+- Local voice-to-text via Parakeet v3 (25 languages, no cloud API)
+- Google Calendar sync with event import and Telegram reminders
+- Tags, tasks with due dates, full-text search, Markdown editor
+- Background jobs via SolidQueue / Sidekiq with Redis
+
+## Documentation
+
+- [README](README.md): Project overview, features, quick start (Docker), development setup, environment variables, architecture diagram, data flow
+- [Contributing Guide](CONTRIBUTING.md): Development setup, running tests (RSpec), code style (RuboCop), security scanning (Brakeman), PR guidelines, Conventional Commits
+- [Project Vision & About](.project/about.md): Vision, problem statement, goals, success criteria, target audience, value proposition, features, scope boundaries, technology stack, key decisions
+- [Technical Architecture](.project/architecture.md): Full tech stack with versions, runtime & tooling, environment configuration, REST API endpoints & contracts, observability (logging, metrics, health checks), security requirements, quality standards, deployment & operations, performance budgets, finalized technical decisions
+- [Technical Specifications](.project/specs.md): Version policy (locked versions), project summary
+- [Deployment Quickstart](.project/deployment-quickstart.md): Production deployment on Raspberry Pi 5 with WireGuard VPN, nginx reverse proxy on Digital Ocean, Docker Compose, Telegram webhook registration, SSL via certbot, monitoring, backup strategy, troubleshooting
+
+## Feature Specifications
+
+- [Audio Recording Proposal](openspec/changes/audio-recording/proposal.md): In-browser audio recording via MediaRecorder API, upload to existing endpoint, automatic transcription with TranscribeAudioJob
+- [Audio Recording Design](openspec/changes/audio-recording/design.md): Architecture overview, Stimulus controller (audio_recorder_controller.js), UI placement, CSS for recording indicator, backend upload endpoint enhancement, supported audio formats, error handling
+- [Audio Recording Tasks](openspec/changes/audio-recording/tasks.md): Implementation task breakdown -- backend upload endpoint triggers transcription, frontend Stimulus controller, testing phases
+
+## Source Code
+
+- [Routes](config/routes.rb): Rails routing configuration
+- [Database Schema](db/schema.rb): Current database schema (SQLite3)
+- [Gemfile](Gemfile): Ruby dependencies
+- [Package JSON](package.json): Node.js dependencies
+- [Docker Compose](docker-compose.yml): Container orchestration configuration
+- [Dockerfile](Dockerfile): Application container build
+- [Procfile.dev](Procfile.dev): Development process manager configuration
+
+## Optional
+
+- [License](LICENSE): MIT License
+- [Docker Compose Dev](docker-compose.dev.yml): Development-specific Docker overrides
+- [Docker Compose Production](docker-compose.production.yml): Production-specific Docker overrides
+- [Tailwind Config](tailwind.config.js): Tailwind CSS configuration
+- [Sidekiq Config](config/sidekiq.yml): Sidekiq background job configuration
+- [Database Config](config/database.yml): Database connection configuration

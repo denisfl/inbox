@@ -9,7 +9,7 @@
 - **Database**: Yes (SQLite3)
 - **Authentication**: Minimal (Single user)
 - **Containers**: Yes (Docker)
-- **AI/ML**: Yes (Ollama + Whisper)
+- **AI/ML**: Yes (Parakeet v3 for transcription via onnx-asr)
 
 ---
 

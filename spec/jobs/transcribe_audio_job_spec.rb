@@ -3,11 +3,9 @@
 require "rails_helper"
 
 RSpec.describe TranscribeAudioJob, type: :job do
-  include_context "ollama_stub"
   include_context "telegram_stub"
 
-  let(:whisper_url) { ENV.fetch("WHISPER_BASE_URL", "http://whisper:5000") }
-  let(:ollama_url) { ENV.fetch("OLLAMA_BASE_URL", "http://ollama:11434") }
+  let(:transcriber_url) { ENV.fetch("TRANSCRIBER_URL", "http://transcriber:5000") }
 
   before do
     ENV["TELEGRAM_BOT_TOKEN"] ||= "test_token"
@@ -25,8 +23,8 @@ RSpec.describe TranscribeAudioJob, type: :job do
       doc
     end
 
-    def stub_whisper(text: "Hello world", language: "en")
-      stub_request(:post, "#{whisper_url}/transcribe")
+    def stub_transcriber(text: "Hello world", language: "en")
+      stub_request(:post, "#{transcriber_url}/transcribe")
         .to_return(
           status: 200,
           body: { text: text, language: language }.to_json,
@@ -34,85 +32,43 @@ RSpec.describe TranscribeAudioJob, type: :job do
         )
     end
 
-    def stub_ollama_two_calls(corrected: "Hello world", intent: "note", confidence: 0.9, title: "Hello")
-      stub_request(:post, "#{ollama_url}/api/generate")
-        .to_return(
-          { status: 200, body: { response: corrected }.to_json, headers: { "Content-Type" => "application/json" } },
-          { status: 200, body: { response: { intent: intent, confidence: confidence, title: title, due_at: nil }.to_json }.to_json, headers: { "Content-Type" => "application/json" } }
-        )
-    end
-
     it "transcribes audio and updates document" do
-      stub_whisper(text: "Hello world", language: "en")
-      stub_ollama_two_calls(corrected: "Hello world", intent: "note", title: "Hello world")
+      stub_transcriber(text: "Hello world", language: "en")
 
       described_class.new.perform(document.id, document.blocks.first.file.blob.key)
 
       document.reload
       expect(document.title).to eq("Hello world")
+      expect(document.document_type).to eq("note")
       expect(document.blocks.where(block_type: "text").count).to eq(1)
     end
 
-    it "classifies as todo and applies tag" do
-      stub_whisper(text: "buy groceries", language: "en")
-      stub_ollama_two_calls(corrected: "buy groceries", intent: "todo", confidence: 0.95, title: "Buy groceries")
+    it "saves transcription text in block content" do
+      stub_transcriber(text: "This is a test transcription", language: "en")
 
       described_class.new.perform(document.id, document.blocks.first.file.blob.key)
 
       document.reload
-      expect(document.document_type).to eq("todo")
-      expect(document.tags.map(&:name)).to include("todo")
+      text_block = document.blocks.find_by(block_type: "text")
+      expect(text_block).to be_present
+      expect(JSON.parse(text_block.content)["text"]).to eq("This is a test transcription")
     end
 
     it "sends Telegram notification after transcription" do
-      stub_whisper(text: "test notification", language: "en")
-      stub_ollama_two_calls(corrected: "test notification")
+      stub_transcriber(text: "test notification", language: "en")
 
       described_class.new.perform(document.id, document.blocks.first.file.blob.key)
 
       expect(WebMock).to have_requested(:post, /api\.telegram\.org/)
     end
 
-    it "uses raw transcription when Ollama correction fails" do
-      stub_whisper(text: "Raw text here", language: "en")
-
-      # First call (correction) fails, second call (classification) succeeds
-      stub_request(:post, "#{ollama_url}/api/generate")
-        .to_return(
-          { status: 500, body: "Internal Server Error" },
-          { status: 200, body: { response: { intent: "note", confidence: 0.9, title: "Raw text", due_at: nil }.to_json }.to_json, headers: { "Content-Type" => "application/json" } }
-        )
-
-      described_class.new.perform(document.id, document.blocks.first.file.blob.key)
-
-      document.reload
-      # Uses raw text since correction failed
-      text_block = document.blocks.find_by(block_type: "text")
-      expect(JSON.parse(text_block.content)["text"]).to eq("Raw text here")
-    end
-
-    it "discards suspiciously long correction (safety check)" do
-      stub_whisper(text: "Short input", language: "en")
-
-      # Return an overly verbose correction response
-      long_response = "Here is my corrected version of the text: " + ("word " * 100)
-      stub_ollama_two_calls(corrected: long_response)
-
-      described_class.new.perform(document.id, document.blocks.first.file.blob.key)
-
-      document.reload
-      text_block = document.blocks.find_by(block_type: "text")
-      # Should use raw text, not the long correction
-      expect(JSON.parse(text_block.content)["text"]).to eq("Short input")
-    end
-
-    it "creates error block on Whisper API failure and re-raises" do
-      stub_request(:post, "#{whisper_url}/transcribe")
+    it "creates error block on Transcription API failure and re-raises" do
+      stub_request(:post, "#{transcriber_url}/transcribe")
         .to_return(status: 500, body: "Internal Server Error")
 
       expect {
         described_class.new.perform(document.id, document.blocks.first.file.blob.key)
-      }.to raise_error(RuntimeError, /Whisper API/)
+      }.to raise_error(RuntimeError, /Transcription API/)
 
       document.reload
       error_block = document.blocks.find_by(block_type: "text")
@@ -121,8 +77,7 @@ RSpec.describe TranscribeAudioJob, type: :job do
     end
 
     it "creates error block on generic StandardError and re-raises" do
-      # Stub whisper to succeed but then cause a StandardError during processing
-      stub_whisper(text: "test", language: "en")
+      stub_transcriber(text: "test", language: "en")
       allow(Document).to receive(:find).and_call_original
       allow(Document).to receive(:find).with(document.id).and_raise(StandardError, "DB connection lost")
 
@@ -132,7 +87,7 @@ RSpec.describe TranscribeAudioJob, type: :job do
     end
 
     it "raises on timeout for retry" do
-      stub_request(:post, "#{whisper_url}/transcribe")
+      stub_request(:post, "#{transcriber_url}/transcribe")
         .to_timeout
 
       expect {
@@ -141,14 +96,14 @@ RSpec.describe TranscribeAudioJob, type: :job do
     end
 
     it "handles Russian language detection" do
-      stub_whisper(text: "Привет мир", language: "ru")
-      stub_ollama_two_calls(corrected: "Привет мир")
+      stub_transcriber(text: "Привет мир", language: "ru")
 
       described_class.new.perform(document.id, document.blocks.first.file.blob.key)
 
       document.reload
       text_block = document.blocks.find_by(block_type: "text")
       content = JSON.parse(text_block.content)
+      expect(content["text"]).to eq("Привет мир")
       expect(content["language"]).to eq("ru")
     end
 
@@ -161,73 +116,48 @@ RSpec.describe TranscribeAudioJob, type: :job do
         content_type: "audio/ogg"
       )
 
-      stub_whisper(text: "No chat", language: "en")
-      stub_ollama_two_calls(corrected: "No chat")
+      stub_transcriber(text: "No chat", language: "en")
 
-      # Should not send Telegram message (no chat_id)
       described_class.new.perform(doc_no_chat.id, block.file.blob.key)
 
-      # Telegram send_message should NOT have been called for this doc
-      # (telegram_stub catches all, so we just verify the doc was processed)
       doc_no_chat.reload
       expect(doc_no_chat.blocks.where(block_type: "text").count).to eq(1)
+      # Telegram notification should not be sent (no chat_id)
+      expect(WebMock).not_to have_requested(:post, /api\.telegram\.org/).
+        with(body: hash_including("chat_id" => nil))
     end
 
-    it "notifies Telegram for event intent with due_at" do
-      stub_whisper(text: "meeting tomorrow", language: "en")
-      stub_ollama_two_calls(
-        corrected: "meeting tomorrow",
-        intent: "event",
-        confidence: 0.9,
-        title: "Meeting tomorrow"
-      )
+    it "truncates long transcriptions in document title" do
+      long_text = "A" * 200
+      stub_transcriber(text: long_text, language: "en")
 
       described_class.new.perform(document.id, document.blocks.first.file.blob.key)
 
       document.reload
-      expect(document.document_type).to eq("event")
-      expect(document.tags.map(&:name)).to include("event")
+      expect(document.title.length).to be <= 50
     end
 
-    it "handles classification failure gracefully" do
-      stub_whisper(text: "test text", language: "en")
+    it "handles TRANSCRIBER_LANGUAGE env variable" do
+      ENV["TRANSCRIBER_LANGUAGE"] = "ru"
 
-      # First call (correction) succeeds, second call (classification) fails
-      stub_request(:post, "#{ollama_url}/api/generate")
-        .to_return(
-          { status: 200, body: { response: "test text" }.to_json, headers: { "Content-Type" => "application/json" } },
-          { status: 500, body: "Internal Server Error" }
-        )
-
-      described_class.new.perform(document.id, document.blocks.first.file.blob.key)
-
-      document.reload
-      # Falls back to note intent
-      expect(document.document_type).to eq("note")
-    end
-
-    it "does not apply tags for note intent" do
-      stub_whisper(text: "just a thought", language: "en")
-      stub_ollama_two_calls(corrected: "just a thought", intent: "note", confidence: 0.9, title: "Just a thought")
-
-      described_class.new.perform(document.id, document.blocks.first.file.blob.key)
-
-      document.reload
-      expect(document.tags.map(&:name)).not_to include("todo", "event")
-    end
-
-    it "handles WHISPER_LANGUAGE env variable" do
-      ENV["WHISPER_LANGUAGE"] = "ru"
-
-      stub_whisper(text: "Привет", language: "ru")
-      stub_ollama_two_calls(corrected: "Привет")
+      stub_transcriber(text: "Привет", language: "ru")
 
       described_class.new.perform(document.id, document.blocks.first.file.blob.key)
 
       document.reload
       expect(document.blocks.where(block_type: "text").count).to eq(1)
 
-      ENV.delete("WHISPER_LANGUAGE")
+      ENV.delete("TRANSCRIBER_LANGUAGE")
+    end
+
+    it "handles empty transcription gracefully" do
+      stub_transcriber(text: "", language: "en")
+
+      described_class.new.perform(document.id, document.blocks.first.file.blob.key)
+
+      document.reload
+      text_block = document.blocks.find_by(block_type: "text")
+      expect(JSON.parse(text_block.content)["text"]).to eq("(empty transcription)")
     end
   end
 

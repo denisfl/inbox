@@ -134,6 +134,7 @@ class Api::DocumentsController < Api::BaseController
     return render json: { error: "No file provided" }, status: :bad_request if file.blank?
 
     is_image = file.content_type.to_s.start_with?("image/")
+    is_audio = file.content_type.to_s.start_with?("audio/")
 
     if is_image
       block = @document.blocks.create!(
@@ -149,12 +150,18 @@ class Api::DocumentsController < Api::BaseController
       )
       block.file.attach(file)
       attachment = block.file
+
+      # Enqueue transcription for audio files
+      if is_audio
+        TranscribeAudioJob.perform_later(@document.id, block.file.blob.key)
+      end
     end
 
     render json: {
       url: url_for(attachment),
       filename: attachment.filename.to_s,
       is_image: is_image,
+      is_audio: is_audio,
       block_id: block.id,
       byte_size: attachment.byte_size
     }

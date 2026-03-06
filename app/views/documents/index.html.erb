@@ -5,6 +5,19 @@
   <div class="inbox-main">
 
 <div class="documents-container">
+  <%# Header %>
+  <header class="documents-header">
+    <h1 class="documents-page-title">
+      <%= heroicon(:document_text, style: 'width: 1.5rem; height: 1.5rem;') %>
+      <%= @page_title || "All Docs" %>
+    </h1>
+
+    <%= link_to new_note_path, class: "btn btn-primary btn-sm", data: { turbo: false } do %>
+      <%= heroicon(:plus, style: 'width: 1rem; height: 1rem;') %>
+      New Note
+    <% end %>
+  </header>
+
   <%# Tag filter bar — always shown when tags exist or tags are selected %>
   <% if @selected_tags.any? || Tag.any? %>
     <%= render partial: "shared/tag_filter_bar", locals: {
@@ -63,6 +76,13 @@
         </button>
       <% end %>
     </div>
+
+    <%# Pagy pagination %>
+    <% if @pagy.pages > 1 %>
+      <div class="pagination-wrapper">
+        <%== @pagy.series_nav %>
+      </div>
+    <% end %>
   <% else %>
     <% if params[:q].present? %>
       <%# No search results %>
@@ -110,19 +130,30 @@
             description: "Start capturing your thoughts by creating a new note or sending messages to your Telegram bot",
             actions: doc_actions %>
     <% end %>
-
-    <%# Pagy pagination %>
-    <% if @pagy.pages > 1 %>
-      <div class="pagination-wrapper">
-        <%== @pagy.series_nav %>
-      </div>
-    <% end %>
   <% end %>
 </div>
 
 <style>
 .documents-container {
   width: 100%;
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.documents-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+}
+
+.documents-page-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 .filters-bar {
@@ -237,6 +268,14 @@
 }
 
 @media (max-width: 768px) {
+  .documents-header {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .documents-page-title {
+    font-size: var(--text-lg);
+  }
+
   .filters-bar {
     flex-direction: column;
     align-items: stretch;

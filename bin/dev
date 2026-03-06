@@ -8,4 +8,11 @@ fi
 # Default to port 3000 if not specified
 export PORT="${PORT:-3000}"
 
-exec foreman start -f Procfile.dev --env /dev/null "$@"
+# Load .env file if it exists (foreman natively supports this)
+if [ -f .env ]; then
+  ENV_FILE=".env"
+else
+  ENV_FILE="/dev/null"
+fi
+
+exec foreman start -f Procfile.dev --env "$ENV_FILE" "$@"

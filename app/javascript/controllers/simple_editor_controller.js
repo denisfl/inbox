@@ -232,7 +232,14 @@ export default class extends Controller {
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const { url, filename, block_id, byte_size } = data;
+      const { url, filename, block_id, byte_size, is_audio } = data;
+
+      // Audio files trigger transcription on the server;
+      // reload the page so the audio player appears properly.
+      if (is_audio) {
+        window.location.reload();
+        return;
+      }
 
       const markdown = isImage
         ? `![${filename}](${url})\n`
@@ -280,7 +287,7 @@ export default class extends Controller {
         <div class="simple-editor-attachment" data-block-id="${block_id}">
           <div class="simple-editor-image-wrapper">
             <img src="${url}" alt="${this._escapeHtml(filename)}" class="simple-editor-image-preview">
-            <div class="simple-editor-image-filename">📷 ${this._escapeHtml(filename)} · ${size}</div>
+            <div class="simple-editor-image-filename">${this._escapeHtml(filename)} · ${size}</div>
           </div>
           ${deleteBtn}
         </div>`;
