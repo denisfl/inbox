@@ -6,11 +6,7 @@ services:
     ports:
       - "6379:6379"
 
-  ollama:
-    ports:
-      - "11434:11434"
-
-  whisper:
+  transcriber:
     ports:
       - "5001:5000"
 
