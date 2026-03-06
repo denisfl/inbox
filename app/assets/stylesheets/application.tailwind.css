@@ -198,7 +198,6 @@ body {
 .markdown-preview .task-list-item {
   list-style: none;
   display: flex;
-  flex-wrap: wrap;
   gap: 0 0.4em;
   align-items: baseline;
   margin-left: -1.5em;
