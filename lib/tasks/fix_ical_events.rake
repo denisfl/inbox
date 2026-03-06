@@ -33,7 +33,7 @@ namespace :calendar do
         age = current_year - original_year
         year_note = "Born: #{original_year} (#{age})"
         unless event.description.to_s.include?("Born:")
-          event.description = [event.description.presence, year_note].compact.join("\n\n")
+          event.description = [ event.description.presence, year_note ].compact.join("\n\n")
         end
       end
 
