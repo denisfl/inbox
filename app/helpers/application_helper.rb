@@ -10,8 +10,10 @@ module ApplicationHelper
 
   # Render a Markdown string as safe HTML.
   # Supports: headings, bold, italic, code, tables, task lists, autolinks, strikethrough.
-  # Interactive checkboxes: removes `disabled` from rendered <input type="checkbox"> so they can be toggled via JS.
-  def render_markdown(text)
+  #
+  # Options:
+  #   interactive_checkboxes: true  — checkboxes trigger markdown-editor#toggleCheckbox (default: false)
+  def render_markdown(text, interactive_checkboxes: false)
     return "".html_safe if text.blank?
 
     renderer = Redcarpet::Render::HTML.new(
@@ -29,16 +31,29 @@ module ApplicationHelper
       space_after_headers: false
     )
 
-    html = markdown.render(text)
+    # Pre-process GFM task lists (Redcarpet doesn't support them natively).
+    # Replace checkbox markers with safe text sentinels BEFORE Redcarpet rendering,
+    # then swap them for HTML checkboxes AFTER rendering.
+    # Preserve leading whitespace for nested list indentation.
+    processed = text
+      .gsub(/^(\s*)-\s*\[x\] /i, '\1- XCHKX ')
+      .gsub(/^(\s*)-\s*\[ \] /,  '\1- OCHKO ')
 
-    # Make task-list checkboxes interactive (Redcarpet renders them as disabled)
-    html = html.gsub(
-      '<input type="checkbox" disabled="">',
-      '<input type="checkbox" data-action="change->markdown-editor#toggleCheckbox">'
-    ).gsub(
-      '<input type="checkbox" disabled="" checked="">',
-      '<input type="checkbox" checked data-action="change->markdown-editor#toggleCheckbox">'
-    )
+    html = markdown.render(processed)
+
+    if interactive_checkboxes
+      checked_input   = '<input type="checkbox" checked data-action="change->markdown-editor#toggleCheckbox">'
+      unchecked_input = '<input type="checkbox" data-action="change->markdown-editor#toggleCheckbox">'
+    else
+      checked_input   = '<input type="checkbox" checked disabled>'
+      unchecked_input = '<input type="checkbox" disabled>'
+    end
+
+    # Replace sentinels with checkbox HTML.
+    # Add task-list-item class to the parent <li> for flex layout.
+    html = html
+      .gsub("<li>XCHKX ") { "<li class=\"task-list-item\">#{checked_input} " }
+      .gsub("<li>OCHKO ") { "<li class=\"task-list-item\">#{unchecked_input} " }
 
     html.html_safe
   end

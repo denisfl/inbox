@@ -35,7 +35,30 @@ class TranscribeAudioJob < ApplicationJob
       )
 
       unless response.status.success?
-        Rails.logger.error("Transcription API error: #{response.status} - #{response.body}")
+        error_body = begin
+          JSON.parse(response.body)["error"]
+        rescue
+          response.body.to_s.truncate(200)
+        end
+
+        Rails.logger.error("Transcription API error: #{response.status} - #{error_body}")
+
+        # 413 = audio too long — permanent failure, don't retry
+        if response.status.code == 413
+          document.update!(title: document.title.start_with?("Voice") ? "Audio too long" : document.title)
+          document.blocks.create!(
+            block_type: "text",
+            position: 0,
+            content: { text: "Transcription skipped: #{error_body}" }.to_json
+          )
+
+          if document.telegram_chat_id.present?
+            notify_telegram_user(document, "Transcription skipped: #{error_body}")
+          end
+
+          return # Don't retry
+        end
+
         raise "Transcription API returned #{response.status}"
       end
 

@@ -169,11 +169,8 @@ class TelegramMessageHandler
     audio_tag = Tag.find_or_create_by!(name: "audio")
     doc.tags << audio_tag unless doc.tags.include?(audio_tag)
 
-    # Queue transcription job
-    TranscribeAudioJob.perform_later(doc.id, file_block.file.blob.key)
-
-    send_reply("Transcribing your voice note...")
-    Rails.logger.info("Created voice document: #{doc.id}, queued transcription")
+    send_reply("Voice note saved")
+    Rails.logger.info("Created voice document: #{doc.id}")
   end
 
   def handle_audio

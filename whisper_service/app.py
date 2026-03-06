@@ -21,6 +21,16 @@ app = Flask(__name__)
 # Model configuration
 MODEL_NAME = os.getenv("PARAKEET_MODEL", "nemo-parakeet-tdt-0.6b-v3")
 
+# Maximum chunk duration in seconds (2 minutes).
+# Audio longer than this is split into overlapping chunks before transcription.
+# Reduced from 5 min to 2 min for RPi 5 (CPU inference, 8GB RAM).
+MAX_CHUNK_SECONDS = int(os.getenv("MAX_CHUNK_SECONDS", "120"))
+# Overlap between chunks (seconds) to avoid cutting words at boundaries.
+CHUNK_OVERLAP_SECONDS = int(os.getenv("CHUNK_OVERLAP_SECONDS", "5"))
+# Maximum total audio duration in seconds (30 minutes).
+# Files longer than this are rejected to avoid excessive resource usage.
+MAX_AUDIO_DURATION_SECONDS = int(os.getenv("MAX_AUDIO_DURATION_SECONDS", "1800"))
+
 # Lazy-load model to avoid blocking gunicorn worker initialization
 model = None
 
@@ -33,6 +43,76 @@ def get_model():
         model = onnx_asr.load_model(MODEL_NAME)
         logger.info("onnx-asr model loaded successfully")
     return model
+
+
+def get_audio_duration(path):
+    """Get audio duration in seconds using ffprobe."""
+    try:
+        result = subprocess.run(
+            [
+                "ffprobe", "-v", "error",
+                "-show_entries", "format=duration",
+                "-of", "default=noprint_wrappers=1:nokey=1",
+                path
+            ],
+            capture_output=True, text=True, timeout=30
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return float(result.stdout.strip())
+    except (subprocess.TimeoutExpired, ValueError) as e:
+        logger.warning(f"Could not determine audio duration: {e}")
+    return None
+
+
+def split_audio(wav_path, max_seconds, overlap_seconds):
+    """Split a WAV file into chunks of max_seconds with overlap_seconds overlap.
+
+    Returns a list of chunk file paths (caller must clean up).
+    """
+    duration = get_audio_duration(wav_path)
+    if duration is None or duration <= max_seconds:
+        return [wav_path]
+
+    chunks = []
+    start = 0.0
+    idx = 0
+    step = max_seconds - overlap_seconds
+
+    while start < duration:
+        chunk_path = f"{wav_path}.chunk{idx}.wav"
+        end = min(start + max_seconds, duration)
+        try:
+            result = subprocess.run(
+                [
+                    "ffmpeg", "-y",
+                    "-i", wav_path,
+                    "-ss", str(start),
+                    "-t", str(end - start),
+                    "-ar", "16000", "-ac", "1", "-sample_fmt", "s16",
+                    chunk_path
+                ],
+                capture_output=True, text=True, timeout=120
+            )
+            if result.returncode != 0:
+                logger.error(f"ffmpeg chunk split failed: {result.stderr}")
+                # Fall back to single-file transcription
+                for c in chunks:
+                    if os.path.exists(c):
+                        os.unlink(c)
+                return [wav_path]
+            chunks.append(chunk_path)
+        except subprocess.TimeoutExpired:
+            logger.error("ffmpeg chunk split timed out")
+            for c in chunks:
+                if os.path.exists(c):
+                    os.unlink(c)
+            return [wav_path]
+
+        start += step
+        idx += 1
+
+    logger.info(f"Split audio ({duration:.0f}s) into {len(chunks)} chunks of ~{max_seconds}s")
+    return chunks
 
 
 def convert_to_wav(input_path):
@@ -113,28 +193,53 @@ def transcribe():
         # Browser records WebM/Opus, Telegram sends OGG/Opus
         wav_path = convert_to_wav(tmp_path)
 
+        # Check duration limit
+        duration = get_audio_duration(wav_path)
+        if duration is not None and duration > MAX_AUDIO_DURATION_SECONDS:
+            os.unlink(tmp_path)
+            if wav_path != tmp_path and os.path.exists(wav_path):
+                os.unlink(wav_path)
+            max_min = MAX_AUDIO_DURATION_SECONDS // 60
+            actual_min = int(duration // 60)
+            return jsonify({
+                "error": f"Audio too long: {actual_min} min (max {max_min} min)"
+            }), 413
+
         # Get model instance (lazy-loaded on first request)
         parakeet = get_model()
 
         start_time = time.time()
 
-        # Transcribe with Parakeet v3
-        # Returns text with automatic punctuation and capitalization
-        transcription = parakeet.recognize(wav_path)
+        # Split long audio into chunks to avoid OOM / 500 errors
+        chunk_paths = split_audio(wav_path, MAX_CHUNK_SECONDS, CHUNK_OVERLAP_SECONDS)
+        chunk_texts = []
+
+        for i, chunk_path in enumerate(chunk_paths):
+            logger.info(f"Transcribing chunk {i+1}/{len(chunk_paths)}: {chunk_path}")
+            transcription = parakeet.recognize(chunk_path)
+
+            # Handle result — onnx-asr returns a string directly
+            if isinstance(transcription, str):
+                chunk_text = transcription.strip()
+            elif hasattr(transcription, "text"):
+                chunk_text = transcription.text.strip()
+            else:
+                chunk_text = str(transcription).strip()
+
+            if chunk_text:
+                chunk_texts.append(chunk_text)
+
+        text = " ".join(chunk_texts)
 
         elapsed = time.time() - start_time
 
         # Clean up temporary files
         os.unlink(tmp_path)
-        os.unlink(wav_path)
-
-        # Handle result — onnx-asr returns a string directly
-        if isinstance(transcription, str):
-            text = transcription.strip()
-        elif hasattr(transcription, "text"):
-            text = transcription.text.strip()
-        else:
-            text = str(transcription).strip()
+        if wav_path != tmp_path and os.path.exists(wav_path):
+            os.unlink(wav_path)
+        for cp in chunk_paths:
+            if cp != wav_path and os.path.exists(cp):
+                os.unlink(cp)
 
         logger.info(f"Transcription complete in {elapsed:.1f}s: {len(text)} chars")
 

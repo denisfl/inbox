@@ -34,6 +34,7 @@ Rails.application.routes.draw do
         post :classify
         post :extract_tags
         post :upload
+        post :transcribe
         get  :preview
         get "export/:format", to: "documents#export", as: :export
       end

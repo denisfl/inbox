@@ -1,5 +1,7 @@
 class Api::DocumentsController < Api::BaseController
-  before_action :set_document, only: [ :show, :update, :destroy, :upload, :preview ]
+  include ApplicationHelper
+
+  before_action :set_document, only: [ :show, :update, :destroy, :upload, :preview, :transcribe ]
 
   # GET /api/documents
   def index
@@ -105,22 +107,7 @@ class Api::DocumentsController < Api::BaseController
 
     if text_block
       text = text_block.content_hash["text"].to_s
-      # Pre-process task lists (Redcarpet doesn't support GFM tasklists)
-      text = text
-        .gsub(/^- \[x\] /i, "- \x00CHECKED\x00 ")
-        .gsub(/^- \[ \] /,  "- \x00UNCHECKED\x00 ")
-      renderer = Redcarpet::Render::HTML.new(
-        hard_wrap: true,
-        link_attributes: { target: "_blank", rel: "noopener noreferrer" }
-      )
-      md = Redcarpet::Markdown.new(renderer,
-        autolink: true, tables: true, fenced_code_blocks: true,
-        strikethrough: true, lax_spacing: true,
-        no_intra_emphasis: true, space_after_headers: false
-      )
-      text_html = md.render(text)
-        .gsub("\x00CHECKED\x00",   '<input type="checkbox" checked>')
-        .gsub("\x00UNCHECKED\x00", '<input type="checkbox">')
+      text_html = render_markdown(text, interactive_checkboxes: true)
     end
 
     render json: { html: audio_html + text_html }
@@ -150,11 +137,6 @@ class Api::DocumentsController < Api::BaseController
       )
       block.file.attach(file)
       attachment = block.file
-
-      # Enqueue transcription for audio files
-      if is_audio
-        TranscribeAudioJob.perform_later(@document.id, block.file.blob.key)
-      end
     end
 
     render json: {
@@ -165,6 +147,30 @@ class Api::DocumentsController < Api::BaseController
       block_id: block.id,
       byte_size: attachment.byte_size
     }
+  end
+
+  # POST /api/documents/:id/transcribe
+  # Enqueues transcription for all audio blocks in the document.
+  # Supports re-transcription — existing text block will be replaced.
+  def transcribe
+    audio_mime_prefix = "audio/"
+    audio_extensions  = %w[.ogg .mp3 .m4a .wav .opus .aac .flac .webm]
+
+    audio_blocks = @document.blocks.where(block_type: "file").select do |b|
+      b.file.attached? &&
+        (b.file.content_type.to_s.start_with?(audio_mime_prefix) ||
+         audio_extensions.any? { |ext| b.file.filename.to_s.end_with?(ext) })
+    end
+
+    if audio_blocks.empty?
+      return render json: { error: "No audio files found in this document" }, status: :unprocessable_entity
+    end
+
+    audio_blocks.each do |block|
+      TranscribeAudioJob.perform_later(@document.id, block.file.blob.key)
+    end
+
+    render json: { message: "Transcription started for #{audio_blocks.size} audio file(s)", audio_count: audio_blocks.size }
   end
 
   private

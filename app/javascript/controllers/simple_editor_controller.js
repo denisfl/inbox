@@ -20,6 +20,7 @@ export default class extends Controller {
     "title",
     "imageInput",
     "fileInput",
+    "transcribeBtn",
   ];
   static values = {
     documentId: Number,
@@ -59,8 +60,19 @@ export default class extends Controller {
   _autoResize() {
     const ta = this.textareaTarget;
     if (!ta) return;
-    ta.style.height = "auto";
-    ta.style.height = ta.scrollHeight + "px";
+
+    // Use CSS field-sizing if supported (modern browsers — no JS resize needed)
+    if (CSS.supports && CSS.supports("field-sizing", "content")) return;
+
+    const scrollParent = ta.closest(".app-main") || document.scrollingElement;
+    const savedScroll = scrollParent ? scrollParent.scrollTop : 0;
+
+    // Reset height to measure true content scrollHeight
+    ta.style.height = "0";
+    ta.style.height = Math.max(ta.scrollHeight, ta.offsetHeight) + "px";
+
+    // Restore parent scroll to prevent visible jump
+    if (scrollParent) scrollParent.scrollTop = savedScroll;
   }
 
   async saveContent() {
@@ -259,6 +271,84 @@ export default class extends Controller {
   }
 
   // ──────────────────────────────────────────────
+  // Transcribe audio
+  // ──────────────────────────────────────────────
+
+  async transcribeAudio() {
+    if (
+      !confirm(
+        "Start transcription? This will process all audio files in this document.",
+      )
+    )
+      return;
+
+    const btn = this.hasTranscribeBtnTarget ? this.transcribeBtnTarget : null;
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = "0.5";
+    }
+    this._showIndicator("transcribing...", "saving");
+
+    try {
+      const res = await this._api(
+        `/api/documents/${this.documentIdValue}/transcribe`,
+        "POST",
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      this._showIndicator(
+        `transcription started (${data.audio_count} file(s))`,
+        "saved",
+      );
+      setTimeout(() => this._clearIndicator(), 3000);
+
+      // Poll for completion — reload page when text block appears or changes
+      this._pollForTranscription();
+    } catch (err) {
+      console.error("Transcribe failed:", err);
+      this._showIndicator(`transcription failed: ${err.message}`, "error");
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+      }
+    }
+  }
+
+  _pollForTranscription() {
+    const token = document.querySelector('meta[name="auth-token"]')?.content;
+    const docId = this.documentIdValue;
+    let pollCount = 0;
+    const maxPolls = 200; // ~10 minutes at 3s intervals
+
+    const interval = setInterval(() => {
+      pollCount++;
+      if (pollCount > maxPolls) {
+        clearInterval(interval);
+        return;
+      }
+
+      fetch(`/api/documents/${docId}`, {
+        headers: { Authorization: `Token token=${token}` },
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          const hasText = (data.blocks || []).some(
+            (b) => b.block_type === "text",
+          );
+          if (hasText) {
+            clearInterval(interval);
+            window.location.reload();
+          }
+        })
+        .catch(() => {});
+    }, 3000);
+  }
+
+  // ──────────────────────────────────────────────
   // Helpers
   // ──────────────────────────────────────────────
 
@@ -282,12 +372,13 @@ export default class extends Controller {
     let sectionClass, html;
 
     if (is_image) {
-      sectionClass = "simple-editor-images-section";
+      sectionClass = "simple-editor-files-section";
       html = `
         <div class="simple-editor-attachment" data-block-id="${block_id}">
-          <div class="simple-editor-image-wrapper">
-            <img src="${url}" alt="${this._escapeHtml(filename)}" class="simple-editor-image-preview">
-            <div class="simple-editor-image-filename">${this._escapeHtml(filename)} · ${size}</div>
+          <div class="simple-editor-file-info">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:16px;height:16px;color:var(--color-text-tertiary);flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z"/></svg>
+            <a href="${url}" target="_blank" class="simple-editor-file-link">${this._escapeHtml(filename)}</a>
+            <span class="simple-editor-file-size">${size}</span>
           </div>
           ${deleteBtn}
         </div>`;
