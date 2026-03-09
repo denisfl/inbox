@@ -21,12 +21,12 @@ app = Flask(__name__)
 # Model configuration
 MODEL_NAME = os.getenv("PARAKEET_MODEL", "nemo-parakeet-tdt-0.6b-v3")
 
-# Maximum chunk duration in seconds (2 minutes).
+# Maximum chunk duration in seconds (60 seconds).
 # Audio longer than this is split into overlapping chunks before transcription.
-# Reduced from 5 min to 2 min for RPi 5 (CPU inference, 8GB RAM).
-MAX_CHUNK_SECONDS = int(os.getenv("MAX_CHUNK_SECONDS", "120"))
+# Short chunks improve RPi 5 memory usage and reduce per-chunk latency.
+MAX_CHUNK_SECONDS = int(os.getenv("MAX_CHUNK_SECONDS", "60"))
 # Overlap between chunks (seconds) to avoid cutting words at boundaries.
-CHUNK_OVERLAP_SECONDS = int(os.getenv("CHUNK_OVERLAP_SECONDS", "5"))
+CHUNK_OVERLAP_SECONDS = int(os.getenv("CHUNK_OVERLAP_SECONDS", "2"))
 # Maximum total audio duration in seconds (30 minutes).
 # Files longer than this are rejected to avoid excessive resource usage.
 MAX_AUDIO_DURATION_SECONDS = int(os.getenv("MAX_AUDIO_DURATION_SECONDS", "1800"))
