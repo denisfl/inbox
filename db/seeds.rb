@@ -98,36 +98,39 @@ documents_data = [
 
 documents_data.each do |attrs|
   tag_names = attrs.delete(:tags)
-  doc = Document.find_or_create_by!(title: attrs[:title]) do |d|
-    d.assign_attributes(attrs.except(:tags))
-  end
+  content = attrs.delete(:content)
+  doc = Document.find_or_initialize_by(title: attrs[:title])
+  doc.assign_attributes(attrs)
+  doc.save!
+
   tag_names&.each do |name|
     doc.tags << tags[name] unless doc.tags.include?(tags[name])
   end
 
-  # Create a text block with the content
-  if doc.blocks.empty? && doc.content.present?
-    doc.blocks.create!(
-      block_type: "text",
-      content: { "text" => doc.content }.to_json,
-      position: 0
-    )
+  # Create or update text block with the content
+  if content.present?
+    text_block = doc.blocks.find_or_initialize_by(block_type: "text")
+    text_block.update!(content: { "text" => content }.to_json, position: 0)
   end
 end
 puts "  Documents: #{Document.count}"
 
 # ── Tasks ───────────────────────────────────────────────────────────────────
 tasks_data = [
-  { title: "Buy groceries for meal prep",     due_date: Date.current,             priority: "high",   tags: %w[health] },
-  { title: "Review pull request #42",         due_date: Date.current,             priority: "high",   tags: %w[work] },
+  { title: "Buy groceries for meal prep",     due_date: Date.current,             priority: "high",   tags: %w[health],
+    description: "- [ ] Chicken thighs (1 kg)\n- [ ] Sweet potatoes\n- [ ] Broccoli, spinach\n- [ ] Greek yogurt\n- [x] Rolled oats\n- [x] Mixed berries" },
+  { title: "Review pull request #42",         due_date: Date.current,             priority: "high",   tags: %w[work],
+    description: "Check the **auth refactor** branch.\n\n- [ ] Code review\n- [ ] Run tests\n- [ ] Approve or request changes" },
   { title: "Book dentist appointment",        due_date: 3.days.from_now.to_date,  priority: "mid",    tags: %w[health] },
-  { title: "Read DDIA chapter 5",             due_date: 5.days.from_now.to_date,  priority: "mid",    tags: %w[book learning] },
+  { title: "Read DDIA chapter 5",             due_date: 5.days.from_now.to_date,  priority: "mid",    tags: %w[book learning],
+    description: "Chapter 5: *Replication*. Focus on leader-based replication and conflict resolution." },
   { title: "Backup Raspberry Pi SD card",     due_date: 7.days.from_now.to_date,  priority: "low",    tags: %w[project] },
   { title: "Send birthday card to Mom",       due_date: Date.current + 10,        priority: "high",   tags: [] },
   { title: "Research Iceland campervan rentals", due_date: 14.days.from_now.to_date, priority: "mid", tags: %w[travel] },
   { title: "Update resume",                   due_date: nil,                       priority: "low",    tags: %w[work] },
   { title: "Try sourdough bread recipe",      due_date: nil,                       priority: "low",    tags: %w[recipe idea] },
-  { title: "Set up automated backups",        due_date: 2.days.from_now.to_date,  priority: "mid",    tags: %w[project] },
+  { title: "Set up automated backups",        due_date: 2.days.from_now.to_date,  priority: "mid",    tags: %w[project],
+    description: "Use `rsync` to backup to USB drive.\n\n```bash\nrsync -avz /data/ /mnt/backup/\n```" },
   { title: "Morning meditation — daily",      due_date: Date.current,             priority: "pinned", tags: %w[health], recurrence_rule: "daily" },
   # Completed tasks
   { title: "Set up CI pipeline",              due_date: 3.days.ago.to_date,       priority: "high",   tags: %w[project work], completed: true, completed_at: 2.days.ago },
@@ -136,39 +139,40 @@ tasks_data = [
 
 tasks_data.each do |attrs|
   tag_names = attrs.delete(:tags)
-  Task.find_or_create_by!(title: attrs[:title]) do |t|
-    t.assign_attributes(attrs)
-  end.tap do |task|
-    tag_names&.each do |name|
-      task.tags << tags[name] unless task.tags.include?(tags[name])
-    end
+  task = Task.find_or_initialize_by(title: attrs[:title])
+  task.assign_attributes(attrs)
+  task.save!
+  tag_names&.each do |name|
+    task.tags << tags[name] unless task.tags.include?(tags[name])
   end
 end
 puts "  Tasks: #{Task.count} (#{Task.active.count} active, #{Task.completed.count} completed)"
 
 # ── Calendar Events ─────────────────────────────────────────────────────────
 events_data = [
-  { title: "Team standup",          starts_at: Time.current.change(hour: 10, min: 0),  ends_at: Time.current.change(hour: 10, min: 15), color: "9",  tags: %w[work] },
+  { title: "Team standup",          starts_at: Time.current.change(hour: 10, min: 0),  ends_at: Time.current.change(hour: 10, min: 15), color: "9",  tags: %w[work],
+    description: "Daily sync with the team.\n\n- What I did yesterday\n- What I'm doing today\n- Blockers" },
   { title: "Lunch with Alex",       starts_at: Time.current.change(hour: 12, min: 30), ends_at: Time.current.change(hour: 13, min: 30), color: "5",  tags: [] },
-  { title: "Code review session",   starts_at: (Date.current + 1).to_time.change(hour: 14),      ends_at: (Date.current + 1).to_time.change(hour: 15),     color: "9",  tags: %w[work project] },
+  { title: "Code review session",   starts_at: (Date.current + 1).to_time.change(hour: 14),      ends_at: (Date.current + 1).to_time.change(hour: 15),     color: "9",  tags: %w[work project],
+    description: "Review the **auth refactor** PR.\n\nFocus on:\n- [ ] Security implications\n- [ ] Test coverage\n- [ ] Performance" },
   { title: "Dentist appointment",   starts_at: (Date.current + 3).to_time.change(hour: 9, min: 30), ends_at: (Date.current + 3).to_time.change(hour: 10, min: 30), color: "4",  tags: %w[health] },
-  { title: "Flight to Reykjavik",   starts_at: (Date.current + 60).to_time.change(hour: 7),      ends_at: (Date.current + 60).to_time.change(hour: 12),     color: "7",  all_day: false, tags: %w[travel] },
+  { title: "Flight to Reykjavik",   starts_at: (Date.current + 60).to_time.change(hour: 7),      ends_at: (Date.current + 60).to_time.change(hour: 12),     color: "7",  all_day: false, tags: %w[travel],
+    description: "Flight **KEF-123**. Terminal 2.\n\nDon't forget:\n- [ ] Passport\n- [ ] Travel adapter\n- [ ] Warm jacket" },
   { title: "Iceland trip",          starts_at: (Date.current + 60).to_time,                       ends_at: (Date.current + 70).to_time,                      color: "2",  all_day: true, tags: %w[travel] },
   { title: "Project deadline",      starts_at: (Date.current + 14).to_time.change(hour: 17),     ends_at: (Date.current + 14).to_time.change(hour: 18),    color: "11", tags: %w[work project] }
 ]
 
 events_data.each do |attrs|
   tag_names = attrs.delete(:tags)
-  CalendarEvent.find_or_create_by!(title: attrs[:title], starts_at: attrs[:starts_at]) do |e|
-    e.assign_attributes(attrs.merge(
-      source: "manual",
-      status: "confirmed",
-      google_event_id: nil
-    ))
-  end.tap do |event|
-    tag_names&.each do |name|
-      event.tags << tags[name] unless event.tags.include?(tags[name])
-    end
+  event = CalendarEvent.find_or_initialize_by(title: attrs[:title])
+  event.assign_attributes(attrs.merge(
+    source: "manual",
+    status: "confirmed",
+    google_event_id: nil
+  ))
+  event.save!
+  tag_names&.each do |name|
+    event.tags << tags[name] unless event.tags.include?(tags[name])
   end
 end
 puts "  Calendar events: #{CalendarEvent.count}"
