@@ -4,7 +4,9 @@ require "telegram/bot"
 
 class ProcessTelegramUpdateJob < ApplicationJob
   queue_as :default
-  sidekiq_options retry: 1 # Only 1 retry — Telegram will also retry the webhook
+
+  # Only 1 retry — Telegram will also retry the webhook
+  retry_on StandardError, wait: 5.seconds, attempts: 2
 
   def perform(update_hash)
     update = Telegram::Bot::Types::Update.new(update_hash)

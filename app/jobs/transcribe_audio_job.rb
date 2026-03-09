@@ -4,7 +4,9 @@ require "telegram/bot"
 
 class TranscribeAudioJob < ApplicationJob
   queue_as :default
-  sidekiq_options retry: 3
+
+  # Retry up to 3 times with exponential back-off (works with any ActiveJob backend)
+  retry_on StandardError, wait: :polynomially_longer, attempts: 3
 
   def perform(document_id, audio_blob_key)
     document = Document.find(document_id)
@@ -102,7 +104,7 @@ class TranscribeAudioJob < ApplicationJob
     end
   rescue HTTP::TimeoutError => e
     Rails.logger.error("Transcription timeout for document #{document_id}: #{e.message}")
-    raise # Retry via Sidekiq
+    raise # Retry via ActiveJob
   rescue StandardError => e
     Rails.logger.error("Transcription failed for document #{document_id}: #{e.class} - #{e.message}")
     Rails.logger.error(e.backtrace.join("\n"))
@@ -115,7 +117,7 @@ class TranscribeAudioJob < ApplicationJob
       content: { text: "Transcription failed: #{e.message}" }.to_json
     )
 
-    raise # Retry via Sidekiq
+    raise # Retry via ActiveJob
   end
 
   private
