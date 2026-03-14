@@ -33,7 +33,7 @@ gem "redis", "~> 5.0"
 gem "telegram-bot-ruby"
 
 # Google Calendar API
-gem "google-apis-calendar_v3", "~> 0.24"
+gem "google-apis-calendar_v3", "~> 0.53"
 
 # iCalendar import/export
 gem "icalendar", "~> 2.10"
