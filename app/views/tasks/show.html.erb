@@ -1,0 +1,77 @@
+<% content_for :title, "#{@task.title} — Inbox" %>
+
+<div class="task-form-page">
+  <div class="task-form-container">
+    <header class="task-form-header">
+      <%= back_link(tasks_path, "Tasks") %>
+      <h1 class="task-form-title"><%= @task.title %></h1>
+    </header>
+
+    <div class="task-show-body">
+      <%# Status %>
+      <div class="task-show-status">
+        <% if @task.completed? %>
+          <span class="task-show-badge task-show-badge--completed">Completed</span>
+        <% elsif @task.overdue? %>
+          <span class="task-show-badge task-show-badge--overdue">Overdue</span>
+        <% else %>
+          <span class="task-show-badge">Active</span>
+        <% end %>
+
+        <span class="task-show-badge"><%= @task.priority.capitalize %> priority</span>
+
+        <% if @task.recurring? %>
+          <span class="task-show-badge"><%= @task.recurrence_rule.capitalize %></span>
+        <% end %>
+      </div>
+
+      <%# Due date/time %>
+      <% if @task.due_date.present? %>
+        <div class="task-show-field">
+          <span class="task-show-label">Due</span>
+          <span class="task-show-value">
+            <%= @task.due_date.strftime("%d %b %Y") %>
+            <% if @task.due_time.present? %>
+              at <%= @task.due_time.strftime("%H:%M") %>
+            <% end %>
+          </span>
+        </div>
+      <% end %>
+
+      <%# Tags %>
+      <% if @task.tags.any? %>
+        <div class="task-show-field">
+          <span class="task-show-label">Tags</span>
+          <div class="task-show-tags">
+            <% @task.tags.each do |t| %>
+              <%= link_to tag_path(t.name), class: "task-tag-link" do %>
+                <%= render "shared/tag", tag: t %>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <%# Description %>
+      <% if @task.description.present? %>
+        <div class="task-show-field">
+          <span class="task-show-label">Description</span>
+          <div class="task-show-description prose">
+            <%= render_markdown(@task.description) %>
+          </div>
+        </div>
+      <% end %>
+
+      <%# Actions %>
+      <div class="task-show-actions">
+        <%= link_to edit_task_path(@task), class: "btn btn-primary" do %>
+          <%= heroicon(:pencil, style: "width: 16px; height: 16px;") %> Edit
+        <% end %>
+        <%= button_to task_path(@task), method: :delete, class: "btn btn-danger",
+            data: { turbo_confirm: "Delete task \"#{@task.title}\"?" } do %>
+          <%= heroicon(:trash, style: "width: 16px; height: 16px;") %> Delete
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

@@ -3,7 +3,7 @@
 class TasksController < ApplicationController
   include ActionView::RecordIdentifier
 
-  before_action :set_task, only: [ :edit, :update, :destroy, :toggle ]
+  before_action :set_task, only: [ :show, :edit, :update, :destroy, :toggle ]
 
   # GET /tasks
   def index
@@ -29,6 +29,10 @@ class TasksController < ApplicationController
     @overdue_count = Task.overdue.count
     @today_count   = Task.today.count
     @inbox_count   = Task.inbox.count
+  end
+
+  # GET /tasks/:id
+  def show
   end
 
   # GET /tasks/new

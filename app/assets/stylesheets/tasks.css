@@ -91,11 +91,17 @@
   border-color: var(--color-primary);
 }
 
-/* Pin icon */
+/* Pin icon — always reserves space to keep text aligned */
 .task-pin-icon {
   color: var(--color-primary);
   display: flex;
   align-items: center;
+  width: 12px;
+  visibility: hidden;
+}
+
+.task-pin-icon--visible {
+  visibility: visible;
 }
 
 /* ── Content ─────────────────────────────────────────────────────── */
@@ -117,6 +123,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-decoration: none;
+}
+
+a.task-item-title:hover {
+  color: var(--color-primary);
 }
 
 /* Low priority: lighter font */
@@ -185,6 +196,15 @@
 .task-has-desc {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
+}
+
+.task-item-desc {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* ── Actions ─────────────────────────────────────────────────────── */
@@ -326,4 +346,82 @@
   .task-field-group {
     grid-template-columns: 1fr;
   }
+}
+
+/* ── Task Show Page ──────────────────────────────────────────────── */
+.task-show-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.task-show-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.task-show-badge {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-tertiary);
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-full);
+}
+
+.task-show-badge--completed {
+  color: var(--color-success);
+  background: color-mix(
+    in srgb,
+    var(--color-success) 10%,
+    var(--color-bg-primary)
+  );
+}
+
+.task-show-badge--overdue {
+  color: var(--color-danger);
+  background: color-mix(
+    in srgb,
+    var(--color-danger) 10%,
+    var(--color-bg-primary)
+  );
+}
+
+.task-show-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.task-show-label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.task-show-value {
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.task-show-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.task-show-description {
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+}
+
+.task-show-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-border-soft);
 }
