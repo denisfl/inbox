@@ -16,10 +16,21 @@ export default class extends Controller {
   connect() {
     this._onOutsideClick = this._onOutsideClick.bind(this);
     this._onKeydown = this._onKeydown.bind(this);
+    this._onCloseClick = () => this._close();
+    // Cache popup reference before any teleport moves it out of scope
+    this._popup = this.popupTarget;
+    // Bind close button directly (Stimulus actions won't route after teleport)
+    this._closeBtn = this._popup.querySelector(".event-popup-close");
+    if (this._closeBtn) {
+      this._closeBtn.addEventListener("click", this._onCloseClick);
+    }
   }
 
   disconnect() {
-    this._removeListeners();
+    if (this._closeBtn) {
+      this._closeBtn.removeEventListener("click", this._onCloseClick);
+    }
+    this._close();
   }
 
   toggle(e) {
@@ -28,7 +39,7 @@ export default class extends Controller {
 
     e.stopPropagation();
 
-    if (this.popupTarget.hidden) {
+    if (this._popup.hidden) {
       this._open();
     } else {
       this._close();
@@ -47,7 +58,12 @@ export default class extends Controller {
       el.hidden = true;
     });
 
-    this.popupTarget.hidden = false;
+    // Teleport popup to body so it escapes any stacking contexts
+    this._originalParent = this._popup.parentElement;
+    this._originalNextSibling = this._popup.nextSibling;
+    document.body.appendChild(this._popup);
+
+    this._popup.hidden = false;
     this._positionPopup();
 
     // Defer listener attachment so current click doesn't immediately close
@@ -58,7 +74,14 @@ export default class extends Controller {
   }
 
   _close() {
-    this.popupTarget.hidden = true;
+    if (!this._popup) return;
+    this._popup.hidden = true;
+    // Return popup to its original DOM position
+    if (this._originalParent) {
+      this._originalParent.insertBefore(this._popup, this._originalNextSibling);
+      this._originalParent = null;
+      this._originalNextSibling = null;
+    }
     this._removeListeners();
   }
 
@@ -68,7 +91,7 @@ export default class extends Controller {
   }
 
   _onOutsideClick(e) {
-    if (!this.element.contains(e.target)) {
+    if (!this.element.contains(e.target) && !this._popup.contains(e.target)) {
       this._close();
     }
   }
@@ -80,7 +103,7 @@ export default class extends Controller {
   }
 
   _positionPopup() {
-    const popup = this.popupTarget;
+    const popup = this._popup;
     const rect = this.element.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;

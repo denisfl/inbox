@@ -36,6 +36,9 @@ services:
       # - TRANSCRIBER_LANGUAGE=ru
     ports:
       - "3000:3000"
+    secrets:
+      - telegram_bot_token
+      - telegram_webhook_secret_token
 
   worker:
     build:
@@ -63,6 +66,9 @@ services:
       - CALENDAR_REMINDER_MINUTES=${CALENDAR_REMINDER_MINUTES:-10}
       # Omit TRANSCRIBER_LANGUAGE to use auto-detection; set to 'ru' or 'en' to force a language
       # - TRANSCRIBER_LANGUAGE=ru
+    secrets:
+      - telegram_bot_token
+      - telegram_webhook_secret_token
 
   # Close internal ports in production
   redis:
@@ -70,3 +76,9 @@ services:
 
   transcriber:
     ports: []
+
+secrets:
+  telegram_bot_token:
+    file: ./secrets/telegram_bot_token
+  telegram_webhook_secret_token:
+    file: ./secrets/telegram_webhook_secret_token

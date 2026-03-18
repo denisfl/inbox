@@ -256,6 +256,77 @@ RSpec.describe CalendarEvent, type: :model do
         expect(event.local?).to be false
       end
     end
+
+    describe "#past?" do
+      it "returns true when ends_at is in the past" do
+        event = build(:calendar_event, starts_at: 2.hours.ago, ends_at: 30.minutes.ago)
+        expect(event.past?).to be true
+      end
+
+      it "returns true using starts_at when ends_at is nil" do
+        event = build(:calendar_event, starts_at: 1.hour.ago, ends_at: nil)
+        expect(event.past?).to be true
+      end
+
+      it "returns false when ends_at is in the future (ongoing event)" do
+        event = build(:calendar_event, starts_at: 1.hour.ago, ends_at: 30.minutes.from_now)
+        expect(event.past?).to be false
+      end
+
+      it "returns false for all-day events" do
+        event = build(:calendar_event, :all_day)
+        expect(event.past?).to be false
+      end
+
+      it "returns false for future events" do
+        event = build(:calendar_event, starts_at: 1.hour.from_now, ends_at: 2.hours.from_now)
+        expect(event.past?).to be false
+      end
+    end
+
+    describe "#grid_row_start" do
+      it "returns 1 for an event at 07:00" do
+        event = build(:calendar_event, starts_at: Time.current.change(hour: 7, min: 0))
+        expect(event.grid_row_start).to eq(1)
+      end
+
+      it "returns correct row for 10:30" do
+        event = build(:calendar_event, starts_at: Time.current.change(hour: 10, min: 30))
+        expect(event.grid_row_start).to eq(8) # (10-7)*2 + 1 + 1 for 30min offset
+      end
+
+      it "clamps to row 1 for events before 07:00" do
+        event = build(:calendar_event, starts_at: Time.current.change(hour: 5, min: 0))
+        expect(event.grid_row_start).to eq(1)
+      end
+
+      it "returns nil for all-day events" do
+        event = build(:calendar_event, :all_day)
+        expect(event.grid_row_start).to be_nil
+      end
+    end
+
+    describe "#grid_row_span" do
+      it "returns span based on duration" do
+        event = build(:calendar_event, starts_at: Time.current, ends_at: Time.current + 90.minutes)
+        expect(event.grid_row_span).to eq(3)
+      end
+
+      it "returns 1 for all-day events" do
+        event = build(:calendar_event, :all_day)
+        expect(event.grid_row_span).to eq(1)
+      end
+
+      it "returns 1 when ends_at is nil" do
+        event = build(:calendar_event, ends_at: nil)
+        expect(event.grid_row_span).to eq(1)
+      end
+
+      it "returns minimum 1 for very short events" do
+        event = build(:calendar_event, starts_at: Time.current, ends_at: Time.current + 5.minutes)
+        expect(event.grid_row_span).to eq(1)
+      end
+    end
   end
 
   describe ".grouped_by_day" do
