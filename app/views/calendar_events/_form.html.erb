@@ -26,14 +26,26 @@
   <%# Date / time fields %>
   <div class="event-field-group">
     <div class="event-field">
-      <%= f.label :starts_at, "Start", class: "event-field-label" %>
-      <%= f.datetime_local_field :starts_at, class: "input", required: true,
-            value: event.starts_at&.strftime("%Y-%m-%dT%H:%M") %>
+      <%= f.label :starts_at_date, "Start date", class: "event-field-label" %>
+      <%= f.date_field :starts_at_date, class: "input", required: true,
+            value: event.starts_at&.to_date %>
     </div>
     <div class="event-field" data-target="endTimeField">
-      <%= f.label :ends_at, "End", class: "event-field-label" %>
-      <%= f.datetime_local_field :ends_at, class: "input",
-            value: event.ends_at&.strftime("%Y-%m-%dT%H:%M") %>
+      <%= f.label :starts_at_time, "Start time", class: "event-field-label" %>
+      <%= f.time_field :starts_at_time, class: "input",
+            value: event.starts_at&.strftime("%H:%M") %>
+    </div>
+  </div>
+  <div class="event-field-group">
+    <div class="event-field">
+      <%= f.label :ends_at_date, "End date", class: "event-field-label" %>
+      <%= f.date_field :ends_at_date, class: "input",
+            value: event.ends_at&.to_date %>
+    </div>
+    <div class="event-field" data-target="endTimeField">
+      <%= f.label :ends_at_time, "End time", class: "event-field-label" %>
+      <%= f.time_field :ends_at_time, class: "input",
+            value: event.ends_at&.strftime("%H:%M") %>
     </div>
   </div>
 

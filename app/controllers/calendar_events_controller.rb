@@ -89,9 +89,31 @@ class CalendarEventsController < ApplicationController
   private
 
   def event_params
-    params.require(:calendar_event).permit(
-      :title, :description, :starts_at, :ends_at, :all_day, :color
+    permitted = params.require(:calendar_event).permit(
+      :title, :description, :starts_at, :ends_at, :all_day, :color,
+      :starts_at_date, :starts_at_time, :ends_at_date, :ends_at_time
     )
+
+    merge_datetime_fields(permitted)
+  end
+
+  def merge_datetime_fields(permitted)
+    if permitted[:starts_at_date].present?
+      permitted[:starts_at] = combine_date_time(permitted[:starts_at_date], permitted[:starts_at_time])
+    end
+    if permitted[:ends_at_date].present?
+      permitted[:ends_at] = combine_date_time(permitted[:ends_at_date], permitted[:ends_at_time])
+    end
+
+    permitted.except(:starts_at_date, :starts_at_time, :ends_at_date, :ends_at_time)
+  end
+
+  def combine_date_time(date_str, time_str)
+    if time_str.present?
+      Time.zone.parse("#{date_str} #{time_str}")
+    else
+      Time.zone.parse(date_str.to_s)
+    end
   end
 
   def parse_default_date

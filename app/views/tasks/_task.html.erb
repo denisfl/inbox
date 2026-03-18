@@ -7,16 +7,14 @@
         <% end %>
       </span>
     <% end %>
-    <% if task.priority == "pinned" %>
-      <span class="task-pin-icon" title="Pinned">
-        <%= heroicon(:bookmark, variant: :solid, style: 'width: 12px; height: 12px;') %>
-      </span>
-    <% end %>
+    <span class="task-pin-icon <%= 'task-pin-icon--visible' if task.priority == 'pinned' %>" title="Pinned">
+      <%= heroicon(:bookmark, variant: :solid, style: 'width: 12px; height: 12px;') %>
+    </span>
   </div>
 
   <div class="task-item-content">
     <div class="task-item-row">
-      <span class="task-item-title"><%= task.title %></span>
+      <%= link_to task.title, task_path(task), class: "task-item-title" %>
       <% if task.recurring? %>
         <span class="task-recurrence-badge" title="<%= task.recurrence_rule %>">
           <%= heroicon(:arrow_path, variant: :solid, style: 'width: 12px; height: 12px;') %>
@@ -24,8 +22,14 @@
       <% end %>
     </div>
 
-    <% if task.due_date.present? || task.description.present? %>
+    <% if task.description.present? %>
       <div class="task-item-meta">
+        <span class="task-item-desc"><%= truncate(task.description, length: 120) %></span>
+      </div>
+    <% end %>
+
+    <% if task.due_date.present? || task.tags.any? %>
+      <div class="task-item-tags">
         <% if task.due_date.present? %>
           <span class="task-due-badge <%= 'task-due-badge--overdue' if task.overdue? %> <%= 'task-due-badge--today' if task.due_today? %>">
             <%= task.due_date.strftime("%d.%m") %>
@@ -34,16 +38,6 @@
             <% end %>
           </span>
         <% end %>
-        <% if task.description.present? %>
-          <span class="task-has-desc" title="Has description">
-            <%= heroicon(:document_text, variant: :solid, style: 'width: 12px; height: 12px;') %>
-          </span>
-        <% end %>
-      </div>
-    <% end %>
-
-    <% if task.tags.any? %>
-      <div class="task-item-tags">
         <% task.tags.limit(3).each do |t| %>
           <%= link_to tag_path(t.name), class: "task-tag-link" do %>
             <%= render "shared/tag", tag: t %>

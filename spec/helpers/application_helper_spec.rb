@@ -8,6 +8,7 @@ RSpec.describe ApplicationHelper, type: :helper do
       html = helper.back_link("/tasks", "Tasks")
       expect(html).to include("Tasks")
       expect(html).to include('class="back-link"')
+      expect(html).to include("history.back()")
     end
   end
 
