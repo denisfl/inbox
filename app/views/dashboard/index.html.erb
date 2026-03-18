@@ -162,7 +162,7 @@
         <% if @events_today.any? %>
           <div class="dash-ev-group">Today</div>
           <% @events_today.each do |event| %>
-            <div class="dash-ev">
+            <div class="dash-ev<%= ' dash-ev--past' if event.past? %>">
               <div class="dash-ev-bar" style="background:<%= event.display_color %>"></div>
               <div class="dash-ev-time"><%= event.time_label %></div>
               <div class="dash-ev-body">
@@ -180,7 +180,7 @@
         <% if @events_tomorrow.any? %>
           <div class="dash-ev-group">Tomorrow</div>
           <% @events_tomorrow.each do |event| %>
-            <div class="dash-ev">
+            <div class="dash-ev<%= ' dash-ev--past' if event.past? %>">
               <div class="dash-ev-bar" style="background:<%= event.display_color %>"></div>
               <div class="dash-ev-time"><%= event.time_label %></div>
               <div class="dash-ev-body">
@@ -198,7 +198,7 @@
         <% if @events_week.any? %>
           <div class="dash-ev-group">This week</div>
           <% @events_week.each do |event| %>
-            <div class="dash-ev">
+            <div class="dash-ev<%= ' dash-ev--past' if event.past? %>">
               <div class="dash-ev-bar" style="background:<%= event.display_color %>"></div>
               <div class="dash-ev-time"><%= event.time_label %></div>
               <div class="dash-ev-body">
@@ -214,7 +214,7 @@
         <% if @events_next_week.any? %>
           <div class="dash-ev-group">Next week</div>
           <% @events_next_week.each do |event| %>
-            <div class="dash-ev">
+            <div class="dash-ev<%= ' dash-ev--past' if event.past? %>">
               <div class="dash-ev-bar" style="background:<%= event.display_color %>"></div>
               <div class="dash-ev-time"><%= event.time_label %></div>
               <div class="dash-ev-body">
@@ -457,6 +457,8 @@
 }
 .dash-ev:last-of-type { border-bottom: none; }
 .dash-ev:hover .dash-ev-title { color: var(--color-primary); }
+.dash-ev--past { opacity: 0.55; transition: opacity var(--transition-fast); }
+.dash-ev--past:hover { opacity: 1; }
 .dash-ev-bar {
   width: 3px;
   border-radius: 2px;
