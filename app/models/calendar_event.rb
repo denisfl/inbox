@@ -107,14 +107,14 @@ class CalendarEvent < ApplicationRecord
 
   def grid_row_start(day_start_hour: 7)
     return nil if all_day?
-    offset_minutes = [(starts_at.hour - day_start_hour) * 60 + starts_at.min, 0].max
+    offset_minutes = [ (starts_at.hour - day_start_hour) * 60 + starts_at.min, 0 ].max
     (offset_minutes / 30) + 1
   end
 
   def grid_row_span
     return 1 if all_day? || ends_at.blank?
     slots = (duration_minutes / 30.0).ceil
-    [slots, 1].max
+    [ slots, 1 ].max
   end
 
   # Can this event be edited/deleted through the web UI?
