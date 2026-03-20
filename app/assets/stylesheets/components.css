@@ -84,6 +84,113 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   TIME COMBOBOX
+   Custom time picker dropdown used in event & task forms.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.time-combobox {
+  position: relative;
+}
+
+.time-combobox__dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.1),
+    0 2px 6px rgba(0, 0, 0, 0.06);
+  z-index: 50;
+  padding: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+.time-combobox__dropdown.open {
+  display: block;
+}
+
+.time-combobox__option {
+  padding: 7px 10px;
+  font-size: 13.5px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 80ms;
+}
+.time-combobox__option:hover,
+.time-combobox__option--active {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+.time-combobox__option--active {
+  font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DATE SHORTCUTS & DURATION PRESETS
+   Pill buttons for quick date/duration selection in event & task forms.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.date-shortcuts {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.date-shortcut {
+  padding: 4px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.date-shortcut:hover,
+.date-shortcut.active {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.duration-presets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.duration-label {
+  font-size: 12.5px;
+  color: var(--color-text-tertiary);
+}
+.duration-btn {
+  padding: 4px 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.duration-btn:hover,
+.duration-btn.active {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    MOBILE BOTTOM NAVIGATION
    Fixed bar at the bottom of the screen, visible only on mobile (< 769px).
    Height: 56px (--bottom-nav-height).

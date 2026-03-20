@@ -42,3 +42,12 @@ application.register("audio-recorder", AudioRecorderController);
 
 import DocumentAutosaveController from "./document_autosave_controller";
 application.register("document-autosave", DocumentAutosaveController);
+
+import TimeComboboxController from "./time_combobox_controller";
+application.register("time-combobox", TimeComboboxController);
+
+import CalendarEventFormController from "./calendar_event_form_controller";
+application.register("calendar-event-form", CalendarEventFormController);
+
+import TaskFormController from "./task_form_controller";
+application.register("task-form", TaskFormController);

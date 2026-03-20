@@ -1,4 +1,5 @@
-<%= form_with model: event, url: url, method: method, class: "event-form" do |f| %>
+<%= form_with model: event, url: url, method: method, class: "event-form",
+      data: { controller: "calendar-event-form" } do |f| %>
   <% if event.errors.any? %>
     <div class="event-form-errors">
       <p><strong><%= pluralize(event.errors.count, "error") %></strong> prevented this event from being saved:</p>
@@ -23,6 +24,20 @@
     <%= f.label :all_day, "All-day event", class: "event-field-label event-field-label--inline" %>
   </div>
 
+  <%# Date shortcuts %>
+  <div class="date-shortcuts">
+    <button type="button" class="date-shortcut"
+            data-action="click->calendar-event-form#setToday">Today</button>
+    <button type="button" class="date-shortcut"
+            data-action="click->calendar-event-form#setTomorrow">Tomorrow</button>
+    <button type="button" class="date-shortcut"
+            data-action="click->calendar-event-form#setDaysAhead"
+            data-days="3">+3 days</button>
+    <button type="button" class="date-shortcut"
+            data-action="click->calendar-event-form#setDaysAhead"
+            data-days="7">+7 days</button>
+  </div>
+
   <%# Date / time fields %>
   <div class="event-field-group">
     <div class="event-field">
@@ -30,10 +45,25 @@
       <%= f.date_field :starts_at_date, class: "input", required: true,
             value: event.starts_at&.to_date %>
     </div>
-    <div class="event-field" data-target="endTimeField">
+    <div class="event-field" data-time-field>
       <%= f.label :starts_at_time, "Start time", class: "event-field-label" %>
-      <%= f.time_field :starts_at_time, class: "input",
-            value: event.starts_at&.strftime("%H:%M") %>
+      <div class="time-combobox" data-controller="time-combobox">
+        <input type="text"
+               class="input time-combobox__input"
+               placeholder="9:00 AM"
+               autocomplete="off"
+               value="<%= event.starts_at&.strftime("%-I:%M %p") %>"
+               data-time-combobox-target="input"
+               data-action="focus->time-combobox#onFocus
+                            blur->time-combobox#onBlur
+                            input->time-combobox#onInput
+                            keydown->time-combobox#onKeydown">
+        <input type="hidden"
+               name="calendar_event[starts_at_time]"
+               value="<%= event.starts_at&.strftime("%H:%M") %>"
+               data-time-combobox-target="hidden">
+        <div class="time-combobox__dropdown" data-time-combobox-target="dropdown"></div>
+      </div>
     </div>
   </div>
   <div class="event-field-group">
@@ -42,11 +72,39 @@
       <%= f.date_field :ends_at_date, class: "input",
             value: event.ends_at&.to_date %>
     </div>
-    <div class="event-field" data-target="endTimeField">
+    <div class="event-field" data-time-field>
       <%= f.label :ends_at_time, "End time", class: "event-field-label" %>
-      <%= f.time_field :ends_at_time, class: "input",
-            value: event.ends_at&.strftime("%H:%M") %>
+      <div class="time-combobox" data-controller="time-combobox">
+        <input type="text"
+               class="input time-combobox__input"
+               placeholder="10:00 AM"
+               autocomplete="off"
+               value="<%= event.ends_at&.strftime("%-I:%M %p") %>"
+               data-time-combobox-target="input"
+               data-action="focus->time-combobox#onFocus
+                            blur->time-combobox#onBlur
+                            input->time-combobox#onInput
+                            keydown->time-combobox#onKeydown">
+        <input type="hidden"
+               name="calendar_event[ends_at_time]"
+               value="<%= event.ends_at&.strftime("%H:%M") %>"
+               data-time-combobox-target="hidden">
+        <div class="time-combobox__dropdown" data-time-combobox-target="dropdown"></div>
+      </div>
     </div>
+  </div>
+
+  <%# Duration presets %>
+  <div class="duration-presets" data-calendar-event-form-target="durationRow" data-time-field>
+    <span class="duration-label">Duration:</span>
+    <button type="button" class="duration-btn" data-minutes="15"
+            data-action="click->calendar-event-form#setDuration">15m</button>
+    <button type="button" class="duration-btn" data-minutes="30"
+            data-action="click->calendar-event-form#setDuration">30m</button>
+    <button type="button" class="duration-btn" data-minutes="60"
+            data-action="click->calendar-event-form#setDuration">1h</button>
+    <button type="button" class="duration-btn" data-minutes="120"
+            data-action="click->calendar-event-form#setDuration">2h</button>
   </div>
 
   <%# Description %>
