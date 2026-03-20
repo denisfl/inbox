@@ -1,8 +1,10 @@
 require 'rails_helper'
 
 RSpec.describe 'TODO Block Creation', type: :request do
+  before { skip "Block API routes deprecated — replaced by Lexxy rich text editor" }
+
   let(:document) { create(:document) }
-  let(:auth_token) { 'test_token_123' }
+  let(:auth_token) { ENV['API_TOKEN'].presence || 'development_token' }
 
   before do
     # Mock authentication - skip token check

@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe "Api::Documents", type: :request do
-  let(:token) { ENV['API_TOKEN'] || 'development_token' }
+  let(:token) { ENV['API_TOKEN'].presence || 'development_token' }
   let(:headers) do
     {
       'Content-Type' => 'application/json',
@@ -221,10 +221,8 @@ RSpec.describe "Api::Documents", type: :request do
   describe "GET /api/documents/:id/preview" do
     let(:document) { create(:document) }
 
-    it "returns rendered HTML for text block" do
-      block = document.blocks.create!(block_type: "text", position: 0)
-      block.content_hash = { text: "Hello **world**" }
-      block.save!
+    it "returns rendered HTML for document body" do
+      document.update!(body: "Hello <strong>world</strong>")
 
       get "/api/documents/#{document.id}/preview", headers: headers
 
@@ -233,7 +231,7 @@ RSpec.describe "Api::Documents", type: :request do
       expect(json["html"]).to include("Hello")
     end
 
-    it "returns empty html when no blocks exist" do
+    it "returns empty html when document has no body" do
       get "/api/documents/#{document.id}/preview", headers: headers
 
       expect(response).to have_http_status(:success)
