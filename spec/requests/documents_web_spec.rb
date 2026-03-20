@@ -96,10 +96,10 @@ RSpec.describe "Documents (web)", type: :request do
   describe "GET /documents/:id" do
     let(:document) { create(:document, :with_initial_block) }
 
-    it "returns 406 (no show template — documents use edit mode)" do
+    it "returns success (show template)" do
       get document_path(document)
 
-      expect(response).to have_http_status(:not_acceptable)
+      expect(response).to have_http_status(:ok)
     end
   end
 
@@ -129,12 +129,11 @@ RSpec.describe "Documents (web)", type: :request do
       expect(doc.tags.map(&:name)).to include("web")
     end
 
-    it "creates an initial text block" do
+    it "does not create any blocks (uses Action Text body)" do
       get new_document_path
 
       doc = Document.last
-      expect(doc.blocks.count).to eq(1)
-      expect(doc.blocks.first.block_type).to eq("text")
+      expect(doc.blocks.count).to eq(0)
     end
   end
 

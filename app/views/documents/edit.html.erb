@@ -7,7 +7,6 @@
   audio_mime_prefix = "audio/"
   audio_extensions  = %w[.ogg .mp3 .m4a .wav .opus .aac .flac .webm]
 
-  text_block   = @blocks.find { |b| b.block_type == "text" }
   audio_blocks = @blocks.select do |b|
     b.block_type == "file" && b.file.attached? &&
       (b.file.content_type.to_s.start_with?(audio_mime_prefix) ||
@@ -23,78 +22,80 @@
 %>
 
 <div class="simple-editor-container"
-     data-controller="simple-editor"
+     data-controller="simple-editor document-autosave"
      data-simple-editor-document-id-value="<%= @document.id %>"
-     data-simple-editor-block-id-value="<%= text_block&.id.to_i %>">
+     data-simple-editor-block-id-value="0">
 
   <%# ── Header ────────────────────────────────────────────────────── %>
   <header class="simple-editor-header">
     <div class="simple-editor-header-left">
-      <%= back_link(documents_path, "Back") %>
+      <%= back_link(documents_path, "Documents") %>
     </div>
 
     <div class="simple-editor-header-right">
-      <span class="save-indicator" data-simple-editor-target="saveIndicator"></span>
+      <span class="save-indicator" data-document-autosave-target="indicator" data-simple-editor-target="saveIndicator"></span>
 
-      <%# Upload buttons %>
-      <label class="simple-editor-upload-btn" title="Attach images">
-        <%= heroicon :photo, width: 16, height: 16 %>
-        <input type="file" accept="image/*" multiple class="hidden"
-               data-simple-editor-target="imageInput"
-               data-action="change->simple-editor#handleImageChange">
-      </label>
+      <button class="save-btn" type="submit" form="document-body-form">Save</button>
 
-      <label class="simple-editor-upload-btn" title="Attach files">
-        <%= heroicon :paper_clip, width: 16, height: 16 %>
-        <input type="file" multiple class="hidden"
-               data-simple-editor-target="fileInput"
-               data-action="change->simple-editor#handleFileChange">
-      </label>
-
-      <%# Record audio %>
-      <div class="simple-editor-record-group"
+      <div class="options-dropdown"
            data-controller="audio-recorder"
            data-audio-recorder-document-id-value="<%= @document.id %>">
-        <button type="button"
-                class="simple-editor-upload-btn"
-                title="Record audio"
-                data-action="click->audio-recorder#toggleRecording"
-                data-audio-recorder-target="recordBtn">
-          <%= heroicon :microphone, width: 16, height: 16 %>
+        <button class="options-btn" type="button" aria-label="Options" data-options-toggle>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="5" cy="12" r="2"/>
+            <circle cx="12" cy="12" r="2"/>
+            <circle cx="19" cy="12" r="2"/>
+          </svg>
         </button>
-        <div class="simple-editor-recording-indicator hidden"
-             data-audio-recorder-target="recordingIndicator">
-          <span class="recording-dot"></span>
-          <span data-audio-recorder-target="timer">0:00</span>
+
+        <div class="options-menu">
+          <label class="options-menu-item">
+            <%= heroicon(:photo, style: 'width: 16px; height: 16px;') %>
+            Attach images
+            <input type="file" accept="image/*" multiple class="hidden"
+                   data-simple-editor-target="imageInput"
+                   data-action="change->simple-editor#handleImageChange">
+          </label>
+
+          <label class="options-menu-item">
+            <%= heroicon(:paper_clip, style: 'width: 16px; height: 16px;') %>
+            Attach files
+            <input type="file" multiple class="hidden"
+                   data-simple-editor-target="fileInput"
+                   data-action="change->simple-editor#handleFileChange">
+          </label>
+
+          <button type="button" class="options-menu-item"
+                  data-action="click->audio-recorder#toggleRecording"
+                  data-audio-recorder-target="recordBtn">
+            <%= heroicon(:microphone, style: 'width: 16px; height: 16px;') %>
+            Record audio
+          </button>
+
+          <% if audio_blocks.any? %>
+            <button type="button" class="options-menu-item"
+                    data-action="click->simple-editor#transcribeAudio"
+                    data-simple-editor-target="transcribeBtn">
+              <%= heroicon(:language, style: 'width: 16px; height: 16px;') %>
+              Transcribe audio
+            </button>
+          <% end %>
+
+          <hr class="options-menu-divider">
+
+          <a href="<%= export_document_path(@document) %>" class="options-menu-item" download>
+            <%= heroicon(:arrow_down_tray, style: 'width: 16px; height: 16px;') %>
+            Export .md
+          </a>
+          <hr class="options-menu-divider">
+          <%= button_to document_path(@document), method: :delete,
+                class: "options-menu-item options-menu-item--danger",
+                form: { data: { turbo_confirm: "Delete \"#{j @document.title.truncate(40)}\"? This will remove the note and all attached files. This cannot be undone." } } do %>
+            <%= heroicon(:trash, style: 'width: 16px; height: 16px;') %>
+            Delete note
+          <% end %>
         </div>
       </div>
-
-      <%# Transcribe button (visible only when audio blocks exist) %>
-      <% if audio_blocks.any? %>
-        <button type="button"
-                class="simple-editor-upload-btn"
-                title="Transcribe audio"
-                data-action="click->simple-editor#transcribeAudio"
-                data-simple-editor-target="transcribeBtn">
-          <%= heroicon(:language, width: 16, height: 16) %>
-        </button>
-      <% end %>
-
-      <%# Preview / Edit toggle %>
-      <button type="button"
-              class="btn btn-sm simple-editor-preview-btn"
-              data-simple-editor-target="previewToggleBtn"
-              data-action="click->simple-editor#togglePreview">
-        Preview
-      </button>
-
-      <%# Delete %>
-      <%= button_to document_path(@document), method: :delete,
-            class: "simple-editor-delete-btn",
-            title: "Delete note",
-            form: { data: { turbo_confirm: "Delete \"#{j @document.title.truncate(40)}\"? This will remove the note and all attached files. This cannot be undone." } } do %>
-        <%= heroicon(:trash, style: 'width: 1rem; height: 1rem;') %>
-      <% end %>
     </div>
   </header>
 
@@ -130,12 +131,6 @@
                 <%= heroicon(:microphone, style: 'width:14px;height:14px;display:inline-block;vertical-align:middle') %> <%= ab.file.filename %>
               </div>
             </div>
-            <button type="button" class="simple-editor-attachment-delete"
-                    title="Remove audio"
-                    data-action="click->simple-editor#deleteBlock"
-                    data-block-id="<%= ab.id %>">
-              <%= heroicon(:trash, style: "width:13px;height:13px") %>
-            </button>
           </div>
         <% end %>
       </div>
@@ -153,12 +148,6 @@
               </a>
               <span class="simple-editor-file-size"><%= number_to_human_size(ib.image.byte_size) %></span>
             </div>
-            <button type="button" class="simple-editor-attachment-delete"
-                    title="Remove image"
-                    data-action="click->simple-editor#deleteBlock"
-                    data-block-id="<%= ib.id %>">
-              <%= heroicon(:trash, style: "width:13px;height:13px") %>
-            </button>
           </div>
         <% end %>
       </div>
@@ -176,101 +165,17 @@
               </a>
               <span class="simple-editor-file-size"><%= number_to_human_size(fb.file.byte_size) %></span>
             </div>
-            <button type="button" class="simple-editor-attachment-delete"
-                    title="Remove file"
-                    data-action="click->simple-editor#deleteBlock"
-                    data-block-id="<%= fb.id %>">
-              <%= heroicon(:trash, style: "width:13px;height:13px") %>
-            </button>
           </div>
         <% end %>
       </div>
     <% end %>
 
-    <%# Transcribe button — shown when audio blocks exist but no text block yet %>
-    <% if text_block.nil? && audio_blocks.any? %>
-      <div class="simple-editor-transcribe-action" id="transcribe-action">
-        <button type="button" class="btn btn-primary simple-editor-transcribe-btn"
-                id="transcribe-btn"
-                onclick="startTranscription()">
-          <%= heroicon(:document_text, style: "width:16px;height:16px") %>
-          Transcribe
-        </button>
-      </div>
-      <div class="simple-editor-transcription-pending hidden" id="transcription-pending">
-        <div class="transcription-pending-spinner"></div>
-        <span>Transcribing audio...</span>
-      </div>
+    <%# ── Rich text editor (Lexxy) ─────────────────────────────────── %>
+    <%= form_with(model: @document, url: document_path(@document), method: :patch, id: "document-body-form", class: "document-body-form", data: { document_autosave_target: "form" }) do |f| %>
+      <%= f.rich_text_area :body %>
     <% end %>
-
-    <%# Edit mode (default): hidden when there is no text block and audio-only document %>
-    <textarea class="simple-editor-textarea<%= ' hidden' if text_block.nil? && audio_blocks.any? %>"
-              data-simple-editor-target="textarea"
-              data-action="input->simple-editor#scheduleAutoSave"
-              placeholder="Write in Markdown..."
-              spellcheck="true"
-              autocomplete="off"><%= text_block&.content_hash&.dig("text") %></textarea>
-
-    <%# Preview mode (hidden by default) %>
-    <div class="hidden markdown-preview simple-editor-preview"
-         data-simple-editor-target="preview"></div>
   </main>
 </div>
-
-<%# Manual transcription: trigger + poll %>
-<% if text_block.nil? && audio_blocks.any? %>
-<script>
-function startTranscription() {
-  var docId = <%= @document.id %>;
-  var token = document.querySelector('meta[name="auth-token"]')?.content;
-  var btn = document.getElementById("transcribe-btn");
-  var actionDiv = document.getElementById("transcribe-action");
-  var pendingDiv = document.getElementById("transcription-pending");
-
-  // Disable button, show spinner
-  btn.disabled = true;
-  btn.textContent = "Starting...";
-
-  fetch("/api/documents/" + docId + "/transcribe", {
-    method: "POST",
-    headers: { "Authorization": "Token token=" + token }
-  })
-  .then(function(r) {
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    return r.json();
-  })
-  .then(function() {
-    // Hide button, show pending indicator
-    actionDiv.classList.add("hidden");
-    pendingDiv.classList.remove("hidden");
-
-    // Start polling for completion
-    var interval = setInterval(function() {
-      fetch("/api/documents/" + docId, {
-        headers: { "Authorization": "Token token=" + token }
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        var hasText = (data.blocks || []).some(function(b) { return b.block_type === "text"; });
-        if (hasText) {
-          clearInterval(interval);
-          window.location.reload();
-        }
-      })
-      .catch(function() {});
-    }, 3000);
-
-    // Stop polling after 10 minutes
-    setTimeout(function() { clearInterval(interval); }, 600000);
-  })
-  .catch(function(err) {
-    btn.disabled = false;
-    btn.textContent = "Transcribe";
-    console.error("Transcription request failed:", err);
-  });
-}
-</script>
-<% end %>
 
 <style>
   .simple-editor-container {
@@ -305,7 +210,9 @@ function startTranscription() {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    padding: 5px 10px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
     border-radius: var(--radius-base);
     color: var(--color-text-tertiary);
     border: 1px solid var(--color-border);
@@ -345,6 +252,91 @@ function startTranscription() {
     background: color-mix(in srgb, var(--color-danger) 6%, var(--color-bg-primary));
   }
 
+  /* Save button */
+  .save-btn {
+    padding: 0 14px;
+    height: 32px;
+    font-weight: 600;
+    font-size: var(--text-sm);
+    color: #fff;
+    background: var(--color-primary);
+    border: none;
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    line-height: 1;
+    transition: background var(--transition-fast);
+  }
+  .save-btn:hover {
+    background: var(--color-primary-hover);
+  }
+
+  /* Options dropdown */
+  .options-dropdown {
+    position: relative;
+  }
+  .options-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    background: none;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+  }
+  .options-btn:hover {
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+  }
+  .options-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    min-width: 180px;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    box-shadow: var(--shadow-lg);
+    padding: 4px;
+    z-index: 100;
+  }
+  .options-dropdown.open .options-menu {
+    display: block;
+  }
+  .options-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    width: 100%;
+    padding: 8px 12px;
+    font-size: var(--text-sm);
+    color: var(--color-text-primary);
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background var(--transition-fast);
+  }
+  .options-menu-item:hover {
+    background: var(--color-bg-secondary);
+  }
+  .options-menu-item--danger {
+    color: var(--color-danger);
+  }
+  .options-menu-item--danger:hover {
+    background: color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-primary));
+  }
+  .options-menu-divider {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 4px 0;
+  }
+
   /* Title */
   .simple-editor-title-wrapper {
     padding: var(--spacing-xl) 40px 0;
@@ -374,6 +366,21 @@ function startTranscription() {
     flex-direction: column;
     min-height: calc(100vh - 16rem);
     padding: var(--spacing-md) 40px 60px;
+  }
+
+  /* Make form + editor fill available height */
+  .document-body-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .document-body-form lexxy-editor {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .document-body-form .lexxy-editor__content {
+    flex: 1;
   }
 
   /* Transcribe button */
@@ -598,3 +605,28 @@ function startTranscription() {
     }
   }
 </style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const toggle = document.querySelector("[data-options-toggle]");
+    const dropdown = toggle && toggle.closest(".options-dropdown");
+    if (!toggle || !dropdown) return;
+
+    toggle.addEventListener("click", function (e) {
+      e.stopPropagation();
+      dropdown.classList.toggle("open");
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!dropdown.contains(e.target)) {
+        dropdown.classList.remove("open");
+      }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        dropdown.classList.remove("open");
+      }
+    });
+  });
+</script>

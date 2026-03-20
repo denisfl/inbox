@@ -24,7 +24,7 @@
 
     <% if task.description.present? %>
       <div class="task-item-meta">
-        <span class="task-item-desc"><%= truncate(task.description, length: 120) %></span>
+        <span class="task-item-desc"><%= truncate(task.description.to_plain_text, length: 120) %></span>
       </div>
     <% end %>
 

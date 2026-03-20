@@ -383,7 +383,7 @@
                         <span class="agenda-entry-duration"><%= ev.duration_label %></span>
                       <% end %>
                       <% if ev.description.present? %>
-                        <div class="agenda-entry-desc markdown-preview"><%= render_markdown(ev.description) %></div>
+                        <div class="agenda-entry-desc"><%= truncate(ev.description.to_plain_text, length: 200) %></div>
                       <% end %>
                     </div>
                     <div class="agenda-entry-actions">
@@ -441,7 +441,7 @@
                         <span class="agenda-entry-duration"><%= task.due_time.strftime("%H:%M") %></span>
                       <% end %>
                       <% if task.description.present? %>
-                        <div class="agenda-entry-desc markdown-preview"><%= render_markdown(task.description) %></div>
+                        <div class="agenda-entry-desc"><%= truncate(task.description.to_plain_text, length: 200) %></div>
                       <% end %>
                     </div>
                     <div class="agenda-entry-source agenda-entry-source--task">

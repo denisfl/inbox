@@ -78,7 +78,7 @@ class Api::DocumentsController < Api::BaseController
   # GET /api/documents/:id/preview
   # Returns rendered HTML for the whole document:
   #   - native <audio> players for each audio file block
-  #   - markdown-rendered text from the first text block
+  #   - rich text body from Action Text
   def preview
     audio_mime_re = /\Aaudio\//
     audio_ext_re  = /\.(ogg|mp3|m4a|wav|opus|aac|flac|webm)\z/i
@@ -102,15 +102,9 @@ class Api::DocumentsController < Api::BaseController
       HTML
     end
 
-    text_block = @document.blocks.find_by(block_type: "text")
-    text_html  = ""
+    body_html = @document.body.to_s
 
-    if text_block
-      text = text_block.content_hash["text"].to_s
-      text_html = render_markdown(text, interactive_checkboxes: true)
-    end
-
-    render json: { html: audio_html + text_html }
+    render json: { html: audio_html + body_html }
   end
 
   # POST /api/documents/:id/upload

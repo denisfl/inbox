@@ -3,7 +3,9 @@
 require 'rails_helper'
 
 RSpec.describe 'Api::Uploads', type: :request do
-  let(:token) { ENV['API_TOKEN'] || 'development_token' }
+  before { skip "Block API routes deprecated — replaced by Lexxy rich text editor" }
+
+  let(:token) { ENV['API_TOKEN'].presence || 'development_token' }
   let(:headers) { { 'Authorization' => "Token token=#{token}" } }
   let(:document) { create(:document) }
   let(:image_block) { create(:block, document: document, block_type: 'image', position: 0) }

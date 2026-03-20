@@ -51,8 +51,8 @@
 
   <%# Description %>
   <div class="event-field">
-    <%= f.label :description, "Description (Markdown)", class: "event-field-label" %>
-    <%= f.text_area :description, class: "input", rows: 3, placeholder: "Optional description..." %>
+    <%= f.label :description, "Description", class: "event-field-label" %>
+    <%= f.rich_text_area :description %>
   </div>
 
   <%# Color %>

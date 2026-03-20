@@ -13,18 +13,18 @@ Rails.application.routes.draw do
         get :search
       end
 
-      # Nested routes for blocks
-      resources :blocks, only: [ :create, :update, :destroy ] do
-        collection do
-          post :reorder
-        end
-
-        # Upload routes for blocks
-        member do
-          post :upload_image, controller: "uploads"
-          post :upload_file, controller: "uploads"
-        end
-      end
+      # Nested routes for blocks (deprecated — replaced by Lexxy rich text editor)
+      # resources :blocks, only: [ :create, :update, :destroy ] do
+      #   collection do
+      #     post :reorder
+      #   end
+      #
+      #   # Upload routes for blocks
+      #   member do
+      #     post :upload_image, controller: "uploads"
+      #     post :upload_file, controller: "uploads"
+      #   end
+      # end
 
       # Document tag management
       resources :tags, only: [ :create, :destroy ], param: :name, controller: "document_tags"
@@ -65,9 +65,10 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Web UI routes
-  resources :documents, only: [ :index, :show, :edit, :new, :destroy ] do
+  resources :documents, only: [ :index, :show, :edit, :new, :update, :destroy ] do
     member do
       patch :toggle_pinned
+      get :export
     end
     collection do
       post :bulk_upload

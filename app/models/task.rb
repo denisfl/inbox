@@ -5,6 +5,7 @@ class Task < ApplicationRecord
   belongs_to :document, optional: true
   has_many :task_tags, dependent: :destroy
   has_many :tags, through: :task_tags
+  has_rich_text :description
 
   # ── Validations ───────────────────────────────────────────────────────────
   validates :title, presence: true

@@ -363,7 +363,7 @@ RSpec.describe "CalendarEvents", type: :request do
       expect(event.starts_at.month).to eq(9)
       expect(event.starts_at.day).to eq(22)
       # Description should include birth year info
-      expect(event.description).to include("Born: 1984")
+      expect(event.description.to_plain_text).to include("Born: 1984")
 
       temp_file.close
       temp_file.unlink
@@ -415,11 +415,11 @@ RSpec.describe "CalendarEvents", type: :request do
 
       # Person C (year 1604) should NOT have birth year in description
       person_c = events.find { |e| e.title.include?("Person C") }
-      expect(person_c.description).to be_nil
+      expect(person_c.description.to_plain_text).to be_blank
 
       # Person A (year 1984) SHOULD have birth year
       person_a = events.find { |e| e.title.include?("Person A") }
-      expect(person_a.description).to include("Born: 1984")
+      expect(person_a.description.to_plain_text).to include("Born: 1984")
 
       temp_file.close
       temp_file.unlink
