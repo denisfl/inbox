@@ -168,7 +168,7 @@ RSpec.describe CalendarEvent, type: :model do
       let!(:already_reminded) { create(:calendar_event, :already_reminded) }
       let!(:far_future) { create(:calendar_event, starts_at: 2.hours.from_now, ends_at: 3.hours.from_now) }
 
-      it "returns events starting in 10-30 min that have not been reminded" do
+      it "returns events starting within lead time that have not been reminded" do
         expect(CalendarEvent.needs_reminder).to include(needs_reminder)
         expect(CalendarEvent.needs_reminder).not_to include(already_reminded)
         expect(CalendarEvent.needs_reminder).not_to include(far_future)

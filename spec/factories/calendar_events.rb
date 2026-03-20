@@ -37,8 +37,8 @@ FactoryBot.define do
     end
 
     trait :needs_reminder do
-      starts_at { 15.minutes.from_now }
-      ends_at { 75.minutes.from_now }
+      starts_at { 5.minutes.from_now }
+      ends_at { 65.minutes.from_now }
       reminded_at { nil }
     end
 
