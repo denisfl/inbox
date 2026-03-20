@@ -13,7 +13,7 @@
       <div class="view-mode-switcher">
         <% %w[agenda week month].each do |mode| %>
           <%= link_to calendar_path(date: params[:date], filter: params[:filter], view: mode),
-                class: "view-mode-btn #{'view-mode-btn--active' if @view_mode == mode}" do %>
+                class: "view-mode-btn #{'view-mode-btn--active' if @view_mode == mode} #{'view-mode-btn--week' if mode == 'week'}" do %>
             <%= mode.capitalize %>
           <% end %>
         <% end %>
@@ -547,7 +547,7 @@
 
   @media (max-width: 700px) {
     .calendar-layout { grid-template-columns: 1fr; }
-    .calendar-sidebar { order: 2; }
+    .calendar-sidebar { display: none; }
     .calendar-content  { order: 1; }
   }
 
@@ -677,6 +677,8 @@
   /* ── Agenda ───────────────────────────────────────────────────────────────── */
   .calendar-content {
     min-height: 400px;
+    min-width: 0;
+    overflow: hidden;
   }
 
   /* Day group */
@@ -951,6 +953,7 @@
 
   @media (max-width: 700px) {
     .topbar-btn-label { display: none; }
+    .view-mode-btn--week { display: none; }
     .agenda-entry-edit { opacity: 1; }
     .agenda-entry-delete { opacity: 1; }
   }
@@ -1202,6 +1205,9 @@
   }
 
   @media (max-width: 700px) {
+    .week-view {
+      display: none;
+    }
     .week-header-row,
     .week-allday-row {
       display: none;

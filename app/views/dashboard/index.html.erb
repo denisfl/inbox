@@ -33,7 +33,7 @@
 
         <%= form_with(url: tasks_path, method: :post, class: "dash-task-add") do |f| %>
           <%= heroicon(:plus, style: 'width: 11px; height: 11px;') %>
-          <input type="text" name="task[title]" class="dash-task-add-input" placeholder="Add a task..." autocomplete="off" autofocus>
+          <input type="text" name="task[title]" class="dash-task-add-input" placeholder="Add a task..." autocomplete="off">
           <input type="hidden" name="task[due_date]" value="<%= Date.current.to_s %>">
           <input type="hidden" name="redirect_to" value="<%= root_path %>">
         <% end %>
