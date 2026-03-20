@@ -60,10 +60,11 @@ class CalendarEvent < ApplicationRecord
       .having("COUNT(DISTINCT tags.id) = ?", names.size)
   }
 
-  # Events that need reminder: starting in 10–30 min, not yet reminded
-  scope :needs_reminder, -> {
+  # Events that need reminder: starting within the configured lead time, not yet reminded
+  scope :needs_reminder, ->(lead_minutes = nil) {
+    lead = (lead_minutes || ENV.fetch("CALENDAR_REMINDER_MINUTES", "10")).to_i
     confirmed
-      .where(starts_at: 9.minutes.from_now..31.minutes.from_now)
+      .where(starts_at: Time.current..lead.minutes.from_now)
       .where(reminded_at: nil)
   }
 

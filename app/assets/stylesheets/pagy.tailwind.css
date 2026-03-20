@@ -1,3 +1,15 @@
+/* Pagy 43 series_nav styling
+ *
+ * HTML structure:
+ *   <nav class="pagy series-nav">
+ *     <a aria-disabled="true" aria-label="Previous">‹</a>      disabled prev
+ *     <a href="?page=1">1</a>                                   page link
+ *     <a aria-disabled="true" aria-current="page">2</a>         active page
+ *     <a role="separator" aria-disabled="true">…</a>            gap
+ *     <a href="?page=3" rel="next" aria-label="Next">›</a>     next link
+ *   </nav>
+ */
+
 .pagination-wrapper {
   display: flex;
   justify-content: center;
@@ -5,41 +17,40 @@
   margin-bottom: var(--spacing-xl);
 }
 
-.pagy-nav {
+.pagy.series-nav {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
 }
 
-.pagy-nav .page,
-.pagy-nav .prev,
-.pagy-nav .next,
-.pagy-nav .gap {
+/* All links: page numbers, prev, next, gap */
+.pagy.series-nav a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 2.5rem;
-  height: 2.5rem;
-  padding: var(--spacing-sm) var(--spacing-md);
+  min-width: 2.25rem;
+  height: 2.25rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   color: var(--color-text-secondary);
   background-color: var(--color-bg-primary);
-  border: 2px solid var(--color-border);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-base);
   text-decoration: none;
   transition: all var(--transition-fast);
+  cursor: pointer;
 }
 
-.pagy-nav .page:hover,
-.pagy-nav .prev:hover,
-.pagy-nav .next:hover {
+/* Hover state for clickable links */
+.pagy.series-nav a[href]:hover {
   color: var(--color-text-primary);
   border-color: var(--color-border-hover);
   background-color: var(--color-bg-hover);
 }
 
-.pagy-nav .page.active {
+/* Active / current page */
+.pagy.series-nav a[aria-current="page"] {
   color: white;
   background-color: var(--color-primary);
   border-color: var(--color-primary);
@@ -48,9 +59,9 @@
   pointer-events: none;
 }
 
-.pagy-nav .page.disabled,
-.pagy-nav .prev.disabled,
-.pagy-nav .next.disabled {
+/* Disabled prev/next */
+.pagy.series-nav
+  a[aria-disabled="true"]:not([aria-current]):not([role="separator"]) {
   color: var(--color-text-tertiary);
   background-color: var(--color-bg-tertiary);
   border-color: var(--color-border);
@@ -59,27 +70,30 @@
   opacity: 0.5;
 }
 
-.pagy-nav .gap {
+/* Gap (separator) */
+.pagy.series-nav a[role="separator"] {
   border: none;
   background: none;
   color: var(--color-text-tertiary);
   cursor: default;
   pointer-events: none;
+  min-width: auto;
 }
 
 /* Mobile responsive */
 @media (max-width: 768px) {
-  .pagy-nav .page,
-  .pagy-nav .prev,
-  .pagy-nav .next {
+  .pagy.series-nav a {
     min-width: 2rem;
     height: 2rem;
-    padding: var(--spacing-xs) var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-xs);
     font-size: var(--text-xs);
   }
 
-  /* Hide some page numbers on mobile */
-  .pagy-nav .page:not(.active):nth-child(n + 4):nth-last-child(n + 4) {
+  /* Hide middle page numbers on mobile, keep first, last, active, prev, next */
+  .pagy.series-nav
+    a:not([aria-current]):not([aria-label]):not([role="separator"]):nth-child(
+      n + 4
+    ):nth-last-child(n + 4) {
     display: none;
   }
 }

@@ -14,7 +14,7 @@ class SendEventReminderJob < ApplicationJob
 
   def perform
     lead_minutes = ENV.fetch("CALENDAR_REMINDER_MINUTES", "10").to_i
-    events = CalendarEvent.needs_reminder
+    events = CalendarEvent.needs_reminder(lead_minutes)
 
     return if events.none?
 
