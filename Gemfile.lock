@@ -399,6 +399,7 @@ GEM
       erb
       psych (>= 4.0.0)
       tsort
+    redcarpet (3.6.1)
     redis (5.4.1)
       redis-client (>= 0.22.0)
     redis-client (0.26.4)
@@ -601,6 +602,7 @@ DEPENDENCIES
   propshaft
   puma (>= 5.0)
   rails (~> 8.1.2)
+  redcarpet (~> 3.6)
   redis (~> 5.0)
   rspec-rails (~> 8.0)
   rubocop-rails-omakase

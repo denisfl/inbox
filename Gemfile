@@ -47,6 +47,9 @@ gem "pagy", "~> 43.3"
 # Rich text editor (Lexxy replaces Trix for Action Text)
 gem "lexxy"
 
+# Markdown rendering (used by data migration to convert markdown → Action Text HTML)
+gem "redcarpet", "~> 3.6"
+
 # Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
 gem "solid_cache"
 gem "solid_queue"
