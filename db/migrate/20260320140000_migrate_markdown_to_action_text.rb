@@ -16,24 +16,24 @@ class MigrateMarkdownToActionText < ActiveRecord::Migration[8.1]
     execute_sql = "SELECT id, description FROM tasks WHERE description IS NOT NULL AND description != ''"
     ActiveRecord::Base.connection.select_all(execute_sql).each do |row|
       html = markdown.render(row["description"])
-      ActionText::RichText.create!(
+      rich_text = ActionText::RichText.find_or_initialize_by(
         record_type: "Task",
         record_id: row["id"],
-        name: "description",
-        body: html
+        name: "description"
       )
+      rich_text.update!(body: html)
     end
 
     # Migrate calendar_events.description
     execute_sql = "SELECT id, description FROM calendar_events WHERE description IS NOT NULL AND description != ''"
     ActiveRecord::Base.connection.select_all(execute_sql).each do |row|
       html = markdown.render(row["description"])
-      ActionText::RichText.create!(
+      rich_text = ActionText::RichText.find_or_initialize_by(
         record_type: "CalendarEvent",
         record_id: row["id"],
-        name: "description",
-        body: html
+        name: "description"
       )
+      rich_text.update!(body: html)
     end
 
     # Migrate document blocks → single rich text body per document
@@ -61,12 +61,12 @@ class MigrateMarkdownToActionText < ActiveRecord::Migration[8.1]
       next if combined_text.blank?
 
       html = markdown.render(combined_text)
-      ActionText::RichText.create!(
+      rich_text = ActionText::RichText.find_or_initialize_by(
         record_type: "Document",
         record_id: doc_id,
-        name: "body",
-        body: html
+        name: "body"
       )
+      rich_text.update!(body: html)
     end
   end
 
