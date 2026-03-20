@@ -16,7 +16,6 @@ class Api::BlocksController < Api::BaseController
 
   # PATCH /api/documents/:document_id/blocks/:id
   def update
-    # Convert content parameter to use content_hash setter
     params_for_update = block_params.to_h
     if params_for_update[:content].present?
       @block.content_hash = params_for_update[:content]
