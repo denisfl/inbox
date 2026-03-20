@@ -31,7 +31,7 @@ class CalendarEvent < ApplicationRecord
   # ── Associations ───────────────────────────────────────────────────────────
   has_many :calendar_event_tags, dependent: :destroy
   has_many :tags, through: :calendar_event_tags
-
+  has_rich_text :description
   # ── Callbacks ──────────────────────────────────────────────────────────────
   before_validation :assign_local_uid, unless: -> { source == "google" }
   before_validation :normalize_event_times

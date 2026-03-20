@@ -62,11 +62,8 @@ class TelegramMessageHandler
       telegram_message_id: message.message_id
     )
 
-    doc.blocks.create!(
-      block_type: "text",
-      position: 0,
-      content: { text: text }.to_json
-    )
+    # Store text as Action Text body
+    doc.update!(body: "<div>#{ERB::Util.html_escape(text).gsub("\n", "<br>")}</div>")
 
     # Auto-tag as telegram
     telegram_tag = Tag.find_or_create_by!(name: "telegram")
@@ -118,13 +115,9 @@ class TelegramMessageHandler
     file_tag = Tag.find_or_create_by!(name: "file")
     doc.tags << file_tag unless doc.tags.include?(file_tag)
 
-    # Add caption as text block if present
+    # Store caption as Action Text body if present
     if message.caption.present?
-      doc.blocks.create!(
-        block_type: "text",
-        position: 1,
-        content: { text: message.caption }.to_json
-      )
+      doc.update!(body: "<div>#{ERB::Util.html_escape(message.caption).gsub("\n", "<br>")}</div>")
     end
 
     send_reply("Photo saved")
@@ -254,13 +247,9 @@ class TelegramMessageHandler
     file_tag = Tag.find_or_create_by!(name: "file")
     doc.tags << file_tag unless doc.tags.include?(file_tag)
 
-    # Add caption as text block if present
+    # Store caption as Action Text body if present
     if message.caption.present?
-      doc.blocks.create!(
-        block_type: "text",
-        position: 1,
-        content: { text: message.caption }.to_json
-      )
+      doc.update!(body: "<div>#{ERB::Util.html_escape(message.caption).gsub("\n", "<br>")}</div>")
     end
 
     send_reply("Document saved")

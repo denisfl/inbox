@@ -31,7 +31,7 @@
   <% if ev.description.present? %>
     <div class="event-popup-row">
       <%= heroicon(:bars_3_bottom_left, class: 'event-popup-icon-svg', style: 'width: 14px; height: 14px;') %>
-      <div class="event-popup-description markdown-preview"><%= render_markdown(ev.description.truncate(500)) %></div>
+      <div class="event-popup-description"><%= truncate(ev.description.to_plain_text, length: 500) %></div>
     </div>
   <% end %>
 

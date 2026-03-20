@@ -4,16 +4,21 @@
   has_photo = document.blocks.any? { |b| b.block_type == 'file' && (b.content.to_s.include?('image') || b.content.to_s.include?('photo')) }
   has_document_file = document.blocks.any? { |b| b.block_type == 'file' && !b.content.to_s.include?('voice') && !b.content.to_s.include?('image') }
 
-  # Get first text block for preview
+  # Get preview text: prefer Action Text body, fall back to blocks
   preview_text = nil
-  text_block = document.blocks.find { |b| b.block_type == 'text' }
-  if text_block && text_block.content.present?
-    begin
-      content_data = text_block.content.is_a?(String) ? JSON.parse(text_block.content) : text_block.content
-      raw_text = content_data['text'] || content_data[:text]
-      preview_text = raw_text if raw_text.present? && raw_text != document.title
-    rescue JSON::ParserError
-      # Invalid JSON, skip preview
+  if document.body.present?
+    plain = document.body.to_plain_text.strip
+    preview_text = plain if plain.present? && plain != document.title
+  else
+    text_block = document.blocks.find { |b| b.block_type == 'text' }
+    if text_block && text_block.content.present?
+      begin
+        content_data = text_block.content.is_a?(String) ? JSON.parse(text_block.content) : text_block.content
+        raw_text = content_data['text'] || content_data[:text]
+        preview_text = raw_text if raw_text.present? && raw_text != document.title
+      rescue JSON::ParserError
+        # Invalid JSON, skip preview
+      end
     end
   end
 %>

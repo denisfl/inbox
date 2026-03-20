@@ -22,6 +22,9 @@
   --color-bg-tertiary: #e8e3da; /* Inputs, inset areas */
   --color-bg-hover: #f7f6f3;
   --color-bg-sidebar: #f5f3ef;
+  --color-bg-toolbar: #f8f8f7;
+  --box-shadow-toolbar:
+    0 1px 2px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 
   /* Text — warm dark, not cold black */
   --color-text-primary: #1e1a16;

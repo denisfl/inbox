@@ -16,8 +16,8 @@
   </div>
 
   <div class="task-field">
-    <%= f.label :description, "Description (Markdown)", class: "task-field-label" %>
-    <%= f.text_area :description, class: "input task-description-input", placeholder: "Task details...", rows: 4 %>
+    <%= f.label :description, "Description", class: "task-field-label" %>
+    <%= f.rich_text_area :description %>
   </div>
 
   <div class="task-field-group">

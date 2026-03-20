@@ -1,0 +1,118 @@
+/* Lexxy editor CSS overrides — match app design system tokens */
+:root {
+  /* Map Lexxy colors to design system */
+  --lexxy-color-ink: var(--color-text-primary);
+  --lexxy-color-ink-medium: var(--color-text-secondary);
+  --lexxy-color-ink-light: var(--color-text-tertiary);
+  --lexxy-color-ink-lighter: var(--color-border);
+  --lexxy-color-ink-lightest: var(--color-bg-tertiary);
+  --lexxy-color-canvas: var(--color-bg-primary);
+
+  /* Map Lexxy accent to design system primary */
+  --lexxy-color-accent-dark: var(--color-primary);
+  --lexxy-color-accent-medium: var(--color-primary);
+  --lexxy-color-accent-light: var(--color-primary-dim);
+  --lexxy-color-accent-lightest: var(--color-primary-soft);
+
+  /* Typography — use app fonts */
+  --lexxy-font-base: "Inter", system-ui, sans-serif;
+  --lexxy-font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Match app border radius */
+  --lexxy-radius: var(--radius-base);
+
+  /* Smaller toolbar buttons */
+  --lexxy-toolbar-button-size: 1.4lh;
+}
+
+/* Remove border/outline from the editor wrapper */
+:where(lexxy-editor) {
+  border: none;
+  background-color: transparent;
+}
+
+/* Remove outline from the content area */
+:where(.lexxy-editor__content) {
+  outline: none;
+}
+
+#document_body-content {
+  outline: none;
+}
+
+/* Style the toolbar like view-mode-switcher */
+:where(lexxy-toolbar) {
+  background: var(--color-bg-toolbar);
+  border-radius: var(--radius-base);
+  border: none;
+  border-block-end: none;
+  padding: 2px;
+  gap: 2px;
+  font-size: 0.8125rem;
+  box-shadow: var(--box-shadow-toolbar);
+  border: 1px solid var(--color-border);
+}
+
+/* Ensure Lexxy content areas match app styling */
+.lexxy-content {
+  font-family: var(--lexxy-font-base);
+  line-height: 1.65;
+}
+
+.lexxy-content a {
+  color: var(--color-primary);
+}
+
+.lexxy-content a:hover {
+  color: var(--color-primary-hover);
+}
+
+/* Replace disc bullets with dash */
+:where(.lexxy-content) ul,
+:where(lexxy-editor) ul {
+  list-style-type: "–  ";
+  padding-inline-start: 1.5em;
+}
+
+/* Checkbox styling for task lists */
+:where(.lexxy-content) ul[data-type="taskList"],
+:where(lexxy-editor) ul[data-type="taskList"],
+:where(.lexxy-content) ul.contains-task-list,
+:where(lexxy-editor) ul.contains-task-list {
+  list-style-type: none;
+  padding-inline-start: 0;
+}
+
+:where(.lexxy-content) li[data-checked] input[type="checkbox"],
+:where(lexxy-editor) li[data-checked] input[type="checkbox"],
+:where(.lexxy-content) .task-list-item input[type="checkbox"],
+:where(lexxy-editor) .task-list-item input[type="checkbox"] {
+  appearance: none;
+  width: 1em;
+  height: 1em;
+  border: 1.5px solid var(--color-border-hover);
+  border-radius: var(--radius-sm);
+  vertical-align: middle;
+  margin-right: 0.5em;
+  cursor: pointer;
+  position: relative;
+}
+
+:where(.lexxy-content) li[data-checked="true"] input[type="checkbox"],
+:where(lexxy-editor) li[data-checked="true"] input[type="checkbox"],
+:where(.lexxy-content) .task-list-item.checked input[type="checkbox"],
+:where(lexxy-editor) .task-list-item.checked input[type="checkbox"] {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+:where(.lexxy-content) li[data-checked="true"] input[type="checkbox"]::after,
+:where(lexxy-editor) li[data-checked="true"] input[type="checkbox"]::after {
+  content: "✓";
+  color: white;
+  font-size: 0.7em;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}

@@ -6,8 +6,10 @@
     "build:css": "pnpm exec tailwindcss -i app/assets/stylesheets/application.tailwind.css -o app/assets/builds/application.css --minify"
   },
   "dependencies": {
+    "@37signals/lexxy": "0.8.5-beta",
     "@hotwired/stimulus": "^3.2.2",
     "@hotwired/turbo-rails": "^8.0.12",
+    "@rails/activestorage": "^8.1.200",
     "highlight.js": "^11.11.1"
   },
   "devDependencies": {

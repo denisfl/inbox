@@ -58,14 +58,13 @@ RSpec.describe TelegramMessageHandler do
         expect(doc.title).to eq("Hello world")
       end
 
-      it "saves text content in a block" do
+      it "saves text content in Action Text body" do
         update = build_update(text: "My note content")
         described_class.new(update).handle
 
         doc = Document.last
-        text_block = doc.blocks.find_by(block_type: "text")
-        expect(text_block).to be_present
-        expect(JSON.parse(text_block.content)["text"]).to eq("My note content")
+        expect(doc.body).to be_present
+        expect(doc.body.to_plain_text).to include("My note content")
       end
 
       it "auto-tags with telegram" do
@@ -129,15 +128,14 @@ RSpec.describe TelegramMessageHandler do
         expect(bot.api).to have_received(:get_file).with(file_id: "large_id")
       end
 
-      it "adds caption as text block when present" do
+      it "adds caption as Action Text body when present" do
         update = build_update(photo: photo, caption: "Photo caption")
 
         described_class.new(update).handle
 
         doc = Document.last
-        text_block = doc.blocks.find_by(block_type: "text")
-        expect(text_block).to be_present
-        expect(JSON.parse(text_block.content)["text"]).to eq("Photo caption")
+        expect(doc.body).to be_present
+        expect(doc.body.to_plain_text).to include("Photo caption")
       end
     end
 
@@ -215,14 +213,14 @@ RSpec.describe TelegramMessageHandler do
         expect(doc.tags.map(&:name)).to include("telegram", "file")
       end
 
-      it "adds caption as text block when present" do
+      it "adds caption as Action Text body when present" do
         update = build_update(document: tg_document, caption: "Important report")
 
         described_class.new(update).handle
 
         doc = Document.last
-        text_block = doc.blocks.find_by(block_type: "text")
-        expect(text_block).to be_present
+        expect(doc.body).to be_present
+        expect(doc.body.to_plain_text).to include("Important report")
       end
     end
 

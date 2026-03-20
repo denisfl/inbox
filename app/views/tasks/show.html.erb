@@ -56,8 +56,8 @@
       <% if @task.description.present? %>
         <div class="task-show-field">
           <span class="task-show-label">Description</span>
-          <div class="task-show-description prose">
-            <%= render_markdown(@task.description) %>
+          <div class="task-show-description lexxy-content">
+            <%= @task.description %>
           </div>
         </div>
       <% end %>

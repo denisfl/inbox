@@ -6,6 +6,7 @@ class Document < ApplicationRecord
   has_many :blocks, dependent: :destroy
   has_many :document_tags, dependent: :destroy
   has_many :tags, through: :document_tags
+  has_rich_text :body
 
   # Active Storage attachments
   has_many_attached :images

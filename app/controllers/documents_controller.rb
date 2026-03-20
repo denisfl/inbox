@@ -1,10 +1,10 @@
 class DocumentsController < ApplicationController
   include ActionView::RecordIdentifier
 
-  before_action :set_document, only: [ :show, :edit, :destroy, :toggle_pinned ]
+  before_action :set_document, only: [ :show, :edit, :update, :destroy, :toggle_pinned, :export ]
 
   def index
-    documents_scope = Document.includes(:blocks, :tags)
+    documents_scope = Document.includes(:blocks, :tags).with_rich_text_body
 
     # Search by query
     if params[:q].present?
@@ -73,12 +73,24 @@ class DocumentsController < ApplicationController
   end
 
   def edit
-    # Edit document with block editor
+    # Edit document with Lexxy rich text editor
     @blocks = @document.blocks.ordered
   end
 
+  def update
+    if @document.update(document_params)
+      respond_to do |format|
+        format.turbo_stream { head :ok }
+        format.html { redirect_to edit_document_path(@document), notice: "Document saved" }
+      end
+    else
+      @blocks = @document.blocks.ordered
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
   def new
-    # Create a new document with initial empty text block
+    # Create a new document
     @document = Document.create!(
       title: "Untitled"
     )
@@ -86,14 +98,6 @@ class DocumentsController < ApplicationController
     # Auto-tag as web-created
     web_tag = Tag.find_or_create_by!(name: "web")
     @document.tags << web_tag unless @document.tags.include?(web_tag)
-
-    # Create initial text block
-    block = @document.blocks.new(
-      block_type: "text",
-      position: 0
-    )
-    block.content_hash = { text: "" }
-    block.save!
 
     # Redirect to edit page with 303 status (prevents Turbo caching)
     redirect_to edit_document_path(@document), status: :see_other
@@ -159,6 +163,17 @@ class DocumentsController < ApplicationController
     redirect_to documents_path, notice: "#{created} #{'document'.pluralize(created)} uploaded"
   end
 
+  # GET /documents/:id/export
+  def export
+    filename = @document.title.parameterize(separator: "_").presence || "document"
+    content = "# #{@document.title}\n\n#{@document.body.to_plain_text}"
+
+    send_data content,
+      filename: "#{filename}.md",
+      type: "text/markdown",
+      disposition: "attachment"
+  end
+
   # PATCH /documents/:id/toggle_pinned
   def toggle_pinned
     @document.toggle_pinned!
@@ -179,7 +194,11 @@ class DocumentsController < ApplicationController
   private
 
   def set_document
-    @document = Document.includes(blocks: []).find(params[:id])
+    @document = Document.find(params[:id])
+  end
+
+  def document_params
+    params.require(:document).permit(:body)
   end
 
   # Normalize tag params: supports both ?tag=name (single) and ?tags[]=a&tags[]=b (multi)

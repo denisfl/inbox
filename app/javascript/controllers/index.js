@@ -4,9 +4,6 @@
 
 import { application } from "./application";
 
-import DocumentEditorController from "./document_editor_controller";
-application.register("document-editor", DocumentEditorController);
-
 import SearchController from "./search_controller";
 application.register("search", SearchController);
 
@@ -15,9 +12,6 @@ application.register("pwa", PwaController);
 
 import HelloController from "./hello_controller";
 application.register("hello", HelloController);
-
-import MarkdownEditorController from "./markdown_editor_controller";
-application.register("markdown-editor", MarkdownEditorController);
 
 import SimpleEditorController from "./simple_editor_controller";
 application.register("simple-editor", SimpleEditorController);
@@ -45,3 +39,6 @@ application.register("audio-player", AudioPlayerController);
 
 import AudioRecorderController from "./audio_recorder_controller";
 application.register("audio-recorder", AudioRecorderController);
+
+import DocumentAutosaveController from "./document_autosave_controller";
+application.register("document-autosave", DocumentAutosaveController);

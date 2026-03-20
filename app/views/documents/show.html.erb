@@ -1,0 +1,36 @@
+<% content_for :title, "#{@document.title} - Inbox" %>
+
+<div class="simple-editor-container">
+  <header class="simple-editor-header">
+    <div class="simple-editor-header-left">
+      <%= back_link(documents_path, "Back") %>
+    </div>
+    <div class="simple-editor-header-right">
+      <%= link_to edit_document_path(@document), class: "btn btn-sm" do %>
+        <%= heroicon(:pencil, style: 'width: 14px; height: 14px;') %> Edit
+      <% end %>
+    </div>
+  </header>
+
+  <div class="simple-editor-title-wrapper">
+    <h1 class="simple-editor-title"><%= @document.title %></h1>
+  </div>
+
+  <% if @document.tags.any? %>
+    <div class="simple-editor-tags">
+      <% @document.tags.each do |tag| %>
+        <%= link_to tag_path(tag.name), class: "card-tag" do %>
+          <%= render "shared/tag", tag: tag %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <main class="simple-editor-body">
+    <% if @document.body.present? %>
+      <div class="lexxy-content">
+        <%= @document.body %>
+      </div>
+    <% end %>
+  </main>
+</div>

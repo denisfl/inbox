@@ -6,7 +6,7 @@
   <%# View mode — rendered Markdown + Edit button %>
   <div class="markdown-preview-wrapper" data-markdown-editor-target="preview">
     <div class="markdown-preview" data-markdown-editor-target="renderedContent">
-      <%= render_markdown(block.content_hash["text"]) %>
+      <%= block.content_hash["text"] %>
     </div>
     <button type="button"
             class="markdown-edit-btn"

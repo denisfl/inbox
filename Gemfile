@@ -44,8 +44,8 @@ gem "http", "~> 5.0"
 # Pagination
 gem "pagy", "~> 43.3"
 
-# Markdown rendering
-gem "redcarpet"
+# Rich text editor (Lexxy replaces Trix for Action Text)
+gem "lexxy"
 
 # Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
 gem "solid_cache"
