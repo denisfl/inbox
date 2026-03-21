@@ -72,6 +72,17 @@ class DocumentsController < ApplicationController
     # Show document in read-only mode
   end
 
+  def search
+    query = params[:q].to_s.strip
+    results = if query.present?
+      Document.where("LOWER(title) LIKE ?", "%#{Document.sanitize_sql_like(query).downcase}%").limit(10)
+    else
+      Document.none
+    end
+
+    render json: results.select(:id, :title).map { |d| { id: d.id, title: d.title } }
+  end
+
   def edit
     # Edit document with Lexxy rich text editor
     @blocks = @document.blocks.ordered

@@ -505,3 +505,9 @@ a:hover .cal-widget-icon {
   gap: var(--spacing-sm);
   align-items: center;
 }
+
+@media (max-width: 640px) {
+  .back-link__label {
+    display: none;
+  }
+}

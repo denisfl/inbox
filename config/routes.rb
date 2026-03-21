@@ -72,6 +72,7 @@ Rails.application.routes.draw do
     end
     collection do
       post :bulk_upload
+      get :search
     end
   end
 

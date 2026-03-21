@@ -5,6 +5,10 @@ RSpec.describe Document, type: :model do
     it { is_expected.to have_many(:blocks).dependent(:destroy) }
     it { is_expected.to have_many(:document_tags).dependent(:destroy) }
     it { is_expected.to have_many(:tags).through(:document_tags) }
+    it { is_expected.to have_many(:outgoing_links).class_name('DocumentLink').dependent(:destroy) }
+    it { is_expected.to have_many(:incoming_links).class_name('DocumentLink').dependent(:destroy) }
+    it { is_expected.to have_many(:linked_documents).through(:outgoing_links).source(:target_document) }
+    it { is_expected.to have_many(:linking_documents).through(:incoming_links).source(:source_document) }
   end
 
   describe 'validations' do
@@ -120,6 +124,54 @@ RSpec.describe Document, type: :model do
       document.update!(pinned: true)
       document.toggle_pinned!
       expect(document.reload.pinned).to be false
+    end
+  end
+
+  describe 'wiki-link associations' do
+    let!(:doc_a) { create(:document, title: "Document A") }
+    let!(:doc_b) { create(:document, title: "Document B") }
+    let!(:doc_c) { create(:document, title: "Document C") }
+
+    before do
+      create(:document_link, source_document: doc_a, target_document: doc_b)
+      create(:document_link, source_document: doc_a, target_document: doc_c)
+      create(:document_link, source_document: doc_c, target_document: doc_a)
+    end
+
+    it 'returns linked documents via outgoing links' do
+      expect(doc_a.linked_documents).to contain_exactly(doc_b, doc_c)
+    end
+
+    it 'returns linking documents via incoming links (backlinks)' do
+      expect(doc_a.linking_documents).to contain_exactly(doc_c)
+    end
+
+    it 'returns empty for documents with no links' do
+      expect(doc_b.linked_documents).to be_empty
+    end
+
+    it 'returns backlinks for document referenced by others' do
+      expect(doc_b.linking_documents).to contain_exactly(doc_a)
+    end
+  end
+
+  describe 'after_save wiki-link extraction' do
+    let!(:target) { create(:document, title: "Target Note") }
+
+    it 'extracts wiki-links on save' do
+      source = create(:document, title: "Source")
+      source.update!(body: "See [[Target Note]]")
+
+      expect(source.reload.linked_documents).to contain_exactly(target)
+    end
+
+    it 'removes links when wiki-link text is removed' do
+      source = create(:document, title: "Source")
+      source.update!(body: "See [[Target Note]]")
+      expect(source.reload.linked_documents).to contain_exactly(target)
+
+      source.update!(body: "No links anymore")
+      expect(source.reload.linked_documents).to be_empty
     end
   end
 

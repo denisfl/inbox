@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_20_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_21_142510) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -91,6 +91,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_140000) do
     t.index ["starts_at"], name: "index_calendar_events_on_starts_at"
     t.index ["status", "starts_at"], name: "index_calendar_events_on_status_and_starts_at"
     t.index ["status"], name: "index_calendar_events_on_status"
+  end
+
+  create_table "document_links", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "source_document_id", null: false
+    t.integer "target_document_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["source_document_id", "target_document_id"], name: "idx_on_source_document_id_target_document_id_ecc1a1ec96", unique: true
+    t.index ["target_document_id"], name: "index_document_links_on_target_document_id"
   end
 
   create_table "document_tags", force: :cascade do |t|
