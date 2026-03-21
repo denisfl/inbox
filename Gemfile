@@ -107,5 +107,5 @@ group :test do
   gem "shoulda-matchers", "~> 7.0"
 
   # Stub external HTTP requests in tests
-  gem "webmock", "~> 3.23"
+  gem "webmock", "~> 3.26"
 end
