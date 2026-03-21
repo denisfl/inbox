@@ -10,7 +10,7 @@ RSpec.describe BackupStorage::Local do
 
   describe "#upload" do
     it "copies the file to the storage path" do
-      source = Tempfile.new(["backup", ".sql.gz"])
+      source = Tempfile.new([ "backup", ".sql.gz" ])
       source.write("test backup data")
       source.close
 
@@ -23,7 +23,7 @@ RSpec.describe BackupStorage::Local do
     end
 
     it "creates the directory if it does not exist" do
-      source = Tempfile.new(["backup", ".sql.gz"])
+      source = Tempfile.new([ "backup", ".sql.gz" ])
       source.write("data")
       source.close
 
@@ -60,7 +60,7 @@ RSpec.describe BackupStorage::Local do
 
       result = storage.list
 
-      expect(result).to eq(["backup_20260320.sql.gz", "backup_20260321.sql.gz"])
+      expect(result).to eq([ "backup_20260320.sql.gz", "backup_20260321.sql.gz" ])
     end
 
     it "returns empty array if directory does not exist" do

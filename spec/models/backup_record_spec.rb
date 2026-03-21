@@ -15,13 +15,13 @@ RSpec.describe BackupRecord, type: :model do
 
     describe ".successful" do
       it "returns only completed records" do
-        expect(described_class.successful).to eq([completed])
+        expect(described_class.successful).to eq([ completed ])
       end
     end
 
     describe ".failed" do
       it "returns only failed records" do
-        expect(described_class.failed).to eq([failed])
+        expect(described_class.failed).to eq([ failed ])
       end
     end
 

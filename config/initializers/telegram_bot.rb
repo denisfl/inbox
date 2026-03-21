@@ -9,7 +9,7 @@ begin
 
   Telegram::Bot.configure do |config|
     config.connection_timeout = telegram_timeout
-    config.connection_open_timeout = [telegram_timeout / 3, 10].max
+    config.connection_open_timeout = [ telegram_timeout / 3, 10 ].max
   end
 rescue LoadError
   # telegram-bot-ruby not available, skip configuration
