@@ -39,7 +39,7 @@ gem "google-apis-calendar_v3", "~> 0.53"
 gem "icalendar", "~> 2.10"
 
 # HTTP client for API calls
-gem "http", "~> 5.0"
+gem "http", "~> 6.0"
 
 # Pagination
 gem "pagy", "~> 43.4"
