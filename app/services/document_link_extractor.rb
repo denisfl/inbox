@@ -26,8 +26,9 @@ class DocumentLinkExtractor
   def resolve_target_ids(titles)
     return [] if titles.empty?
 
+    downcased = titles.map { |t| t.encode(Encoding::UTF_8).gsub(/[A-Z]/) { |c| c.downcase } }
     Document
-      .where("LOWER(title) IN (?)", titles.map(&:downcase))
+      .where("title IN (?) OR LOWER(title) IN (?)", titles, downcased)
       .where.not(id: @document.id)
       .pluck(:id)
   end
