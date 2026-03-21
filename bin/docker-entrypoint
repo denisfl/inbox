@@ -1,6 +1,8 @@
 #!/bin/sh -e
 
-# Load Docker secrets (if present) into environment variables
+# Load Docker secrets (if present) into environment variables.
+# This ensures non-Ruby processes (e.g. shell scripts) can also access secrets.
+# Ruby code uses AppSecret (lib/app_secret.rb) which reads /run/secrets/* directly.
 if [ -r /run/secrets/telegram_bot_token ]; then
   export TELEGRAM_BOT_TOKEN=$(cat /run/secrets/telegram_bot_token)
 fi

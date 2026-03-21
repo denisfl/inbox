@@ -25,9 +25,9 @@ class GoogleCalendarService
   # ── Public API ──────────────────────────────────────────────────────────────
 
   def initialize
-    @client_id = ENV.fetch("GOOGLE_CLIENT_ID") { raise "GOOGLE_CLIENT_ID env var is required" }
-    @secret    = ENV.fetch("GOOGLE_CLIENT_SECRET") { raise "GOOGLE_CLIENT_SECRET env var is required" }
-    @refresh   = ENV.fetch("GOOGLE_REFRESH_TOKEN") { raise "GOOGLE_REFRESH_TOKEN env var is required" }
+    @client_id = AppSecret.fetch("GOOGLE_CLIENT_ID") { raise "GOOGLE_CLIENT_ID env var is required" }
+    @secret    = AppSecret.fetch("GOOGLE_CLIENT_SECRET") { raise "GOOGLE_CLIENT_SECRET env var is required" }
+    @refresh   = AppSecret.fetch("GOOGLE_REFRESH_TOKEN") { raise "GOOGLE_REFRESH_TOKEN env var is required" }
     @calendar_ids = ENV.fetch("GOOGLE_CALENDAR_IDS", "primary").split(",").map(&:strip).reject(&:blank?)
     @calendar_ids = [ "primary" ] if @calendar_ids.empty?
   end
@@ -37,15 +37,23 @@ class GoogleCalendarService
     service = build_service
 
     @calendar_ids.each do |cal_id|
-      Rails.logger.info "[GoogleCalendarService] Syncing calendar: #{cal_id}"
+      Rails.logger.tagged("[google_calendar]") do
+        Rails.logger.info "Syncing calendar: #{cal_id}"
+      end
       sync_calendar!(service, cal_id)
     rescue Google::Apis::AuthorizationError => e
-      Rails.logger.error "[GoogleCalendarService] Auth error on #{cal_id}: #{e.message}"
+      Rails.logger.tagged("[google_calendar]") do
+        Rails.logger.error "Auth error on #{cal_id}: #{e.message}"
+      end
       raise
     rescue Google::Apis::Error => e
-      Rails.logger.error "[GoogleCalendarService] API error on #{cal_id}: #{e.message} (skipping)"
+      Rails.logger.tagged("[google_calendar]") do
+        Rails.logger.error "API error on #{cal_id}: #{e.message} (skipping)"
+      end
     rescue => e
-      Rails.logger.error "[GoogleCalendarService] Unexpected error on #{cal_id}: #{e.class} — #{e.message} (skipping)"
+      Rails.logger.tagged("[google_calendar]") do
+        Rails.logger.error "Unexpected error on #{cal_id}: #{e.class} — #{e.message} (skipping)"
+      end
     end
   end
 
@@ -66,6 +74,13 @@ class GoogleCalendarService
     )
     svc = CAL::CalendarService.new
     svc.authorization = authorizer
+
+    # Explicit timeout — configurable via GOOGLE_CALENDAR_TIMEOUT env (default: 15s)
+    timeout = ENV.fetch("GOOGLE_CALENDAR_TIMEOUT", "15").to_i
+    svc.client_options.open_timeout_sec = timeout
+    svc.client_options.send_timeout_sec = timeout
+    svc.client_options.read_timeout_sec = timeout
+
     svc
   end
 
@@ -80,7 +95,7 @@ class GoogleCalendarService
   end
 
   def full_sync!(service, cal_id)
-    Rails.logger.info "[GoogleCalendarService] FULL sync: #{cal_id}"
+    Rails.logger.tagged("[google_calendar]") { Rails.logger.info "FULL sync: #{cal_id}" }
     page_token = nil
     next_sync  = nil
 
@@ -99,20 +114,20 @@ class GoogleCalendarService
 
       next_sync  = result.next_sync_token
       page_token = result.next_page_token
-      Rails.logger.debug "[GoogleCalendarService] page items=#{(result.items || []).size}, next_sync_token=#{next_sync.present? ? 'present' : 'nil'}, next_page_token=#{page_token.present? ? 'present' : 'nil'}"
+      Rails.logger.tagged("[google_calendar]") { Rails.logger.debug "page items=#{(result.items || []).size}, next_sync_token=#{next_sync.present? ? 'present' : 'nil'}, next_page_token=#{page_token.present? ? 'present' : 'nil'}" }
       break if page_token.nil?
     end
 
     if next_sync.present?
       save_sync_token(cal_id, next_sync)
     else
-      Rails.logger.warn "[GoogleCalendarService] No syncToken returned for #{cal_id} — next sync will be full again"
+      Rails.logger.tagged("[google_calendar]") { Rails.logger.warn "No syncToken returned for #{cal_id} — next sync will be full again" }
     end
-    Rails.logger.info "[GoogleCalendarService] Full sync complete: #{cal_id}"
+    Rails.logger.tagged("[google_calendar]") { Rails.logger.info "Full sync complete: #{cal_id}" }
   end
 
   def delta_sync!(service, cal_id, sync_token)
-    Rails.logger.info "[GoogleCalendarService] DELTA sync: #{cal_id}"
+    Rails.logger.tagged("[google_calendar]") { Rails.logger.info "DELTA sync: #{cal_id}" }
     page_token = nil
     next_sync  = nil
 
@@ -131,11 +146,11 @@ class GoogleCalendarService
     end
 
     save_sync_token(cal_id, next_sync)
-    Rails.logger.info "[GoogleCalendarService] Delta sync complete: #{cal_id}"
+    Rails.logger.tagged("[google_calendar]") { Rails.logger.info "Delta sync complete: #{cal_id}" }
   rescue Google::Apis::ClientError => e
     if e.status_code == 410
       # syncToken expired — fall back to full sync
-      Rails.logger.warn "[GoogleCalendarService] syncToken expired for #{cal_id}, running full sync"
+      Rails.logger.tagged("[google_calendar]") { Rails.logger.warn "syncToken expired for #{cal_id}, running full sync" }
       clear_sync_token(cal_id)
       full_sync!(service, cal_id)
     else
@@ -186,7 +201,7 @@ class GoogleCalendarService
       [ starts, ends, false ]
     end
   rescue ArgumentError => e
-    Rails.logger.warn "[GoogleCalendarService] Could not parse time: #{e.message}"
+    Rails.logger.tagged("[google_calendar]") { Rails.logger.warn "Could not parse time: #{e.message}" }
     [ nil, nil, false ]
   end
 
@@ -199,7 +214,7 @@ class GoogleCalendarService
   def save_sync_token(cal_id, token)
     return if token.blank?
     File.write(token_path(cal_id), token)
-    Rails.logger.debug "[GoogleCalendarService] syncToken saved for #{cal_id}"
+    Rails.logger.tagged("[google_calendar]") { Rails.logger.debug "syncToken saved for #{cal_id}" }
   end
 
   def load_sync_token(cal_id)

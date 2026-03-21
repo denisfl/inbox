@@ -56,10 +56,13 @@ RSpec.describe GoogleCalendarService do
     let(:google_service) { instance_double(Google::Apis::CalendarV3::CalendarService) }
     let(:authorizer) { instance_double(Google::Auth::UserRefreshCredentials) }
 
+    let(:client_options) { double("client_options", :open_timeout_sec= => nil, :send_timeout_sec= => nil, :read_timeout_sec= => nil) }
+
     before do
       allow(Google::Auth::UserRefreshCredentials).to receive(:new).and_return(authorizer)
       allow(Google::Apis::CalendarV3::CalendarService).to receive(:new).and_return(google_service)
       allow(google_service).to receive(:authorization=)
+      allow(google_service).to receive(:client_options).and_return(client_options)
       # Clear any existing sync tokens
       token_path = Rails.root.join("tmp", "google_sync_token_primary.txt")
       File.delete(token_path) if File.exist?(token_path)

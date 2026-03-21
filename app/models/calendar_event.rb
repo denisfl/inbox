@@ -29,7 +29,7 @@ class CalendarEvent < ApplicationRecord
   validates :source,          inclusion: { in: SOURCES }
 
   # ── Associations ───────────────────────────────────────────────────────────
-  has_many :calendar_event_tags, dependent: :destroy
+  has_many :calendar_event_tags, dependent: :delete_all
   has_many :tags, through: :calendar_event_tags
   has_rich_text :description
   # ── Callbacks ──────────────────────────────────────────────────────────────

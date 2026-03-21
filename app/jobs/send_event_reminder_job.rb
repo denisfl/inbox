@@ -4,6 +4,10 @@
 # Runs every minute via SolidQueue recurring schedule.
 #
 # Reminds when event starts within CALENDAR_REMINDER_MINUTES (default: 10).
+#
+# Retry strategy:
+#   - discard_on StandardError: no retry — duplicate reminders next minute are worse than missing one
+#   - Uses ExternalServiceClient for Telegram API calls (has its own HTTP-level retry)
 class SendEventReminderJob < ApplicationJob
   queue_as :default
 
@@ -41,23 +45,17 @@ class SendEventReminderJob < ApplicationJob
   end
 
   def send_telegram(text)
-    token   = ENV.fetch("TELEGRAM_BOT_TOKEN")
+    token   = AppSecret.fetch("TELEGRAM_BOT_TOKEN")
     chat_id = ENV.fetch("TELEGRAM_ALLOWED_USER_ID")
 
-    uri  = URI("https://api.telegram.org/bot#{token}/sendMessage")
-    body = { chat_id: chat_id, text: text, parse_mode: "HTML" }.to_json
+    url  = "https://api.telegram.org/bot#{token}/sendMessage"
+    body = { chat_id: chat_id, text: text, parse_mode: "HTML" }
 
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-    http.open_timeout = 5
-    http.read_timeout = 10
+    client = ExternalServiceClient.new(:telegram)
+    response = client.post(url, json: body)
 
-    request = Net::HTTP::Post.new(uri.path, "Content-Type" => "application/json")
-    request.body = body
-    response = http.request(request)
-
-    unless response.is_a?(Net::HTTPSuccess)
-      raise "Telegram API error #{response.code}: #{response.body}"
+    unless response.status.success?
+      raise "Telegram API error #{response.status.code}: #{response.body}"
     end
   end
 end

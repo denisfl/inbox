@@ -2,11 +2,17 @@
 
 require "telegram/bot"
 
+# Processes incoming Telegram webhook updates.
+#
+# Retry strategy:
+#   - retry_on StandardError: 2 attempts, 5s wait (Telegram also retries the webhook)
+#   - discard_on ActiveJob::DeserializationError: invalid payload, no retry
 class ProcessTelegramUpdateJob < ApplicationJob
   queue_as :default
 
   # Only 1 retry — Telegram will also retry the webhook
   retry_on StandardError, wait: 5.seconds, attempts: 2
+  discard_on ActiveJob::DeserializationError
 
   def perform(update_hash)
     update = Telegram::Bot::Types::Update.new(update_hash)

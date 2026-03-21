@@ -1,6 +1,6 @@
 <% content_for :title, "#{@document.title} - Inbox" %>
 <% content_for :head do %>
-  <meta name="auth-token" content="<%= ENV['API_TOKEN'] || 'development_token' %>">
+  <meta name="auth-token" content="<%= AppSecret['API_TOKEN'] || 'development_token' %>">
 <% end %>
 
 <%

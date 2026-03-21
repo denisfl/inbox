@@ -5,7 +5,7 @@ require "rails_helper"
 RSpec.describe Task, type: :model do
   describe "associations" do
     it { is_expected.to belong_to(:document).optional }
-    it { is_expected.to have_many(:task_tags).dependent(:destroy) }
+    it { is_expected.to have_many(:task_tags).dependent(:delete_all) }
     it { is_expected.to have_many(:tags).through(:task_tags) }
   end
 

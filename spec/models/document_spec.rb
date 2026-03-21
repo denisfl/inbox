@@ -3,10 +3,10 @@ require 'rails_helper'
 RSpec.describe Document, type: :model do
   describe 'associations' do
     it { is_expected.to have_many(:blocks).dependent(:destroy) }
-    it { is_expected.to have_many(:document_tags).dependent(:destroy) }
+    it { is_expected.to have_many(:document_tags).dependent(:delete_all) }
     it { is_expected.to have_many(:tags).through(:document_tags) }
-    it { is_expected.to have_many(:outgoing_links).class_name('DocumentLink').dependent(:destroy) }
-    it { is_expected.to have_many(:incoming_links).class_name('DocumentLink').dependent(:destroy) }
+    it { is_expected.to have_many(:outgoing_links).class_name('DocumentLink').dependent(:delete_all) }
+    it { is_expected.to have_many(:incoming_links).class_name('DocumentLink').dependent(:delete_all) }
     it { is_expected.to have_many(:linked_documents).through(:outgoing_links).source(:target_document) }
     it { is_expected.to have_many(:linking_documents).through(:incoming_links).source(:source_document) }
   end

@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe Tag, type: :model do
   describe 'associations' do
-    it { is_expected.to have_many(:document_tags).dependent(:destroy) }
+    it { is_expected.to have_many(:document_tags).dependent(:delete_all) }
     it { is_expected.to have_many(:documents).through(:document_tags) }
   end
 

@@ -23,3 +23,8 @@ production:
     class: SendEventReminderJob
     queue: default
     schedule: every minute
+
+  daily_backup:
+    class: BackupJob
+    queue: default
+    schedule: at 3am every day

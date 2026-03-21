@@ -68,12 +68,7 @@ RSpec.describe TranscribeAudioJob, type: :job do
 
       expect {
         described_class.new.perform(document.id, document.blocks.first.file.blob.key)
-      }.to raise_error(RuntimeError, /Transcription API/)
-
-      document.reload
-      error_block = document.blocks.find_by(block_type: "text")
-      expect(error_block).to be_present
-      expect(JSON.parse(error_block.content)["text"]).to include("Transcription failed")
+      }.to raise_error(ExternalServiceClient::TransientHttpError)
     end
 
     it "creates error block on generic StandardError and re-raises" do
