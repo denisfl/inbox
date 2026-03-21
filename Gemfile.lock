@@ -331,7 +331,7 @@ GEM
       racc (~> 1.4)
     os (1.1.4)
     ostruct (0.6.3)
-    pagy (43.3.3)
+    pagy (43.4.2)
       json
       uri
       yaml
@@ -598,7 +598,7 @@ DEPENDENCIES
   kamal
   kaminari (~> 1.2)
   lexxy
-  pagy (~> 43.3)
+  pagy (~> 43.4)
   propshaft
   puma (>= 5.0)
   rails (~> 8.1.2)

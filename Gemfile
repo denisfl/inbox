@@ -42,7 +42,7 @@ gem "icalendar", "~> 2.10"
 gem "http", "~> 5.0"
 
 # Pagination
-gem "pagy", "~> 43.3"
+gem "pagy", "~> 43.4"
 
 # Rich text editor (Lexxy replaces Trix for Action Text)
 gem "lexxy"
