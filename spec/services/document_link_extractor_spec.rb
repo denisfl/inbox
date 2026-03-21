@@ -1,9 +1,24 @@
 require "rails_helper"
 
 RSpec.describe DocumentLinkExtractor do
-  # Suppress after_save callback so we control when extraction runs
+  # Suppress event-driven extraction so we control when extraction runs
   before do
-    allow_any_instance_of(Document).to receive(:extract_wiki_links)
+    @subscriptions = []
+    ActiveSupport::Notifications.notifier.listeners_for("document.created").each do |sub|
+      @subscriptions << [ "document.created", sub ]
+      ActiveSupport::Notifications.unsubscribe(sub)
+    end
+    ActiveSupport::Notifications.notifier.listeners_for("document.updated").each do |sub|
+      @subscriptions << [ "document.updated", sub ]
+      ActiveSupport::Notifications.unsubscribe(sub)
+    end
+  end
+
+  after do
+    @subscriptions.each do |event_name, _sub|
+      # Re-register the subscriber
+      WikiLinkExtractionSubscriber.subscribe(event_name)
+    end
   end
 
   describe "#call" do

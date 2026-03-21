@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 class Task < ApplicationRecord
+  include DomainEvents
+
   # ── Associations ──────────────────────────────────────────────────────────
   belongs_to :document, optional: true
-  has_many :task_tags, dependent: :destroy
+  has_many :task_tags, dependent: :delete_all
   has_many :tags, through: :task_tags
   has_rich_text :description
 
@@ -80,10 +82,12 @@ class Task < ApplicationRecord
       update!(completed: true, completed_at: Time.current)
       spawn_next_recurrence! if recurrence_rule.present? && due_date.present?
     end
+    publish_domain_event("completed")
   end
 
   def uncomplete!
     update!(completed: false, completed_at: nil)
+    publish_domain_event("uncompleted")
   end
 
   def toggle!

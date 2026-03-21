@@ -2,10 +2,15 @@
 
 require "telegram/bot"
 
+# Transcribes audio attachments via Parakeet v3 (onnx-asr) and saves the text.
+#
+# Retry strategy:
+#   - retry_on StandardError: 3 attempts with exponential backoff (transient failures)
+#   - 413 (audio too long): treated as permanent failure — saves error message, no retry
+#   - ExternalServiceClient handles HTTP-level retries (timeout, connection errors)
 class TranscribeAudioJob < ApplicationJob
   queue_as :default
 
-  # Retry up to 3 times with exponential back-off (works with any ActiveJob backend)
   retry_on StandardError, wait: :polynomially_longer, attempts: 3
 
   def perform(document_id, audio_blob_key)
@@ -25,16 +30,15 @@ class TranscribeAudioJob < ApplicationJob
       temp_file.write(audio_file)
       temp_file.rewind
 
-      # Call Parakeet v3 transcription API
-      # Parakeet handles punctuation and capitalization natively — no LLM needed
+      # Call Parakeet v3 transcription API via ExternalServiceClient.
+      # Timeout is configurable via TRANSCRIBER_TIMEOUT env (default: 600s).
       transcriber_language = ENV["TRANSCRIBER_LANGUAGE"].presence
       form_data = { audio: HTTP::FormData::File.new(temp_file.path) }
       form_data[:language] = transcriber_language if transcriber_language
 
-      response = HTTP.timeout(600).post(
-        "#{ENV.fetch('TRANSCRIBER_URL', 'http://transcriber:5000')}/transcribe",
-        form: form_data
-      )
+      client = ExternalServiceClient.new(:transcriber)
+      transcriber_url = ENV.fetch("TRANSCRIBER_URL", "http://transcriber:5000")
+      response = client.post("#{transcriber_url}/transcribe", form: form_data)
 
       unless response.status.success?
         error_body = begin
@@ -43,7 +47,9 @@ class TranscribeAudioJob < ApplicationJob
           response.body.to_s.truncate(200)
         end
 
-        Rails.logger.error("Transcription API error: #{response.status} - #{error_body}")
+        Rails.logger.tagged("[transcriber]") do
+          Rails.logger.error("Transcription API error: #{response.status} - #{error_body}")
+        end
 
         # 413 = audio too long — permanent failure, don't retry
         if response.status.code == 413
@@ -68,7 +74,7 @@ class TranscribeAudioJob < ApplicationJob
       transcription = data["text"].to_s.strip
 
       if transcription.blank?
-        Rails.logger.warn("Empty transcription for document #{document_id}")
+        Rails.logger.tagged("[transcriber]") { Rails.logger.warn("Empty transcription for document #{document_id}") }
         transcription = "(empty transcription)"
       end
 
@@ -97,17 +103,22 @@ class TranscribeAudioJob < ApplicationJob
         notify_telegram_user(document, transcription)
       end
 
-      Rails.logger.info("Transcribed document #{document.id}: #{transcription.truncate(100)}")
+      Rails.logger.tagged("[transcriber]") do
+        Rails.logger.info("Transcribed document #{document.id}: #{transcription.truncate(100)}")
+      end
     ensure
       temp_file.close
       temp_file.unlink
     end
   rescue HTTP::TimeoutError => e
-    Rails.logger.error("Transcription timeout for document #{document_id}: #{e.message}")
+    Rails.logger.tagged("[transcriber]") do
+      Rails.logger.error("Transcription timeout for document #{document_id}: #{e.message}")
+    end
     raise # Retry via ActiveJob
   rescue StandardError => e
-    Rails.logger.error("Transcription failed for document #{document_id}: #{e.class} - #{e.message}")
-    Rails.logger.error(e.backtrace.join("\n"))
+    Rails.logger.tagged("[transcriber]") do
+      Rails.logger.error("Transcription failed for document #{document_id}: #{e.class} - #{e.message}")
+    end
 
     # Update document with error message
     document = Document.find(document_id)
@@ -123,7 +134,7 @@ class TranscribeAudioJob < ApplicationJob
   private
 
   def notify_telegram_user(document, transcription)
-    bot = Telegram::Bot::Client.new(ENV["TELEGRAM_BOT_TOKEN"])
+    bot = Telegram::Bot::Client.new(AppSecret["TELEGRAM_BOT_TOKEN"])
     preview = transcription.truncate(100)
 
     bot.api.send_message(

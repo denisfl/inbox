@@ -14,7 +14,7 @@
     <meta name="app-version" content="<%= Rails.application.config.app_version %>">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-    <meta name="auth-token" content="<%= ENV.fetch('API_TOKEN', 'development_token') %>">
+    <meta name="auth-token" content="<%= AppSecret.fetch('API_TOKEN', 'development_token') %>">
 
     <%= yield :head %>
 

@@ -7,6 +7,24 @@ RSpec.describe DocumentLink, type: :model do
   end
 
   describe 'validations' do
+    # Suppress event-driven wiki-link extraction so DocumentLinkExtractor
+    # doesn't delete_all outgoing_links during shoulda-matchers probing
+    before do
+      @subscriptions = []
+      %w[document.created document.updated].each do |event|
+        ActiveSupport::Notifications.notifier.listeners_for(event).each do |sub|
+          @subscriptions << [ event, sub ]
+          ActiveSupport::Notifications.unsubscribe(sub)
+        end
+      end
+    end
+
+    after do
+      @subscriptions.each do |event_name, _sub|
+        WikiLinkExtractionSubscriber.subscribe(event_name)
+      end
+    end
+
     subject { build(:document_link) }
     it { is_expected.to validate_uniqueness_of(:source_document_id).scoped_to(:target_document_id) }
   end

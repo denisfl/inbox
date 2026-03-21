@@ -1,10 +1,10 @@
 class Tag < ApplicationRecord
   # Associations
-  has_many :document_tags, dependent: :destroy
+  has_many :document_tags, dependent: :delete_all
   has_many :documents, through: :document_tags
-  has_many :task_tags, dependent: :destroy
+  has_many :task_tags, dependent: :delete_all
   has_many :tasks, through: :task_tags
-  has_many :calendar_event_tags, dependent: :destroy
+  has_many :calendar_event_tags, dependent: :delete_all
   has_many :calendar_events, through: :calendar_event_tags
 
   # Validations

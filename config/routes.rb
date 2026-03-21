@@ -7,6 +7,9 @@ Rails.application.routes.draw do
 
   # API namespace
   namespace :api do
+    # Health check (no auth required)
+    get "health", to: "health#show"
+
     resources :documents do
       # Collection-level search
       collection do

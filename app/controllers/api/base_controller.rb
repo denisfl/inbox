@@ -13,7 +13,7 @@ class Api::BaseController < ActionController::API
   def authenticate
     authenticate_or_request_with_http_token do |token, options|
       # Simple token authentication - compare with ENV variable or default for development
-      expected_token = ENV["API_TOKEN"].presence ||
+      expected_token = AppSecret["API_TOKEN"].presence ||
                        (Rails.env.local? ? "development_token" : Rails.application.credentials.api_token)
 
       return false unless expected_token

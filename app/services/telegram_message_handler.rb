@@ -8,7 +8,7 @@ class TelegramMessageHandler
   def initialize(update)
     @update = update
     @message = update.message
-    @bot = Telegram::Bot::Client.new(ENV["TELEGRAM_BOT_TOKEN"])
+    @bot = Telegram::Bot::Client.new(AppSecret["TELEGRAM_BOT_TOKEN"])
   end
 
   def handle
@@ -76,7 +76,7 @@ class TelegramMessageHandler
     file_path = file_info.file_path
 
     # Download the photo
-    file_url = "https://api.telegram.org/file/bot#{ENV['TELEGRAM_BOT_TOKEN']}/#{file_path}"
+    file_url = "https://api.telegram.org/file/bot#{AppSecret['TELEGRAM_BOT_TOKEN']}/#{file_path}"
     downloaded_file = download_file(file_url)
 
     caption = message.caption || "Photo from Telegram"
@@ -121,7 +121,7 @@ class TelegramMessageHandler
     file_path = file_info.file_path
 
     # Download voice file
-    file_url = "https://api.telegram.org/file/bot#{ENV['TELEGRAM_BOT_TOKEN']}/#{file_path}"
+    file_url = "https://api.telegram.org/file/bot#{AppSecret['TELEGRAM_BOT_TOKEN']}/#{file_path}"
     downloaded_file = download_file(file_url)
 
     # Add timestamp to ensure unique slug
@@ -159,7 +159,7 @@ class TelegramMessageHandler
     file_path = file_info.file_path
 
     # Download audio file
-    file_url = "https://api.telegram.org/file/bot#{ENV['TELEGRAM_BOT_TOKEN']}/#{file_path}"
+    file_url = "https://api.telegram.org/file/bot#{AppSecret['TELEGRAM_BOT_TOKEN']}/#{file_path}"
     downloaded_file = download_file(file_url)
 
     filename = message.audio.file_name || "audio_#{message.audio.file_id}"
@@ -198,7 +198,7 @@ class TelegramMessageHandler
     file_path = file_info.file_path
 
     # Download document
-    file_url = "https://api.telegram.org/file/bot#{ENV['TELEGRAM_BOT_TOKEN']}/#{file_path}"
+    file_url = "https://api.telegram.org/file/bot#{AppSecret['TELEGRAM_BOT_TOKEN']}/#{file_path}"
     downloaded_file = download_file(file_url)
 
     filename = message.document.file_name
@@ -237,10 +237,15 @@ class TelegramMessageHandler
   end
 
   def download_file(url)
-    require "open-uri"
+    client = ExternalServiceClient.new(:telegram)
+    response = client.get(url)
 
-    URI.parse(url).open
-  rescue StandardError => e
+    unless response.status.success?
+      raise "Failed to download file: HTTP #{response.status.code}"
+    end
+
+    StringIO.new(response.body.to_s)
+  rescue ExternalServiceClient::TransientHttpError, HTTP::Error => e
     Rails.logger.error("Failed to download file from #{url}: #{e.message}")
     raise "Failed to download file: #{e.message}"
   end

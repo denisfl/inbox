@@ -12,6 +12,7 @@ default: &default
   # https://www.sqlite.org/wal.html
   pool: 5
   pragmas:
+    foreign_keys: 1
     journal_mode: wal
     synchronous: normal
     mmap_size: 134217728 # 128MB

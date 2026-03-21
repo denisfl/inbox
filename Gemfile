@@ -44,6 +44,9 @@ gem "http", "~> 6.0"
 # Pagination
 gem "pagy", "~> 43.4"
 
+# S3-compatible backup storage (lazy-loaded, only used when BACKUP_STORAGE_TYPE=s3)
+gem "aws-sdk-s3", require: false
+
 # Rich text editor (Lexxy replaces Trix for Action Text)
 gem "lexxy"
 

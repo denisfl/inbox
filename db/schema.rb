@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_21_161821) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_22_000000) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -47,6 +47,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_161821) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "backup_records", force: :cascade do |t|
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.integer "size_bytes"
+    t.datetime "started_at"
+    t.string "status", null: false
+    t.string "storage_path"
+    t.string "storage_type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["started_at"], name: "index_backup_records_on_started_at"
+    t.index ["status"], name: "index_backup_records_on_status"
   end
 
   create_table "blocks", force: :cascade do |t|
@@ -173,6 +187,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_161821) do
   add_foreign_key "blocks", "documents"
   add_foreign_key "calendar_event_tags", "calendar_events"
   add_foreign_key "calendar_event_tags", "tags"
+  add_foreign_key "document_links", "documents", column: "source_document_id"
+  add_foreign_key "document_links", "documents", column: "target_document_id"
   add_foreign_key "document_tags", "documents"
   add_foreign_key "document_tags", "tags"
   add_foreign_key "task_tags", "tags"

@@ -13,8 +13,8 @@ namespace :google_calendar do
     require "uri"
     require "socket"
 
-    client_id     = ENV.fetch("GOOGLE_CLIENT_ID") { abort "GOOGLE_CLIENT_ID env var is required" }
-    client_secret = ENV.fetch("GOOGLE_CLIENT_SECRET") { abort "GOOGLE_CLIENT_SECRET env var is required" }
+    client_id     = AppSecret.fetch("GOOGLE_CLIENT_ID") { abort "GOOGLE_CLIENT_ID env var is required" }
+    client_secret = AppSecret.fetch("GOOGLE_CLIENT_SECRET") { abort "GOOGLE_CLIENT_SECRET env var is required" }
 
     scope        = "https://www.googleapis.com/auth/calendar.readonly"
     port         = 8765

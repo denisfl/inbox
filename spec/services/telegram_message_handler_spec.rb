@@ -37,11 +37,10 @@ RSpec.describe TelegramMessageHandler do
     allow(Telegram::Bot::Client).to receive(:new).and_return(bot)
   end
 
-  # Stub file download via open-uri
+  # Stub file download via ExternalServiceClient (HTTP gem)
   def stub_file_download(content: "fake file data")
-    io = StringIO.new(content)
-    allow(URI).to receive(:parse).and_call_original
-    allow_any_instance_of(URI::HTTPS).to receive(:open).and_return(io)
+    stub_request(:get, /api\.telegram\.org\/file\/bot/)
+      .to_return(status: 200, body: content)
   end
 
   describe "#handle" do
@@ -281,8 +280,9 @@ RSpec.describe TelegramMessageHandler do
       it "raises download error with message" do
         stub_bot_get_file(file_path: "photos/photo_large_id.jpg")
 
-        # Stub URI.parse to raise on the download URL
-        allow_any_instance_of(URI::HTTPS).to receive(:open).and_raise(StandardError, "Connection refused")
+        # Stub download to fail via WebMock
+        stub_request(:get, /api\.telegram\.org\/file\/bot/)
+          .to_return(status: 500, body: "Server Error")
 
         update = build_update(photo: photo)
 
@@ -291,6 +291,40 @@ RSpec.describe TelegramMessageHandler do
           described_class.new(update).handle
         }.not_to raise_error
       end
+    end
+  end
+
+  describe "download_file" do
+    let(:handler) do
+      update = build_update(text: "test")
+      described_class.new(update)
+    end
+
+    it "downloads file via ExternalServiceClient with timeout" do
+      stub_request(:get, "https://example.com/file.ogg")
+        .to_return(status: 200, body: "audio data")
+
+      result = handler.send(:download_file, "https://example.com/file.ogg")
+      expect(result).to be_a(StringIO)
+      expect(result.read).to eq("audio data")
+    end
+
+    it "raises on HTTP error response" do
+      stub_request(:get, "https://example.com/file.ogg")
+        .to_return(status: 404, body: "not found")
+
+      expect {
+        handler.send(:download_file, "https://example.com/file.ogg")
+      }.to raise_error(/Failed to download file/)
+    end
+
+    it "raises on connection error" do
+      stub_request(:get, "https://example.com/file.ogg")
+        .to_raise(HTTP::ConnectionError)
+
+      expect {
+        handler.send(:download_file, "https://example.com/file.ogg")
+      }.to raise_error(/Failed to download file/)
     end
   end
 end

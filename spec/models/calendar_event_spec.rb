@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe CalendarEvent, type: :model do
   describe "associations" do
-    it { is_expected.to have_many(:calendar_event_tags).dependent(:destroy) }
+    it { is_expected.to have_many(:calendar_event_tags).dependent(:delete_all) }
     it { is_expected.to have_many(:tags).through(:calendar_event_tags) }
   end
 

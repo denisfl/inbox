@@ -30,7 +30,7 @@ module Api
     private
 
     def validate_telegram_secret
-      configured = ENV["TELEGRAM_WEBHOOK_SECRET_TOKEN"].to_s
+      configured = AppSecret["TELEGRAM_WEBHOOK_SECRET_TOKEN"].to_s
       return true if configured.empty?
 
       header = request.headers["X-Telegram-Bot-Api-Secret-Token"] || request.headers["HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN"]
@@ -76,7 +76,7 @@ module Api
 
       return unless chat_id
 
-      bot = Telegram::Bot::Client.new(ENV["TELEGRAM_BOT_TOKEN"])
+      bot = Telegram::Bot::Client.new(AppSecret["TELEGRAM_BOT_TOKEN"])
       bot.api.send_message(chat_id: chat_id, text: text)
     rescue StandardError => e
       Rails.logger.error("Failed to send Telegram reply: #{e.message}")

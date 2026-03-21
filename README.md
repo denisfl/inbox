@@ -156,6 +156,14 @@ bin/brakeman --no-pager        # Security scan
 | `GOOGLE_CLIENT_SECRET`     | No       | For Google Calendar sync                                       |
 | `GOOGLE_REFRESH_TOKEN`     | No       | For Google Calendar sync                                       |
 | `GOOGLE_CALENDAR_IDS`      | No       | Comma-separated calendar IDs (default: `primary`)              |
+| `BACKUP_STORAGE_TYPE`      | No       | Backup storage: `local` (default) or `s3`                      |
+| `BACKUP_LOCAL_PATH`        | No       | Local backup directory (default: `storage/backups/`)           |
+| `BACKUP_RETENTION_DAYS`    | No       | Days to keep backups (default: 30)                             |
+| `BACKUP_S3_BUCKET`         | No       | S3 bucket name (required if `BACKUP_STORAGE_TYPE=s3`)          |
+| `BACKUP_S3_ACCESS_KEY`     | No       | S3 access key                                                  |
+| `BACKUP_S3_SECRET_KEY`     | No       | S3 secret key                                                  |
+| `BACKUP_S3_REGION`         | No       | S3 region (default: `us-east-1`)                               |
+| `BACKUP_S3_ENDPOINT`       | No       | S3 endpoint URL (for Backblaze B2, MinIO, etc.)                |
 
 ## How It Works
 
