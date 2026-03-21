@@ -19,8 +19,9 @@ module WikiLinkRenderer
     titles = text.scan(WIKI_LINK_PATTERN).flatten.map(&:strip).uniq
     return text.html_safe if titles.empty?
 
+    downcased = titles.map { |t| t.encode(Encoding::UTF_8).gsub(/[A-Z]/) { |c| c.downcase } }
     resolved = Document
-      .where("LOWER(title) IN (?)", titles.map(&:downcase))
+      .where("title IN (?) OR LOWER(title) IN (?)", titles, downcased)
       .index_by { |d| d.title.downcase }
 
     text.gsub(WIKI_LINK_PATTERN) do

@@ -27,14 +27,6 @@
     Dashboard
   <% end %>
 
-  <%= link_to inbox_documents_path, class: "nav-item #{'active' if controller_name == 'documents' && action_name == 'inbox'}" do %>
-    <div class="nav-icon"><%= heroicon(:inbox, style: 'width: 14px; height: 14px;') %></div>
-    Inbox
-    <% if @sidebar_counts[:inbox] > 0 %>
-      <span class="count"><%= @sidebar_counts[:inbox] %></span>
-    <% end %>
-  <% end %>
-
   <%= link_to documents_path, class: "nav-item #{'active' if controller_name == 'documents' && action_name != 'inbox'}" do %>
     <div class="nav-icon"><%= heroicon(:document_text, style: 'width: 14px; height: 14px;') %></div>
     Documents
