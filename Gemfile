@@ -39,10 +39,10 @@ gem "google-apis-calendar_v3", "~> 0.53"
 gem "icalendar", "~> 2.10"
 
 # HTTP client for API calls
-gem "http", "~> 5.0"
+gem "http", "~> 6.0"
 
 # Pagination
-gem "pagy", "~> 43.3"
+gem "pagy", "~> 43.4"
 
 # Rich text editor (Lexxy replaces Trix for Action Text)
 gem "lexxy"
@@ -107,5 +107,5 @@ group :test do
   gem "shoulda-matchers", "~> 7.0"
 
   # Stub external HTTP requests in tests
-  gem "webmock", "~> 3.23"
+  gem "webmock", "~> 3.26"
 end
