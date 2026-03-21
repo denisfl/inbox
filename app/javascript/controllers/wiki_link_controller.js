@@ -20,8 +20,9 @@ export default class extends Controller {
   }
 
   _tryAttach() {
-    this._editor = this.element.querySelector(".lexxy-editor__content") ||
-                   this.element.querySelector("[contenteditable]");
+    this._editor =
+      this.element.querySelector(".lexxy-editor__content") ||
+      this.element.querySelector("[contenteditable]");
 
     if (this._editor) {
       this._bind();
@@ -116,7 +117,7 @@ export default class extends Controller {
 
     try {
       const response = await fetch(url.toString(), {
-        headers: { "Accept": "application/json" }
+        headers: { Accept: "application/json" },
       });
       if (!response.ok) return;
 
@@ -144,7 +145,10 @@ export default class extends Controller {
 
     this._dropdown.innerHTML = this._results
       .map((doc, i) => {
-        const cls = i === this._selectedIndex ? "wiki-link-dropdown__item wiki-link-dropdown__item--active" : "wiki-link-dropdown__item";
+        const cls =
+          i === this._selectedIndex
+            ? "wiki-link-dropdown__item wiki-link-dropdown__item--active"
+            : "wiki-link-dropdown__item";
         return `<div class="${cls}" data-index="${i}" data-id="${doc.id}" data-title="${this._escapeAttr(doc.title)}">${this._escapeHtml(doc.title)}</div>`;
       })
       .join("");
@@ -153,12 +157,14 @@ export default class extends Controller {
     this._positionDropdown();
 
     // Bind click events
-    this._dropdown.querySelectorAll(".wiki-link-dropdown__item").forEach((item) => {
-      item.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        this._selectItem(parseInt(item.dataset.index, 10));
+    this._dropdown
+      .querySelectorAll(".wiki-link-dropdown__item")
+      .forEach((item) => {
+        item.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+          this._selectItem(parseInt(item.dataset.index, 10));
+        });
       });
-    });
 
     this._dropdown.style.display = "block";
   }
@@ -184,7 +190,10 @@ export default class extends Controller {
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
-        this._selectedIndex = Math.min(this._selectedIndex + 1, this._results.length - 1);
+        this._selectedIndex = Math.min(
+          this._selectedIndex + 1,
+          this._results.length - 1,
+        );
         this._updateActiveItem();
         break;
       case "ArrowUp":
@@ -207,12 +216,19 @@ export default class extends Controller {
 
   _updateActiveItem() {
     if (!this._dropdown) return;
-    this._dropdown.querySelectorAll(".wiki-link-dropdown__item").forEach((item, i) => {
-      item.classList.toggle("wiki-link-dropdown__item--active", i === this._selectedIndex);
-    });
+    this._dropdown
+      .querySelectorAll(".wiki-link-dropdown__item")
+      .forEach((item, i) => {
+        item.classList.toggle(
+          "wiki-link-dropdown__item--active",
+          i === this._selectedIndex,
+        );
+      });
 
     // Scroll active item into view
-    const activeItem = this._dropdown.querySelector(".wiki-link-dropdown__item--active");
+    const activeItem = this._dropdown.querySelector(
+      ".wiki-link-dropdown__item--active",
+    );
     if (activeItem) activeItem.scrollIntoView({ block: "nearest" });
   }
 
@@ -230,11 +246,17 @@ export default class extends Controller {
     this._inserting = true;
 
     const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) { this._inserting = false; return; }
+    if (!sel || sel.rangeCount === 0) {
+      this._inserting = false;
+      return;
+    }
 
     const range = sel.getRangeAt(0);
     const node = range.startContainer;
-    if (node.nodeType !== Node.TEXT_NODE) { this._inserting = false; return; }
+    if (node.nodeType !== Node.TEXT_NODE) {
+      this._inserting = false;
+      return;
+    }
 
     const offset = range.startOffset;
     const text = node.textContent;
@@ -242,7 +264,10 @@ export default class extends Controller {
     // Find the [[ that started this autocomplete
     const before = text.slice(0, offset);
     const bracketPos = before.lastIndexOf("[[");
-    if (bracketPos === -1) { this._inserting = false; return; }
+    if (bracketPos === -1) {
+      this._inserting = false;
+      return;
+    }
 
     // Select from [[ to cursor position, then replace via execCommand
     // so ProseMirror (Lexxy) processes it as a normal text input

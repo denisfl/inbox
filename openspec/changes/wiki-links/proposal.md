@@ -14,9 +14,11 @@ Documents in Inbox are isolated — there's no way to connect related notes. Kno
 ## Capabilities
 
 ### New Capabilities
+
 - `wiki-links`: Bidirectional document linking via `[[Title]]` syntax — storage, extraction, autocomplete, rendering, and backlink display
 
 ### Modified Capabilities
+
 <!-- No existing spec-level behavior changes -->
 
 ## Impact
