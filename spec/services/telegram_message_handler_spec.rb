@@ -67,12 +67,12 @@ RSpec.describe TelegramMessageHandler do
         expect(doc.body.to_plain_text).to include("My note content")
       end
 
-      it "auto-tags with telegram" do
+      it "does not auto-tag with telegram" do
         update = build_update(text: "tagged message")
         described_class.new(update).handle
 
         doc = Document.last
-        expect(doc.tags.map(&:name)).to include("telegram")
+        expect(doc.tags.map(&:name)).not_to include("telegram")
       end
 
       it "updates telegram_message_id on the created document" do
@@ -115,7 +115,8 @@ RSpec.describe TelegramMessageHandler do
 
         doc = Document.last
         expect(doc.blocks.where(block_type: "image").count).to eq(1)
-        expect(doc.tags.map(&:name)).to include("telegram", "file")
+        expect(doc.tags.map(&:name)).to include("file")
+        expect(doc.tags.map(&:name)).not_to include("telegram")
       end
 
       it "uses the largest photo size" do
@@ -156,7 +157,8 @@ RSpec.describe TelegramMessageHandler do
 
         doc = Document.last
         expect(doc.blocks.where(block_type: "file").count).to eq(1)
-        expect(doc.tags.map(&:name)).to include("telegram", "audio")
+        expect(doc.tags.map(&:name)).to include("audio")
+        expect(doc.tags.map(&:name)).not_to include("telegram")
       end
     end
 
@@ -183,7 +185,8 @@ RSpec.describe TelegramMessageHandler do
 
         doc = Document.last
         expect(doc.blocks.where(block_type: "file").count).to eq(1)
-        expect(doc.tags.map(&:name)).to include("telegram", "audio")
+        expect(doc.tags.map(&:name)).to include("audio")
+        expect(doc.tags.map(&:name)).not_to include("telegram")
       end
     end
 
@@ -210,7 +213,8 @@ RSpec.describe TelegramMessageHandler do
 
         doc = Document.last
         expect(doc.blocks.where(block_type: "file").count).to eq(1)
-        expect(doc.tags.map(&:name)).to include("telegram", "file")
+        expect(doc.tags.map(&:name)).to include("file")
+        expect(doc.tags.map(&:name)).not_to include("telegram")
       end
 
       it "adds caption as Action Text body when present" do

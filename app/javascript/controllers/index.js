@@ -51,3 +51,9 @@ application.register("calendar-event-form", CalendarEventFormController);
 
 import TaskFormController from "./task_form_controller";
 application.register("task-form", TaskFormController);
+
+import WikiLinkController from "./wiki_link_controller";
+application.register("wiki-link", WikiLinkController);
+
+import StatusDropdownController from "./status_dropdown_controller";
+application.register("status-dropdown", StatusDropdownController);

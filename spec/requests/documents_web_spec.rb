@@ -101,6 +101,29 @@ RSpec.describe "Documents (web)", type: :request do
 
       expect(response).to have_http_status(:ok)
     end
+
+    context "backlinks" do
+      it "displays 'Mentioned in' section when backlinks exist" do
+        source = create(:document, title: "Linking Doc")
+        target = create(:document, title: "Target Doc")
+        create(:document_link, source_document: source, target_document: target)
+
+        get document_path(target)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Mentioned in")
+        expect(response.body).to include("Linking Doc")
+      end
+
+      it "hides 'Mentioned in' section when no backlinks" do
+        doc = create(:document, title: "Lonely Doc")
+
+        get document_path(doc)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).not_to include("Mentioned in")
+      end
+    end
   end
 
   describe "GET /documents/:id/edit" do
@@ -122,11 +145,11 @@ RSpec.describe "Documents (web)", type: :request do
       expect(response).to redirect_to(edit_document_path(Document.last))
     end
 
-    it "auto-tags the new document as web" do
+    it "does not auto-tag the new document as web" do
       get new_document_path
 
       doc = Document.last
-      expect(doc.tags.map(&:name)).to include("web")
+      expect(doc.tags.map(&:name)).not_to include("web")
     end
 
     it "does not create any blocks (uses Action Text body)" do
@@ -203,7 +226,8 @@ RSpec.describe "Documents (web)", type: :request do
 
       expect(response).to redirect_to(documents_path)
       doc = Document.last
-      expect(doc.tags.map(&:name)).to include("web", "file")
+      expect(doc.tags.map(&:name)).to include("file")
+      expect(doc.tags.map(&:name)).not_to include("web")
     end
 
     it "handles image uploads with image block" do
@@ -251,6 +275,66 @@ RSpec.describe "Documents (web)", type: :request do
 
       doc = Document.last
       expect(doc.tags.map(&:name)).to include("audio")
+    end
+  end
+
+  describe "GET /documents/search.json" do
+    it "returns matching documents" do
+      create(:document, title: "Meeting Notes")
+      create(:document, title: "Team Meeting")
+      create(:document, title: "Grocery List")
+
+      get search_documents_path(q: "meet", format: :json)
+
+      expect(response).to have_http_status(:ok)
+      results = JSON.parse(response.body)
+      expect(results.length).to eq(2)
+      titles = results.map { |r| r["title"] }
+      expect(titles).to contain_exactly("Meeting Notes", "Team Meeting")
+    end
+
+    it "returns empty array for empty query" do
+      create(:document, title: "Something")
+
+      get search_documents_path(q: "", format: :json)
+
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)).to eq([])
+    end
+
+    it "returns empty array when no query parameter" do
+      get search_documents_path(format: :json)
+
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)).to eq([])
+    end
+
+    it "limits results to 10" do
+      12.times { |i| create(:document, title: "Note #{i}") }
+
+      get search_documents_path(q: "Note", format: :json)
+
+      expect(response).to have_http_status(:ok)
+      results = JSON.parse(response.body)
+      expect(results.length).to eq(10)
+    end
+
+    it "returns id and title for each result" do
+      doc = create(:document, title: "My Document")
+
+      get search_documents_path(q: "My", format: :json)
+
+      results = JSON.parse(response.body)
+      expect(results.first).to include("id" => doc.id, "title" => "My Document")
+    end
+
+    it "is case-insensitive" do
+      create(:document, title: "Important Note")
+
+      get search_documents_path(q: "important", format: :json)
+
+      results = JSON.parse(response.body)
+      expect(results.length).to eq(1)
     end
   end
 end

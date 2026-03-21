@@ -4,11 +4,18 @@
   <header class="simple-editor-header">
     <div class="simple-editor-header-left">
       <%= back_link(documents_path, "Back") %>
+
+      <nav class="simple-editor-mode-toggle">
+        <%= link_to edit_document_path(@document) do %>
+          <%= heroicon(:pencil, style: 'width: 12px; height: 12px;') %> Edit
+        <% end %>
+        <%= link_to document_path(@document), class: "active" do %>
+          <%= heroicon(:eye, style: 'width: 12px; height: 12px;') %> Preview
+        <% end %>
+      </nav>
+      <%= render "documents/status_badge", document: @document %>
     </div>
     <div class="simple-editor-header-right">
-      <%= link_to edit_document_path(@document), class: "btn btn-sm" do %>
-        <%= heroicon(:pencil, style: 'width: 14px; height: 14px;') %> Edit
-      <% end %>
     </div>
   </header>
 
@@ -29,8 +36,36 @@
   <main class="simple-editor-body">
     <% if @document.body.present? %>
       <div class="lexxy-content">
-        <%= @document.body %>
+        <%= render_wiki_links(@document.body.to_s) %>
       </div>
+    <% end %>
+
+    <%# ── Linked documents (outgoing wiki-links) ───────────────────── %>
+    <% if @document.linked_documents.any? %>
+      <aside class="backlinks-section">
+        <h3 class="backlinks-title">Links</h3>
+        <ul class="backlinks-list">
+          <% @document.linked_documents.each do |doc| %>
+            <li class="backlinks-item">
+              <%= link_to doc.title, document_path(doc), class: "backlinks-link" %>
+            </li>
+          <% end %>
+        </ul>
+      </aside>
+    <% end %>
+
+    <%# ── Backlinks (incoming wiki-links) ──────────────────────────── %>
+    <% if @document.linking_documents.any? %>
+      <aside class="backlinks-section">
+        <h3 class="backlinks-title">Mentioned in</h3>
+        <ul class="backlinks-list">
+          <% @document.linking_documents.each do |doc| %>
+            <li class="backlinks-item">
+              <%= link_to doc.title, document_path(doc), class: "backlinks-link" %>
+            </li>
+          <% end %>
+        </ul>
+      </aside>
     <% end %>
   </main>
 </div>

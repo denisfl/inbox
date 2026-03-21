@@ -2,10 +2,21 @@ class Document < ApplicationRecord
   # Document types
   DOCUMENT_TYPES = %w[note todo event].freeze
 
+  # Document statuses
+  enum :status, {
+    inbox:      "inbox",
+    processing: "processing",
+    evergreen:  "evergreen"
+  }, default: "inbox"
+
   # Associations
   has_many :blocks, dependent: :destroy
   has_many :document_tags, dependent: :destroy
   has_many :tags, through: :document_tags
+  has_many :outgoing_links, class_name: "DocumentLink", foreign_key: :source_document_id, dependent: :destroy
+  has_many :incoming_links, class_name: "DocumentLink", foreign_key: :target_document_id, dependent: :destroy
+  has_many :linked_documents, through: :outgoing_links, source: :target_document
+  has_many :linking_documents, through: :incoming_links, source: :source_document
   has_rich_text :body
 
   # Active Storage attachments
@@ -19,6 +30,7 @@ class Document < ApplicationRecord
 
   # Callbacks
   before_validation :generate_slug, if: -> { slug.blank? && title.present? }
+  after_save :extract_wiki_links
 
   # Scopes
   scope :recent, -> { order(created_at: :desc) }
@@ -27,6 +39,7 @@ class Document < ApplicationRecord
   scope :pinned, -> { where(pinned: true) }
   scope :not_pinned, -> { where(pinned: false) }
   scope :pinned_first, -> { order(pinned: :desc) }
+  scope :needs_processing, -> { where(status: :inbox) }
 
   # Filter by multiple tags (AND — documents must have ALL specified tags)
   scope :tagged_with, ->(tag_names) {
@@ -111,5 +124,9 @@ class Document < ApplicationRecord
     else
       self.slug = base_slug
     end
+  end
+
+  def extract_wiki_links
+    DocumentLinkExtractor.new(self).call
   end
 end

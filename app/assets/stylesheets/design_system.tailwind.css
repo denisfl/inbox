@@ -19,7 +19,8 @@
   /* Warm neutrals — the whole vibe lives here */
   --color-bg-primary: #ffffff; /* Panels — pure white for readability */
   --color-bg-secondary: #f0ece4; /* App background — warm parchment */
-  --color-bg-tertiary: #e8e3da; /* Inputs, inset areas */
+  /* --color-bg-tertiary: #e8e3da; Inputs, inset areas */
+  --color-bg-tertiary: #f6f3ee;
   --color-bg-hover: #f7f6f3;
   --color-bg-sidebar: #f5f3ef;
   --color-bg-toolbar: #f8f8f7;
@@ -265,7 +266,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 18px 13px;
 }
 
 .card-title {

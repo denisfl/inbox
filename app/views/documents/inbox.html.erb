@@ -1,0 +1,50 @@
+<% content_for :title, "Inbox - Documents to Process" %>
+<% content_for :page_title, "Inbox" %>
+
+<div class="inbox-with-sidebar">
+  <div class="inbox-main">
+
+<div class="documents-container">
+  <header class="documents-header">
+    <h1 class="documents-page-title">
+      <%= heroicon(:inbox, style: 'width: 1.5rem; height: 1.5rem;') %>
+      Inbox
+      <% if @pagy.count > 0 %>
+        <span class="results-count" style="font-weight: normal; font-size: var(--text-sm);"><%= @pagy.count %></span>
+      <% end %>
+    </h1>
+
+    <%= link_to new_note_path, class: "btn btn-primary btn-sm", data: { turbo: false } do %>
+      <%= heroicon(:plus, style: 'width: 1rem; height: 1rem;') %>
+      New Note
+    <% end %>
+  </header>
+
+  <% if @documents.any? %>
+    <div class="documents-grid">
+      <% @documents.each do |document| %>
+        <%= render 'documents/card', document: document %>
+      <% end %>
+    </div>
+
+    <% if @pagy.pages > 1 %>
+      <div class="pagination-wrapper">
+        <%== @pagy.series_nav %>
+      </div>
+    <% end %>
+  <% else %>
+    <% empty_actions = capture do %>
+      <div class="empty-state-actions">
+        <%= link_to documents_path, class: "btn btn-secondary" %>
+      </div>
+    <% end %>
+    <%= render "shared/empty_state",
+          icon: :inbox,
+          title: "Inbox is empty",
+          description: "All documents have been processed. Nice work!",
+          actions: empty_actions %>
+  <% end %>
+</div>
+
+  </div><%# .inbox-main %>
+</div><%# .inbox-with-sidebar %>

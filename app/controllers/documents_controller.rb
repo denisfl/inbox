@@ -1,7 +1,7 @@
 class DocumentsController < ApplicationController
   include ActionView::RecordIdentifier
 
-  before_action :set_document, only: [ :show, :edit, :update, :destroy, :toggle_pinned, :export ]
+  before_action :set_document, only: [ :show, :edit, :update, :destroy, :toggle_pinned, :export, :update_status ]
 
   def index
     documents_scope = Document.includes(:blocks, :tags).with_rich_text_body
@@ -12,6 +12,11 @@ class DocumentsController < ApplicationController
       documents_scope = documents_scope.left_joins(:blocks)
         .where("documents.title LIKE ? OR blocks.content LIKE ?", "%#{query}%", "%#{query}%")
         .distinct
+    end
+
+    # Filter by status
+    if params[:status].present?
+      documents_scope = documents_scope.where(status: params[:status])
     end
 
     # Filter by type (voice, photo)
@@ -72,6 +77,17 @@ class DocumentsController < ApplicationController
     # Show document in read-only mode
   end
 
+  def search
+    query = params[:q].to_s.strip
+    results = if query.present?
+      Document.where("LOWER(title) LIKE ?", "%#{Document.sanitize_sql_like(query).downcase}%").limit(10)
+    else
+      Document.none
+    end
+
+    render json: results.select(:id, :title).map { |d| { id: d.id, title: d.title } }
+  end
+
   def edit
     # Edit document with Lexxy rich text editor
     @blocks = @document.blocks.ordered
@@ -94,10 +110,6 @@ class DocumentsController < ApplicationController
     @document = Document.create!(
       title: "Untitled"
     )
-
-    # Auto-tag as web-created
-    web_tag = Tag.find_or_create_by!(name: "web")
-    @document.tags << web_tag unless @document.tags.include?(web_tag)
 
     # Redirect to edit page with 303 status (prevents Turbo caching)
     redirect_to edit_document_path(@document), status: :see_other
@@ -126,10 +138,6 @@ class DocumentsController < ApplicationController
                   .truncate(50)
 
       doc = Document.create!(title: title)
-
-      # Auto-tag as web-created
-      web_tag = Tag.find_or_create_by!(name: "web")
-      doc.tags << web_tag unless doc.tags.include?(web_tag)
 
       # Create text block so the editor can work with this document
       text_block = doc.blocks.new(block_type: "text", position: 0)
@@ -174,6 +182,34 @@ class DocumentsController < ApplicationController
       disposition: "attachment"
   end
 
+  # PATCH /documents/:id/update_status
+  def update_status
+    if Document.statuses.key?(params[:status])
+      @document.update!(status: params[:status])
+      respond_to do |format|
+        format.turbo_stream {
+          render turbo_stream: turbo_stream.replace(
+            "document_status_#{@document.id}",
+            partial: "documents/status_badge",
+            locals: { document: @document }
+          )
+        }
+        format.html { redirect_back fallback_location: documents_path }
+      end
+    else
+      head :unprocessable_entity
+    end
+  end
+
+  # GET /inbox
+  def inbox
+    @documents = Document.inbox
+                         .includes(:blocks, :tags)
+                         .with_rich_text_body
+                         .order(created_at: :desc)
+    @pagy, @documents = pagy(:offset, @documents, limit: 20)
+  end
+
   # PATCH /documents/:id/toggle_pinned
   def toggle_pinned
     @document.toggle_pinned!
@@ -198,7 +234,7 @@ class DocumentsController < ApplicationController
   end
 
   def document_params
-    params.require(:document).permit(:body)
+    params.require(:document).permit(:body, :status)
   end
 
   # Normalize tag params: supports both ?tag=name (single) and ?tags[]=a&tags[]=b (multi)

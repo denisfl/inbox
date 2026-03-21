@@ -1,0 +1,30 @@
+<%# Status badge with dropdown for changing document status %>
+<%
+  status_config = {
+    "inbox"      => { icon: :inbox,       label: "Inbox",      css: "status-badge--inbox" },
+    "processing" => { icon: :cog_6_tooth, label: "Processing", css: "status-badge--processing" },
+    "evergreen"  => { icon: :check_badge, label: "Evergreen",  css: "status-badge--evergreen" }
+  }
+  current = status_config[document.status] || status_config["inbox"]
+  other_statuses = status_config.reject { |k, _| k == document.status }
+%>
+
+<div id="document_status_<%= document.id %>" class="status-badge-wrapper" data-controller="status-dropdown">
+  <button type="button" class="status-badge <%= current[:css] %>" data-action="click->status-dropdown#toggle">
+    <%= heroicon(current[:icon], style: 'width: 12px; height: 12px;') %>
+    <%= current[:label] %>
+    <%= heroicon(:chevron_right, style: 'width: 10px; height: 10px; transform: rotate(90deg);') %>
+  </button>
+
+  <div class="status-dropdown" data-status-dropdown-target="menu">
+    <% other_statuses.each do |status_key, config| %>
+      <%= button_to update_status_document_path(document, status: status_key),
+            method: :patch,
+            class: "status-dropdown-item #{config[:css]}",
+            data: { turbo: true } do %>
+        <%= heroicon(config[:icon], style: 'width: 14px; height: 14px;') %>
+        <%= config[:label] %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
