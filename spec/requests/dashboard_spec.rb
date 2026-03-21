@@ -187,11 +187,11 @@ RSpec.describe "Dashboard", type: :request do
       expect(response).to redirect_to(root_path)
     end
 
-    it "auto-tags note as web" do
+    it "does not auto-tag note as web" do
       post quick_capture_path, params: { content: "Tagged note", capture_type: "note" }
 
       doc = Document.last
-      expect(doc.tags.map(&:name)).to include("web")
+      expect(doc.tags.map(&:name)).not_to include("web")
     end
   end
 end

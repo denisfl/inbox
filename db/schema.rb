@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_21_142510) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_21_161821) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -118,6 +118,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_142510) do
     t.boolean "pinned", default: false, null: false
     t.string "slug"
     t.string "source"
+    t.string "status", default: "inbox", null: false
     t.integer "telegram_chat_id", limit: 8
     t.integer "telegram_message_id", limit: 8
     t.string "title"
@@ -126,6 +127,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_142510) do
     t.index ["pinned"], name: "index_documents_on_pinned"
     t.index ["slug"], name: "index_documents_on_slug", unique: true
     t.index ["source"], name: "index_documents_on_source"
+    t.index ["status"], name: "index_documents_on_status"
     t.index ["telegram_chat_id", "telegram_message_id"], name: "index_documents_on_telegram_chat_id_and_telegram_message_id"
   end
 

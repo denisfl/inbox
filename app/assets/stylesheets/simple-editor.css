@@ -474,14 +474,16 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-base);
   padding: 2px;
+  height: 32px;
 }
 
 .simple-editor-mode-toggle a {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  padding: 4px 12px;
-  font-size: var(--text-xs);
+  gap: 4px;
+  padding: 0 10px;
+  height: 26px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--color-text-tertiary);
   text-decoration: none;
@@ -489,6 +491,7 @@
   transition:
     background var(--transition-fast),
     color var(--transition-fast);
+  white-space: nowrap;
 }
 
 .simple-editor-mode-toggle a:hover {

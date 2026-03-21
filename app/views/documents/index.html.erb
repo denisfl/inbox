@@ -38,6 +38,16 @@
 
     <div class="filters-right">
       <div class="sort-dropdown">
+        <label for="status-select" class="sr-only">Filter by status</label>
+        <select id="status-select" class="input input-sm" onchange="window.location.href='<%= request.path %>?<%= request.query_parameters.except(:status).to_query %>&status=' + this.value">
+          <option value="">All statuses</option>
+          <option value="inbox" <%= 'selected' if params[:status] == 'inbox' %>>Inbox</option>
+          <option value="processing" <%= 'selected' if params[:status] == 'processing' %>>Processing</option>
+          <option value="evergreen" <%= 'selected' if params[:status] == 'evergreen' %>>Evergreen</option>
+        </select>
+      </div>
+
+      <div class="sort-dropdown">
         <label for="sort-select" class="sr-only">Sort by</label>
         <select id="sort-select" class="input input-sm" onchange="window.location.href='<%= request.path %>?<%= request.query_parameters.except(:sort).to_query %>&sort=' + this.value">
           <option value="updated_desc" <%= 'selected' if params[:sort] == 'updated_desc' || params[:sort].blank? %>>Recently updated</option>

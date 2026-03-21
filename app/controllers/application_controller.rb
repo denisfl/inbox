@@ -30,7 +30,8 @@ class ApplicationController < ActionController::Base
   def load_sidebar_data
     @sidebar_counts = {
       documents: Document.count,
-      tasks:     Task.active.count
+      tasks:     Task.active.count,
+      inbox:     Document.inbox.count
     }
     @sidebar_tags = Tag.left_joins(:document_tags, :task_tags, :calendar_event_tags)
                        .select(

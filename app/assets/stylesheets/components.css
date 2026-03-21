@@ -363,3 +363,125 @@
     );
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DOCUMENT STATUS BADGE
+   Dropdown to change document status (inbox / processing / evergreen).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.status-badge-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  height: 32px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+.status-badge:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-bg-tertiary);
+}
+
+.status-badge--inbox {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+.status-badge--processing {
+  background: color-mix(in srgb, #f59e0b 12%, var(--color-bg-primary));
+  color: #b45309;
+  border-color: color-mix(in srgb, #f59e0b 25%, var(--color-border));
+}
+.status-badge--evergreen {
+  background: color-mix(
+    in srgb,
+    var(--color-primary) 12%,
+    var(--color-bg-primary)
+  );
+  color: var(--color-primary);
+  border-color: color-mix(
+    in srgb,
+    var(--color-primary) 25%,
+    var(--color-border)
+  );
+}
+
+.status-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 140px;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-dropdown, 50);
+  overflow: hidden;
+}
+
+.status-badge-wrapper.open .status-dropdown {
+  display: block;
+}
+
+.status-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+  text-align: left;
+}
+.status-dropdown-item:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+.status-dropdown-item.status-badge--processing:hover {
+  color: #b45309;
+}
+.status-dropdown-item.status-badge--evergreen:hover {
+  color: var(--color-primary);
+}
+
+/* Status badges in card view */
+.source-badge--processing {
+  background: color-mix(in srgb, #f59e0b 15%, var(--color-bg-primary));
+  color: #b45309;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.source-badge--evergreen {
+  background: color-mix(
+    in srgb,
+    var(--color-primary) 12%,
+    var(--color-bg-primary)
+  );
+  color: var(--color-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}

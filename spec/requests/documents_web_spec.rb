@@ -145,11 +145,11 @@ RSpec.describe "Documents (web)", type: :request do
       expect(response).to redirect_to(edit_document_path(Document.last))
     end
 
-    it "auto-tags the new document as web" do
+    it "does not auto-tag the new document as web" do
       get new_document_path
 
       doc = Document.last
-      expect(doc.tags.map(&:name)).to include("web")
+      expect(doc.tags.map(&:name)).not_to include("web")
     end
 
     it "does not create any blocks (uses Action Text body)" do
@@ -226,7 +226,8 @@ RSpec.describe "Documents (web)", type: :request do
 
       expect(response).to redirect_to(documents_path)
       doc = Document.last
-      expect(doc.tags.map(&:name)).to include("web", "file")
+      expect(doc.tags.map(&:name)).to include("file")
+      expect(doc.tags.map(&:name)).not_to include("web")
     end
 
     it "handles image uploads with image block" do

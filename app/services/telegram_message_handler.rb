@@ -65,10 +65,6 @@ class TelegramMessageHandler
     # Store text as Action Text body
     doc.update!(body: "<div>#{ERB::Util.html_escape(text).gsub("\n", "<br>")}</div>")
 
-    # Auto-tag as telegram
-    telegram_tag = Tag.find_or_create_by!(name: "telegram")
-    doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
-
     send_reply("Note saved")
     Rails.logger.info("Created note document: #{doc.id} from text message")
   end
@@ -92,10 +88,6 @@ class TelegramMessageHandler
       telegram_chat_id: message.chat.id,
       telegram_message_id: message.message_id
     )
-
-    # Auto-tag as telegram
-    telegram_tag = Tag.find_or_create_by!(name: "telegram")
-    doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
 
     # Create image block
     image_block = doc.blocks.create!(
@@ -141,10 +133,6 @@ class TelegramMessageHandler
       telegram_message_id: message.message_id
     )
 
-    # Auto-tag as telegram
-    telegram_tag = Tag.find_or_create_by!(name: "telegram")
-    doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
-
     # Create file block with voice attachment
     file_block = doc.blocks.create!(
       block_type: "file",
@@ -184,10 +172,6 @@ class TelegramMessageHandler
       telegram_message_id: message.message_id
     )
 
-    # Auto-tag as telegram
-    telegram_tag = Tag.find_or_create_by!(name: "telegram")
-    doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
-
     # Create file block with audio attachment
     file_block = doc.blocks.create!(
       block_type: "file",
@@ -225,10 +209,6 @@ class TelegramMessageHandler
       telegram_chat_id: message.chat.id,
       telegram_message_id: message.message_id
     )
-
-    # Auto-tag as telegram
-    telegram_tag = Tag.find_or_create_by!(name: "telegram")
-    doc.tags << telegram_tag unless doc.tags.include?(telegram_tag)
 
     # Create file block
     file_block = doc.blocks.create!(

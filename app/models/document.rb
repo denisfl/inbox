@@ -2,6 +2,13 @@ class Document < ApplicationRecord
   # Document types
   DOCUMENT_TYPES = %w[note todo event].freeze
 
+  # Document statuses
+  enum :status, {
+    inbox:      "inbox",
+    processing: "processing",
+    evergreen:  "evergreen"
+  }, default: "inbox"
+
   # Associations
   has_many :blocks, dependent: :destroy
   has_many :document_tags, dependent: :destroy
@@ -32,6 +39,7 @@ class Document < ApplicationRecord
   scope :pinned, -> { where(pinned: true) }
   scope :not_pinned, -> { where(pinned: false) }
   scope :pinned_first, -> { order(pinned: :desc) }
+  scope :needs_processing, -> { where(status: :inbox) }
 
   # Filter by multiple tags (AND — documents must have ALL specified tags)
   scope :tagged_with, ->(tag_names) {

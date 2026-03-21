@@ -27,6 +27,16 @@
   <%# ── Header: badges + time ── %>
   <div class="card-header">
     <div class="card-badges">
+      <% unless document.inbox? %>
+        <span class="source-badge source-badge--<%= document.status %>">
+          <% if document.processing? %>
+            <%= heroicon(:cog_6_tooth, style: 'width: 10px; height: 10px;') %>
+          <% elsif document.evergreen? %>
+            <%= heroicon(:check_badge, style: 'width: 10px; height: 10px;') %>
+          <% end %>
+          <%= document.status.capitalize %>
+        </span>
+      <% end %>
       <% if document.pinned? %>
         <span class="source-badge source-badge--pinned" title="Pinned">
           <%= heroicon(:bookmark, variant: :solid, style: 'width: 10px; height: 10px;') %>
@@ -133,14 +143,15 @@
 
 /* ── Content-type badges ── */
 .source-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.02em;
   padding: 2px 8px;
   border-radius: var(--radius-full);
-  background: var(--color-bg-secondary);
   color: var(--color-text-secondary);
 }
 .source-badge--voice { background: color-mix(in srgb, var(--color-accent) 20%, var(--color-bg-primary)); color: color-mix(in srgb, var(--color-accent) 70%, var(--color-text-primary)); }

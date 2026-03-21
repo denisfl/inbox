@@ -68,11 +68,13 @@ Rails.application.routes.draw do
   resources :documents, only: [ :index, :show, :edit, :new, :update, :destroy ] do
     member do
       patch :toggle_pinned
+      patch :update_status
       get :export
     end
     collection do
       post :bulk_upload
       get :search
+      get :inbox
     end
   end
 

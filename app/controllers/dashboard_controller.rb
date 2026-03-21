@@ -71,9 +71,6 @@ class DashboardController < ApplicationController
     case params[:capture_type]
     when "note"
       doc = Document.create!(title: content.truncate(80))
-      # Auto-tag as web-created
-      web_tag = Tag.find_or_create_by!(name: "web")
-      doc.tags << web_tag unless doc.tags.include?(web_tag)
       block = doc.blocks.new(block_type: "text", position: 0)
       block.content_hash = { text: content }
       block.save!

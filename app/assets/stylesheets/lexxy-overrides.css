@@ -116,3 +116,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
 }
+
+.trix-content pre {
+  background: var(--lexxy-color-ink-lightest);
+}
