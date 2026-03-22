@@ -40,32 +40,8 @@
       </div>
     <% end %>
 
-    <%# ── Linked documents (outgoing wiki-links) ───────────────────── %>
-    <% if @document.linked_documents.any? %>
-      <aside class="backlinks-section">
-        <h3 class="backlinks-title">Links</h3>
-        <ul class="backlinks-list">
-          <% @document.linked_documents.each do |doc| %>
-            <li class="backlinks-item">
-              <%= link_to doc.title, document_path(doc), class: "backlinks-link" %>
-            </li>
-          <% end %>
-        </ul>
-      </aside>
-    <% end %>
-
-    <%# ── Backlinks (incoming wiki-links) ──────────────────────────── %>
-    <% if @document.linking_documents.any? %>
-      <aside class="backlinks-section">
-        <h3 class="backlinks-title">Mentioned in</h3>
-        <ul class="backlinks-list">
-          <% @document.linking_documents.each do |doc| %>
-            <li class="backlinks-item">
-              <%= link_to doc.title, document_path(doc), class: "backlinks-link" %>
-            </li>
-          <% end %>
-        </ul>
-      </aside>
-    <% end %>
+    <%= render "documents/connected_notes",
+          links: @document.linked_documents,
+          backlinks: @document.linking_documents %>
   </main>
 </div>

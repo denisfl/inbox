@@ -1,7 +1,7 @@
 class DocumentsController < ApplicationController
   include ActionView::RecordIdentifier
 
-  before_action :set_document, only: [ :show, :edit, :update, :destroy, :toggle_pinned, :export, :update_status ]
+  before_action :set_document, only: [ :show, :edit, :update, :destroy, :toggle_pinned, :export, :update_status, :preview ]
 
   def index
     documents_scope = Document.includes(:blocks, :tags).with_rich_text_body
@@ -75,6 +75,14 @@ class DocumentsController < ApplicationController
 
   def show
     # Show document in read-only mode
+  end
+
+  def preview
+    render json: {
+      title: @document.title.presence || "Untitled",
+      html: helpers.render_wiki_links(@document.body.to_s),
+      url: edit_document_path(@document)
+    }
   end
 
   def search

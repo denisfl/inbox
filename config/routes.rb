@@ -73,6 +73,7 @@ Rails.application.routes.draw do
       patch :toggle_pinned
       patch :update_status
       get :export
+      get :preview
     end
     collection do
       post :bulk_upload

@@ -60,6 +60,12 @@ class Document < ApplicationRecord
     update!(pinned: !pinned)
   end
 
+  # Plain text excerpt for preview cards
+  def plain_text_excerpt(lines: 3)
+    text = body.to_plain_text.strip
+    text.split("\n").reject(&:blank?).first(lines).join(" ").truncate(240)
+  end
+
   # Full-text search using SQLite FTS5
   def self.search(query, page: 1, per_page: 20)
     return none if query.blank?

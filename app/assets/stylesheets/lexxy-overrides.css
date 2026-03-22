@@ -17,6 +17,8 @@
   /* Typography — use app fonts */
   --lexxy-font-base: "Inter", system-ui, sans-serif;
   --lexxy-font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --lexxy-content-margin: 1rem;
+  --lexxy-text-small: 0.875rem;
 
   /* Match app border radius */
   --lexxy-radius: var(--radius-base);

@@ -57,3 +57,6 @@ application.register("wiki-link", WikiLinkController);
 
 import StatusDropdownController from "./status_dropdown_controller";
 application.register("status-dropdown", StatusDropdownController);
+
+import ConnectedNotesController from "./connected_notes_controller";
+application.register("connected-notes", ConnectedNotesController);

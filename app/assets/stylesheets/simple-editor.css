@@ -210,6 +210,10 @@
   flex-direction: column;
   min-height: calc(100vh - 16rem);
   padding: var(--spacing-md) 40px 60px;
+  font-family: var(--lexxy-font-base, "Inter", system-ui, sans-serif);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--color-text-primary);
 }
 
 /* Make form + editor fill available height */
