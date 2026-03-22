@@ -3,7 +3,7 @@ class OAuthManager
     dropbox: {
       authorize_url: "https://www.dropbox.com/oauth2/authorize",
       token_url: "https://api.dropboxapi.com/oauth2/token",
-      scopes: "files.content.write files.content.read",
+      scopes: "files.metadata.read files.metadata.write files.content.read files.content.write",
       client_id_env: "DROPBOX_CLIENT_ID",
       client_secret_env: "DROPBOX_CLIENT_SECRET",
       token_access_type: "offline"
