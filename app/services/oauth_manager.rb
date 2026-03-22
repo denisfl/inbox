@@ -3,7 +3,6 @@ class OAuthManager
     dropbox: {
       authorize_url: "https://www.dropbox.com/oauth2/authorize",
       token_url: "https://api.dropboxapi.com/oauth2/token",
-      scopes: "files.metadata.read files.metadata.write files.content.read files.content.write",
       client_id_env: "DROPBOX_CLIENT_ID",
       client_secret_env: "DROPBOX_CLIENT_SECRET",
       token_access_type: "offline"
@@ -37,9 +36,11 @@ class OAuthManager
     params = {
       client_id: client_id(config),
       redirect_uri: redirect_uri,
-      response_type: "code",
-      scope: config[:scopes]
+      response_type: "code"
     }
+
+    # Only send scope if the provider requires it (Dropbox grants all Permissions-tab scopes when omitted)
+    params[:scope] = config[:scopes] if config[:scopes]
 
     # Dropbox uses token_access_type for offline access
     params[:token_access_type] = config[:token_access_type] if config[:token_access_type]
