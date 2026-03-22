@@ -107,11 +107,18 @@ export default class extends Controller {
     if (!title) return;
 
     try {
-      const res = await this._api(
-        `/api/documents/${this.documentIdValue}`,
-        "PATCH",
-        { document: { title } },
-      );
+      const formData = new FormData();
+      formData.append("document[title]", title);
+      const res = await fetch(`/documents/${this.documentIdValue}`, {
+        method: "PATCH",
+        body: formData,
+        headers: {
+          Accept:
+            "text/vnd.turbo-stream.html, text/html, application/xhtml+xml",
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')
+            ?.content,
+        },
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
     } catch (err) {
       console.error("Title save failed:", err);
