@@ -13,6 +13,7 @@ We live in an interesting time when producing code has become incredibly cheap. 
 - **Telegram Bot** -- capture notes, voice messages, photos, and files from Telegram
 - **Voice Transcription** -- local audio-to-text via [Parakeet v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) (no cloud API, 25 languages)
 - **Audio Recording** -- record voice notes directly in the browser, auto-transcribed
+- **Cloud Storage** -- optionally store files and backups on S3, Dropbox, Google Drive, or OneDrive
 - **Google Calendar Sync** -- import events and get reminders via Telegram
 - **Tags** -- organize documents and tasks with a flexible tagging system
 - **Tasks** -- simple task management with due dates
@@ -141,29 +142,80 @@ bin/brakeman --no-pager        # Security scan
 
 ## Environment Variables
 
-| Variable                   | Required | Description                                                    |
-| -------------------------- | -------- | -------------------------------------------------------------- |
-| `SECRET_KEY_BASE`          | Yes      | Rails secret key (generate with `openssl rand -hex 64`)        |
-| `TELEGRAM_BOT_TOKEN`       | Yes      | Bot token from BotFather                                       |
-| `TELEGRAM_BOT_NAME`        | Yes      | Bot username (without @)                                       |
-| `TELEGRAM_ALLOWED_USER_ID` | Yes      | Your Telegram user ID                                          |
-| `TELEGRAM_WEBHOOK_URL`     | Yes      | Public URL for webhook                                         |
-| `API_TOKEN`                | No       | Token for API authentication                                   |
-| `GIT_SHA`                  | No       | Git commit SHA, baked at build time for version tracking       |
-| `TRANSCRIBER_URL`          | No       | Transcription service URL (default: `http://transcriber:5000`) |
-| `TRANSCRIBER_LANGUAGE`     | No       | Force transcription language (default: auto-detect)            |
-| `GOOGLE_CLIENT_ID`         | No       | For Google Calendar sync                                       |
-| `GOOGLE_CLIENT_SECRET`     | No       | For Google Calendar sync                                       |
-| `GOOGLE_REFRESH_TOKEN`     | No       | For Google Calendar sync                                       |
-| `GOOGLE_CALENDAR_IDS`      | No       | Comma-separated calendar IDs (default: `primary`)              |
-| `BACKUP_STORAGE_TYPE`      | No       | Backup storage: `local` (default) or `s3`                      |
-| `BACKUP_LOCAL_PATH`        | No       | Local backup directory (default: `storage/backups/`)           |
-| `BACKUP_RETENTION_DAYS`    | No       | Days to keep backups (default: 30)                             |
-| `BACKUP_S3_BUCKET`         | No       | S3 bucket name (required if `BACKUP_STORAGE_TYPE=s3`)          |
-| `BACKUP_S3_ACCESS_KEY`     | No       | S3 access key                                                  |
-| `BACKUP_S3_SECRET_KEY`     | No       | S3 secret key                                                  |
-| `BACKUP_S3_REGION`         | No       | S3 region (default: `us-east-1`)                               |
-| `BACKUP_S3_ENDPOINT`       | No       | S3 endpoint URL (for Backblaze B2, MinIO, etc.)                |
+| Variable                     | Required | Description                                                    |
+| ---------------------------- | -------- | -------------------------------------------------------------- |
+| `SECRET_KEY_BASE`            | Yes      | Rails secret key (generate with `openssl rand -hex 64`)        |
+| `TELEGRAM_BOT_TOKEN`         | Yes      | Bot token from BotFather                                       |
+| `TELEGRAM_BOT_NAME`          | Yes      | Bot username (without @)                                       |
+| `TELEGRAM_ALLOWED_USER_ID`   | Yes      | Your Telegram user ID                                          |
+| `TELEGRAM_WEBHOOK_URL`       | Yes      | Public URL for webhook                                         |
+| `API_TOKEN`                  | No       | Token for API authentication                                   |
+| `GIT_SHA`                    | No       | Git commit SHA, baked at build time for version tracking       |
+| `TRANSCRIBER_URL`            | No       | Transcription service URL (default: `http://transcriber:5000`) |
+| `TRANSCRIBER_LANGUAGE`       | No       | Force transcription language (default: auto-detect)            |
+| `GOOGLE_CLIENT_ID`           | No       | For Google Calendar sync                                       |
+| `GOOGLE_CLIENT_SECRET`       | No       | For Google Calendar sync                                       |
+| `GOOGLE_REFRESH_TOKEN`       | No       | For Google Calendar sync                                       |
+| `GOOGLE_CALENDAR_IDS`        | No       | Comma-separated calendar IDs (default: `primary`)              |
+| `DROPBOX_CLIENT_ID`          | No       | Dropbox OAuth app key (for Dropbox storage)                    |
+| `DROPBOX_CLIENT_SECRET`      | No       | Dropbox OAuth app secret                                       |
+| `GOOGLE_DRIVE_CLIENT_ID`     | No       | Google Drive OAuth client ID                                   |
+| `GOOGLE_DRIVE_CLIENT_SECRET` | No       | Google Drive OAuth client secret                               |
+| `ONEDRIVE_CLIENT_ID`         | No       | Microsoft OneDrive/Graph OAuth client ID                       |
+| `ONEDRIVE_CLIENT_SECRET`     | No       | Microsoft OneDrive/Graph OAuth client secret                   |
+| `BACKUP_STORAGE_TYPE`        | No       | **Deprecated** — use Settings > Storage instead                |
+| `BACKUP_LOCAL_PATH`          | No       | **Deprecated** — use Settings > Storage instead                |
+| `BACKUP_RETENTION_DAYS`      | No       | Days to keep backups (default: 30)                             |
+| `BACKUP_S3_BUCKET`           | No       | **Deprecated** — use Settings > Storage instead                |
+| `BACKUP_S3_ACCESS_KEY`       | No       | **Deprecated** — use Settings > Storage instead                |
+| `BACKUP_S3_SECRET_KEY`       | No       | **Deprecated** — use Settings > Storage instead                |
+| `BACKUP_S3_REGION`           | No       | **Deprecated** — use Settings > Storage instead                |
+| `BACKUP_S3_ENDPOINT`         | No       | **Deprecated** — use Settings > Storage instead                |
+
+## Cloud Storage
+
+By default, all files and backups are stored locally on disk. You can optionally connect a cloud storage provider (S3, Dropbox, Google Drive, or OneDrive) through **Settings > Storage** in the web UI.
+
+### S3 / S3-Compatible (MinIO, Backblaze B2)
+
+1. Go to **Settings > Storage**, select **S3**
+2. Enter your access key, secret, region, and bucket name
+3. For S3-compatible services (MinIO, Backblaze B2), also fill in the **Endpoint** field
+4. Click **Save Settings**, then **Test Connection**
+
+### Dropbox
+
+1. Create an app at [Dropbox App Console](https://www.dropbox.com/developers/apps):
+   - Choose "Scoped access" and "Full Dropbox" access type
+   - Under Permissions, enable `files.metadata.read`, `files.metadata.write`, `files.content.read`, `files.content.write`
+   - Add `https://your-domain.com/settings/storage/oauth/dropbox/callback` as a redirect URI
+2. Set `DROPBOX_CLIENT_ID` and `DROPBOX_CLIENT_SECRET` ENV vars (from the app's Settings page)
+3. Go to **Settings > Storage**, select **Dropbox**, click **Connect Dropbox**
+4. Authorize in the Dropbox consent screen — files will be stored under `Apps/Inbox/`
+
+### Google Drive
+
+1. Create an OAuth 2.0 client at [Google Cloud Console](https://console.cloud.google.com/apis/credentials):
+   - Enable the **Google Drive API**
+   - Create an OAuth client (Web application type)
+   - Add `https://your-domain.com/settings/storage/oauth/google_drive/callback` as an authorized redirect URI
+2. Set `GOOGLE_DRIVE_CLIENT_ID` and `GOOGLE_DRIVE_CLIENT_SECRET` ENV vars
+3. Go to **Settings > Storage**, select **Google Drive**, click **Connect Google Drive**
+4. Authorize in the Google consent screen — files will be stored under an `Inbox/` folder in your Drive
+
+### OneDrive
+
+1. Register an app at [Azure App Registrations](https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps):
+   - Add `https://your-domain.com/settings/storage/oauth/onedrive/callback` as a redirect URI (Web platform)
+   - Under API permissions, add `Files.ReadWrite` (Microsoft Graph, delegated)
+   - Create a client secret under Certificates & secrets
+2. Set `ONEDRIVE_CLIENT_ID` (Application/client ID) and `ONEDRIVE_CLIENT_SECRET` ENV vars
+3. Go to **Settings > Storage**, select **Onedrive**, click **Connect Onedrive**
+4. Authorize in the Microsoft consent screen — files will be stored under `Apps/Inbox/`
+
+### Migrating Files
+
+When switching from local to a cloud provider, go to **Settings > Storage** and click **Migrate Files**. This runs a background job that copies all existing files and backups to the new provider. Progress is shown on the settings page.
 
 ## How It Works
 

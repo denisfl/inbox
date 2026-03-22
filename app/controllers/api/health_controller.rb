@@ -3,11 +3,12 @@ class Api::HealthController < ActionController::API
     services = {
       database: check_database,
       transcriber: check_transcriber,
-      google_calendar: check_google_calendar
+      google_calendar: check_google_calendar,
+      storage: check_storage
     }
     backup = backup_status
 
-    all_ok = services.values.all? { |s| s == "ok" || s == "not_configured" } && backup[:status] != "failed"
+    all_ok = services.values.all? { |s| %w[ok not_configured local].include?(s) } && backup[:status] != "failed"
     overall = if !services[:database].eql?("ok")
       "degraded"
     elsif all_ok
@@ -60,6 +61,20 @@ class Api::HealthController < ActionController::API
     "ok"
   rescue => e
     Rails.logger.tagged("[health]") { Rails.logger.debug("Google Calendar check failed: #{e.message}") }
+    "unavailable"
+  end
+
+  def check_storage
+    setting = StorageSetting.active_setting
+    return "local" unless setting && setting.provider != "local"
+
+    case setting.status
+    when "ok" then "ok"
+    when "error" then "error"
+    else "unchecked"
+    end
+  rescue => e
+    Rails.logger.tagged("[health]") { Rails.logger.debug("Storage check failed: #{e.message}") }
     "unavailable"
   end
 

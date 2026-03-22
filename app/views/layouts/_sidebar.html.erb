@@ -64,8 +64,13 @@
     <% end %>
   <% end %>
 
-  <%# ── New Note button at bottom ── %>
+  <%# ── Bottom actions ── %>
   <div class="sidebar-bottom">
+    <%= link_to settings_storage_path, class: "nav-item #{'active' if controller_name == 'storages'}" do %>
+      <div class="nav-icon"><%= heroicon(:cog_6_tooth, style: 'width: 14px; height: 14px;') %></div>
+      Settings
+    <% end %>
+
     <%= link_to new_note_path, class: "sidebar-new-note", data: { turbo: false } do %>
       <%= heroicon(:plus, style: 'width: 12px; height: 12px;') %>
       New Note
