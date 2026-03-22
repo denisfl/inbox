@@ -69,7 +69,7 @@ RSpec.describe "StorageAdapter::S3 end-to-end with MinIO", type: :service do
     test_content = "Hello from integration test #{SecureRandom.hex(8)}"
 
     # Create temp file
-    file = Tempfile.new(["integration", ".txt"])
+    file = Tempfile.new([ "integration", ".txt" ])
     file.write(test_content)
     file.rewind
 

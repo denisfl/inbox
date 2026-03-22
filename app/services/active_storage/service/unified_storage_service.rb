@@ -9,7 +9,7 @@ module ActiveStorage
 
       def upload(key, io, checksum: nil, **)
         instrument :upload, key: key, checksum: checksum do
-          temp = Tempfile.new(["as_upload", File.extname(key)])
+          temp = Tempfile.new([ "as_upload", File.extname(key) ])
           temp.binmode
           IO.copy_stream(io, temp)
           temp.close

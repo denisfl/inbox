@@ -79,7 +79,7 @@ RSpec.describe StorageAdapter::S3 do
 
       result = adapter.list(namespace: :backups)
 
-      expect(result).to eq(["a.sql.gz", "b.sql.gz"])
+      expect(result).to eq([ "a.sql.gz", "b.sql.gz" ])
     end
   end
 

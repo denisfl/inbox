@@ -10,7 +10,7 @@ RSpec.describe StorageAdapter::Local do
 
   describe "#upload" do
     it "copies file to namespace directory" do
-      source = Tempfile.new(["test", ".txt"])
+      source = Tempfile.new([ "test", ".txt" ])
       source.write("hello world")
       source.close
 
@@ -24,7 +24,7 @@ RSpec.describe StorageAdapter::Local do
     end
 
     it "creates namespace directory if it does not exist" do
-      source = Tempfile.new(["test", ".txt"])
+      source = Tempfile.new([ "test", ".txt" ])
       source.write("data")
       source.close
 
@@ -36,7 +36,7 @@ RSpec.describe StorageAdapter::Local do
     end
 
     it "uses default namespace :files" do
-      source = Tempfile.new(["test", ".txt"])
+      source = Tempfile.new([ "test", ".txt" ])
       source.write("data")
       source.close
 

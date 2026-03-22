@@ -64,14 +64,14 @@ RSpec.describe StorageAdapter::Dropbox do
     it "handles pagination" do
       stub_request(:post, "https://api.dropboxapi.com/2/files/list_folder")
         .to_return(status: 200, body: {
-          entries: [{ ".tag" => "file", "name" => "a.txt" }],
+          entries: [ { ".tag" => "file", "name" => "a.txt" } ],
           has_more: true,
           cursor: "cursor123"
         }.to_json)
 
       stub_request(:post, "https://api.dropboxapi.com/2/files/list_folder/continue")
         .to_return(status: 200, body: {
-          entries: [{ ".tag" => "file", "name" => "b.txt" }],
+          entries: [ { ".tag" => "file", "name" => "b.txt" } ],
           has_more: false
         }.to_json)
 
