@@ -1,0 +1,367 @@
+<% content_for :title, "Storage Settings — Inbox" %>
+
+<div class="settings-storage-page">
+  <div class="settings-storage-container">
+    <header class="settings-storage-header">
+      <h1 class="settings-storage-title">Storage Settings</h1>
+      <p class="settings-storage-subtitle">Configure where files and backups are stored.</p>
+    </header>
+
+    <%# ── Flash messages ── %>
+    <% if flash[:notice] %>
+      <div class="flash-notice"><%= flash[:notice] %></div>
+    <% end %>
+    <% if flash[:alert] %>
+      <div class="flash-alert"><%= flash[:alert] %></div>
+    <% end %>
+
+    <%# ── Status badge ── %>
+    <% if @setting.persisted? %>
+      <div class="settings-storage-status">
+        <span class="status-badge status-<%= @setting.status %>">
+          <%= @setting.status.titleize %>
+        </span>
+        <% if @setting.last_checked_at %>
+          <span class="status-checked">Checked <%= time_ago_in_words(@setting.last_checked_at) %> ago</span>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# ── Settings form ── %>
+    <%= form_with(model: @setting, url: settings_storage_path, method: :patch, class: "settings-form",
+          data: { controller: "storage-settings" }) do |f| %>
+      <% if @setting.errors.any? %>
+        <div class="settings-form-errors">
+          <strong><%= pluralize(@setting.errors.count, "error") %>:</strong>
+          <ul>
+            <% @setting.errors.full_messages.each do |msg| %>
+              <li><%= msg %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="settings-field">
+        <%= f.label :provider, "Storage Provider", class: "settings-field-label" %>
+        <%= f.select :provider,
+              StorageSetting::VALID_PROVIDERS.map { |p| [p.titleize.gsub("s3", "S3"), p] },
+              {}, class: "input", data: { action: "change->storage-settings#toggleFields", storage_settings_target: "providerSelect" } %>
+      </div>
+
+      <%# ── S3 config fields ── %>
+      <div class="settings-provider-fields" data-storage-settings-target="s3Fields"
+           style="<%= 'display:none' unless @setting.provider == 's3' %>">
+        <div class="settings-field">
+          <label class="settings-field-label" for="config_access_key_id">Access Key ID</label>
+          <input type="text" name="config[access_key_id]" id="config_access_key_id"
+                 value="<%= @setting.config_data&.dig('access_key_id') %>"
+                 class="input" autocomplete="off">
+        </div>
+
+        <div class="settings-field">
+          <label class="settings-field-label" for="config_secret_access_key">Secret Access Key</label>
+          <input type="password" name="config[secret_access_key]" id="config_secret_access_key"
+                 value="<%= @setting.config_data&.dig('secret_access_key') %>"
+                 class="input" autocomplete="off">
+        </div>
+
+        <div class="settings-field-group">
+          <div class="settings-field">
+            <label class="settings-field-label" for="config_region">Region</label>
+            <input type="text" name="config[region]" id="config_region"
+                   value="<%= @setting.config_data&.dig('region') || 'us-east-1' %>"
+                   class="input" placeholder="us-east-1">
+          </div>
+          <div class="settings-field">
+            <label class="settings-field-label" for="config_bucket">Bucket</label>
+            <input type="text" name="config[bucket]" id="config_bucket"
+                   value="<%= @setting.config_data&.dig('bucket') %>"
+                   class="input" placeholder="my-inbox-bucket">
+          </div>
+        </div>
+
+        <div class="settings-field">
+          <label class="settings-field-label" for="config_endpoint">Endpoint <span class="settings-field-hint">(optional, for S3-compatible services)</span></label>
+          <input type="text" name="config[endpoint]" id="config_endpoint"
+                 value="<%= @setting.config_data&.dig('endpoint') %>"
+                 class="input" placeholder="https://s3.provider.com">
+        </div>
+      </div>
+
+      <%# ── OAuth providers ── %>
+      <% %w[dropbox google_drive onedrive].each do |provider| %>
+        <div class="settings-provider-fields" data-storage-settings-target="<%= provider %>Fields"
+             style="<%= 'display:none' unless @setting.provider == provider %>">
+          <div class="settings-field">
+            <% if @setting.provider == provider && @setting.config_data&.dig("access_token").present? %>
+              <p class="settings-oauth-connected">
+                Connected to <%= provider.titleize %>.
+                <% if @setting.config_data&.dig("expires_at").present? %>
+                  Token expires: <%= Time.parse(@setting.config_data["expires_at"]).strftime("%b %d, %Y %H:%M") %>
+                <% end %>
+              </p>
+              <%= link_to "Reconnect", settings_storage_oauth_authorize_path(provider: provider), class: "btn" %>
+            <% else %>
+              <p class="settings-oauth-placeholder">
+                Connect your <%= provider.titleize %> account to use it for storage.
+              </p>
+              <%= link_to "Connect #{provider.titleize}", settings_storage_oauth_authorize_path(provider: provider), class: "btn btn-primary" %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <%# ── Actions ── %>
+      <div class="settings-actions">
+        <%= f.submit "Save Settings", class: "btn btn-primary" %>
+
+        <% if @setting.persisted? %>
+          <%= button_to "Test Connection", test_connection_settings_storage_path,
+                method: :post, class: "btn" %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# ── Migration section ── %>
+    <% if @setting.persisted? && @setting.provider != "local" %>
+      <div class="settings-migration-section">
+        <h2 class="settings-section-title">File Migration</h2>
+        <p class="settings-section-desc">Migrate existing files and backups to the new storage provider.</p>
+
+        <% if @migration&.running? || @migration&.status == "pending" %>
+          <div class="migration-progress">
+            <div class="migration-progress-bar-container">
+              <div class="migration-progress-bar" style="width: <%= @migration.progress_percent %>%"></div>
+            </div>
+            <p class="migration-progress-text">
+              <%= @migration.completed_items %> / <%= @migration.total_items %> items
+              (<%= @migration.progress_percent %>%)
+              <% if @migration.failed_items.positive? %>
+                — <%= @migration.failed_items %> failed
+              <% end %>
+            </p>
+          </div>
+          <%= button_to "Cancel Migration", cancel_migration_settings_storage_path,
+                method: :post, class: "btn btn-danger" %>
+        <% elsif @migration&.completed? %>
+          <div class="migration-complete">
+            <p class="migration-complete-text">
+              Migration completed: <%= @migration.completed_items %> items migrated.
+              <% if @migration.failed_items.positive? %>
+                <%= @migration.failed_items %> items failed.
+              <% end %>
+            </p>
+          </div>
+          <%= button_to "Start New Migration", start_migration_settings_storage_path,
+                method: :post, class: "btn",
+                params: { from_provider: "local" } %>
+        <% else %>
+          <%= button_to "Migrate Files to #{@setting.provider.titleize}", start_migration_settings_storage_path,
+                method: :post, class: "btn",
+                params: { from_provider: "local" } %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<style>
+/* ── Storage Settings Page ── */
+.settings-storage-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--spacing-lg) var(--spacing-md);
+}
+
+.settings-storage-container {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  border: 1px solid var(--color-border-soft);
+}
+
+.settings-storage-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.settings-storage-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.settings-storage-subtitle {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  margin: 0;
+}
+
+/* Status */
+.settings-storage-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-base);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  border-radius: var(--radius-full);
+}
+.status-ok { background: var(--color-primary-soft); color: var(--color-primary); }
+.status-error { background: #fef2f2; color: var(--color-danger); }
+.status-unchecked { background: var(--color-bg-hover); color: var(--color-text-tertiary); }
+
+.status-checked {
+  font-size: var(--text-xs);
+  color: var(--color-text-quaternary);
+}
+
+/* Form */
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.settings-form-errors {
+  background: #fef2f2;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-base);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}
+.settings-form-errors ul {
+  margin: var(--spacing-xs) 0 0;
+  padding-left: var(--spacing-md);
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.settings-field-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-text-secondary);
+}
+
+.settings-field-hint {
+  font-weight: var(--font-normal);
+  color: var(--color-text-quaternary);
+}
+
+.settings-field-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+/* Provider-specific sections */
+.settings-provider-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-base);
+  border: 1px solid var(--color-border-soft);
+}
+
+.settings-oauth-placeholder {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  font-style: italic;
+  margin: 0;
+}
+
+/* Actions */
+.settings-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border-soft);
+}
+
+/* Flash messages (local to settings page) */
+.flash-notice, .flash-alert {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-base);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  margin-bottom: var(--spacing-md);
+}
+.flash-notice { background: var(--color-primary-soft); color: var(--color-primary); }
+.flash-alert { background: #fef2f2; color: var(--color-danger); }
+
+/* Migration section */
+.settings-migration-section {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border-soft);
+}
+
+.settings-section-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.settings-section-desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.migration-progress {
+  margin-bottom: var(--spacing-md);
+}
+
+.migration-progress-bar-container {
+  height: 8px;
+  background: var(--color-bg-hover);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: var(--spacing-xs);
+}
+
+.migration-progress-bar {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.migration-progress-text {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  margin: 0;
+}
+
+.migration-complete-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: white;
+  border: none;
+}
+.btn-danger:hover {
+  opacity: 0.9;
+}
+</style>

@@ -28,3 +28,8 @@ production:
     class: BackupJob
     queue: default
     schedule: at 3am every day
+
+  storage_health_check:
+    class: StorageHealthCheckJob
+    queue: default
+    schedule: every 30 minutes

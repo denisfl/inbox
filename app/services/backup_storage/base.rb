@@ -1,12 +1,27 @@
 module BackupStorage
+  # DEPRECATED: Use StorageAdapter instead.
+  # This module is kept for backward compatibility during transition.
   def self.resolve
-    case ENV.fetch("BACKUP_STORAGE_TYPE", "local")
-    when "s3"
-      S3.new
-    when "local"
-      Local.new
-    else
-      raise ArgumentError, "Unknown BACKUP_STORAGE_TYPE: #{ENV['BACKUP_STORAGE_TYPE']}. Valid values: local, s3"
+    Rails.logger.warn("BackupStorage.resolve is deprecated. Use StorageAdapter.resolve instead.")
+    adapter = StorageAdapter.resolve
+    LegacyWrapper.new(adapter)
+  end
+
+  class LegacyWrapper
+    def initialize(adapter)
+      @adapter = adapter
+    end
+
+    def upload(file_path, key)
+      @adapter.upload(file_path, key, namespace: :backups)
+    end
+
+    def delete(key)
+      @adapter.delete(key, namespace: :backups)
+    end
+
+    def list
+      @adapter.list(namespace: :backups)
     end
   end
 

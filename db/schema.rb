@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_22_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_23_000000) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -143,6 +143,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_22_000000) do
     t.index ["source"], name: "index_documents_on_source"
     t.index ["status"], name: "index_documents_on_status"
     t.index ["telegram_chat_id", "telegram_message_id"], name: "index_documents_on_telegram_chat_id_and_telegram_message_id"
+  end
+
+  create_table "storage_migrations", force: :cascade do |t|
+    t.datetime "completed_at"
+    t.integer "completed_items", default: 0
+    t.datetime "created_at", null: false
+    t.text "error_log"
+    t.integer "failed_items", default: 0
+    t.string "from_provider", null: false
+    t.datetime "started_at"
+    t.string "status", default: "pending", null: false
+    t.string "to_provider", null: false
+    t.integer "total_items", default: 0
+    t.datetime "updated_at", null: false
+    t.index ["status"], name: "index_storage_migrations_on_status"
+  end
+
+  create_table "storage_settings", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.text "config_encrypted"
+    t.datetime "created_at", null: false
+    t.datetime "last_checked_at"
+    t.string "provider", default: "local", null: false
+    t.string "status", default: "unchecked"
+    t.datetime "updated_at", null: false
   end
 
   create_table "tags", force: :cascade do |t|

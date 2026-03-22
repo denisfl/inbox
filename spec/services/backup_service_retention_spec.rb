@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "BackupService retention cleanup" do
-  let(:storage) { instance_double(BackupStorage::Local) }
+  let(:storage) { instance_double(StorageAdapter::Local) }
   let(:service) { BackupService.new(storage: storage) }
 
   before do
@@ -27,9 +27,9 @@ RSpec.describe "BackupService retention cleanup" do
       it "calls storage delete for each old backup" do
         service.cleanup_retention
 
-        expect(storage).to have_received(:delete).with("old1.sql.gz")
-        expect(storage).to have_received(:delete).with("old2.sql.gz")
-        expect(storage).not_to have_received(:delete).with("recent1.sql.gz")
+        expect(storage).to have_received(:delete).with("old1.sql.gz", namespace: :backups)
+        expect(storage).to have_received(:delete).with("old2.sql.gz", namespace: :backups)
+        expect(storage).not_to have_received(:delete).with("recent1.sql.gz", namespace: :backups)
       end
     end
 
@@ -78,7 +78,7 @@ RSpec.describe "BackupService retention cleanup" do
         service.cleanup_retention
 
         expect(BackupRecord.find_by(id: ten_day_old.id)).to be_nil
-        expect(storage).to have_received(:delete).with("ten.sql.gz")
+        expect(storage).to have_received(:delete).with("ten.sql.gz", namespace: :backups)
       end
     end
 

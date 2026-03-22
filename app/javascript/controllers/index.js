@@ -60,3 +60,6 @@ application.register("status-dropdown", StatusDropdownController);
 
 import ConnectedNotesController from "./connected_notes_controller";
 application.register("connected-notes", ConnectedNotesController);
+
+import StorageSettingsController from "./storage_settings_controller";
+application.register("storage-settings", StorageSettingsController);

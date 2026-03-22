@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe BackupService do
-  let(:storage) { instance_double(BackupStorage::Local) }
+  let(:storage) { instance_double(StorageAdapter::Local) }
   let(:service) { described_class.new(storage: storage) }
   let(:temp_path) { Rails.root.join("tmp", "backups", "test_backup.sql.gz") }
 
@@ -93,7 +93,7 @@ RSpec.describe BackupService do
     it "calls storage delete for old backups" do
       service.cleanup_retention
 
-      expect(storage).to have_received(:delete).with("old.sql.gz")
+      expect(storage).to have_received(:delete).with("old.sql.gz", namespace: :backups)
     end
   end
 end

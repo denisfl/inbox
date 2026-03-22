@@ -109,4 +109,19 @@ Rails.application.routes.draw do
 
   # Root path — Dashboard
   root "dashboard#index"
+
+  # Settings
+  namespace :settings do
+    resource :storage, only: [ :show, :update ] do
+      post :test_connection
+      post :start_migration
+      post :cancel_migration
+    end
+
+    # OAuth flows for cloud storage providers
+    scope "storage/oauth/:provider", as: :storage_oauth, controller: "storage_oauth" do
+      get "authorize", action: :authorize
+      get "callback", action: :callback
+    end
+  end
 end

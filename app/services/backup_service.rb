@@ -1,7 +1,7 @@
 class BackupService
   RETENTION_DAYS_DEFAULT = 30
 
-  def initialize(storage: BackupStorage.resolve)
+  def initialize(storage: StorageAdapter.resolve)
     @storage = storage
   end
 
@@ -9,13 +9,13 @@ class BackupService
     record = BackupRecord.create!(
       status: "running",
       started_at: Time.current,
-      storage_type: ENV.fetch("BACKUP_STORAGE_TYPE", "local")
+      storage_type: active_provider_name
     )
 
     temp_path = dump_and_compress
     key = "backup_#{Time.current.strftime('%Y%m%d_%H%M%S')}.sql.gz"
 
-    storage_path = @storage.upload(temp_path.to_s, key)
+    storage_path = @storage.upload(temp_path.to_s, key, namespace: :backups)
 
     record.update!(
       status: "completed",
@@ -45,7 +45,7 @@ class BackupService
     old_records.find_each do |record|
       if record.storage_path.present?
         key = File.basename(record.storage_path)
-        @storage.delete(key)
+        @storage.delete(key, namespace: :backups)
       end
     rescue => e
       Rails.logger.warn("Failed to delete backup file for record #{record.id}: #{e.message}")
@@ -73,5 +73,10 @@ class BackupService
 
   def cleanup_temp(temp_path)
     FileUtils.rm_f(temp_path)
+  end
+
+  def active_provider_name
+    setting = StorageSetting.active_setting rescue nil
+    setting&.provider || ENV.fetch("BACKUP_STORAGE_TYPE", "local")
   end
 end
