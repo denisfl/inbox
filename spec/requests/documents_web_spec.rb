@@ -103,7 +103,7 @@ RSpec.describe "Documents (web)", type: :request do
     end
 
     context "backlinks" do
-      it "displays 'Mentioned in' section when backlinks exist" do
+      it "displays Connected Notes section when backlinks exist" do
         source = create(:document, title: "Linking Doc")
         target = create(:document, title: "Target Doc")
         create(:document_link, source_document: source, target_document: target)
@@ -111,17 +111,17 @@ RSpec.describe "Documents (web)", type: :request do
         get document_path(target)
 
         expect(response).to have_http_status(:ok)
-        expect(response.body).to include("Mentioned in")
+        expect(response.body).to include("Connected Notes")
         expect(response.body).to include("Linking Doc")
       end
 
-      it "hides 'Mentioned in' section when no backlinks" do
+      it "hides Connected Notes section when no backlinks" do
         doc = create(:document, title: "Lonely Doc")
 
         get document_path(doc)
 
         expect(response).to have_http_status(:ok)
-        expect(response.body).not_to include("Mentioned in")
+        expect(response.body).not_to include("Connected Notes")
       end
     end
   end

@@ -1,0 +1,43 @@
+<% connected = (links + backlinks).uniq %>
+<% if connected.any? %>
+<aside class="connected-notes" data-controller="connected-notes">
+  <h3 class="connected-notes-title">Connected Notes</h3>
+  <div class="connected-notes-grid">
+    <% connected.each do |doc| %>
+    <div class="connected-note-card"
+         data-action="click->connected-notes#openPopup"
+         data-connected-notes-doc-id-param="<%= doc.id %>">
+      <a class="connected-note-title"
+         href="<%= edit_document_path(doc) %>"
+         data-action="click->connected-notes#titleClick">
+        <%= doc.title.presence || "Untitled" %>
+      </a>
+      <p class="connected-note-excerpt">
+        <%= doc.plain_text_excerpt(lines: 3) %>
+      </p>
+    </div>
+    <% end %>
+  </div>
+
+  <div class="connected-note-popup" hidden
+       data-connected-notes-target="popup">
+    <div class="connected-note-popup-header">
+      <a class="connected-note-popup-title"
+         data-connected-notes-target="popupTitle"
+         href="#"></a>
+      <button class="connected-note-popup-close"
+              data-action="click->connected-notes#closePopup"
+              type="button">
+        <%= heroicon(:x_mark, style: "width: 16px; height: 16px;") %>
+      </button>
+    </div>
+    <div class="connected-note-popup-body lexxy-content"
+         data-connected-notes-target="popupBody"></div>
+    <div class="connected-note-popup-footer">
+      <a class="connected-note-popup-open-btn"
+         data-connected-notes-target="popupLink"
+         href="#">Open note</a>
+    </div>
+  </div>
+</aside>
+<% end %>

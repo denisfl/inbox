@@ -1,7 +1,7 @@
 class DocumentsController < ApplicationController
   include ActionView::RecordIdentifier
 
-  before_action :set_document, only: [ :show, :edit, :update, :destroy, :toggle_pinned, :export, :update_status ]
+  before_action :set_document, only: [ :show, :edit, :update, :destroy, :toggle_pinned, :export, :update_status, :preview ]
 
   def index
     documents_scope = Document.includes(:blocks, :tags).with_rich_text_body
@@ -77,15 +77,34 @@ class DocumentsController < ApplicationController
     # Show document in read-only mode
   end
 
+  def preview
+    render json: {
+      title: @document.title.presence || "Untitled",
+      html: helpers.render_wiki_links(@document.body.to_s),
+      url: edit_document_path(@document)
+    }
+  end
+
   def search
     query = params[:q].to_s.strip
     results = if query.present?
-      Document.where("LOWER(title) LIKE ?", "%#{Document.sanitize_sql_like(query).downcase}%").limit(10)
+      # SQLite LOWER() only handles ASCII — it cannot lowercase Cyrillic/Unicode.
+      # Use a broad SQL LIKE to fetch candidates, then filter in Ruby for true
+      # Unicode case-insensitive matching.
+      sanitized = Document.sanitize_sql_like(query)
+      downcased = sanitized.downcase
+      # Fetch candidates matching either original case or downcased query
+      candidates = Document.where(
+        "title LIKE ? OR title LIKE ?",
+        "%#{sanitized}%", "%#{downcased}%"
+      ).limit(50)
+      # Ruby-side Unicode case-insensitive filter
+      candidates.select { |d| d.title.downcase.include?(query.downcase) }.first(10)
     else
-      Document.none
+      []
     end
 
-    render json: results.select(:id, :title).map { |d| { id: d.id, title: d.title } }
+    render json: results.map { |d| { id: d.id, title: d.title } }
   end
 
   def edit
@@ -234,7 +253,7 @@ class DocumentsController < ApplicationController
   end
 
   def document_params
-    params.require(:document).permit(:body, :status)
+    params.require(:document).permit(:title, :body, :status)
   end
 
   # Normalize tag params: supports both ?tag=name (single) and ?tags[]=a&tags[]=b (multi)
