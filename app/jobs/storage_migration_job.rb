@@ -45,7 +45,17 @@ class StorageMigrationJob < ApplicationJob
   private
 
   def migrate_blob(blob, from_adapter, to_adapter, migration)
-    tempfile = from_adapter.download(blob.key, namespace: :files)
+    if from_adapter.is_a?(StorageAdapter::Local)
+      # Read via Active Storage's Disk service (handles nested directory layout)
+      data = disk_service.download(blob.key)
+      tempfile = Tempfile.new([ "migrate", File.extname(blob.filename.to_s) ])
+      tempfile.binmode
+      tempfile.write(data)
+      tempfile.close
+    else
+      tempfile = from_adapter.download(blob.key, namespace: :files)
+    end
+
     to_adapter.upload(tempfile.path, blob.key, namespace: :files)
     migration.increment!(:completed_items)
   rescue => e
@@ -95,5 +105,9 @@ class StorageMigrationJob < ApplicationJob
         StorageAdapter::Local.new
       end
     end
+  end
+
+  def disk_service
+    @disk_service ||= ActiveStorage::Service::DiskService.new(root: Rails.root.join("storage"))
   end
 end
