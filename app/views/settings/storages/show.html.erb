@@ -100,12 +100,12 @@
                   Token expires: <%= Time.parse(@setting.config_data["expires_at"]).strftime("%b %d, %Y %H:%M") %>
                 <% end %>
               </p>
-              <%= link_to "Reconnect", settings_storage_oauth_authorize_path(provider: provider), class: "btn" %>
+              <%= link_to "Reconnect", settings_storage_oauth_authorize_path(provider: provider), class: "btn", data: { turbo: false } %>
             <% else %>
               <p class="settings-oauth-placeholder">
                 Connect your <%= provider.titleize %> account to use it for storage.
               </p>
-              <%= link_to "Connect #{provider.titleize}", settings_storage_oauth_authorize_path(provider: provider), class: "btn btn-primary" %>
+              <%= link_to "Connect #{provider.titleize}", settings_storage_oauth_authorize_path(provider: provider), class: "btn btn-primary", data: { turbo: false } %>
             <% end %>
           </div>
         </div>

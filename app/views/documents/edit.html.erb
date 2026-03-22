@@ -59,22 +59,6 @@
         </button>
 
         <div class="options-menu">
-          <label class="options-menu-item">
-            <%= heroicon(:photo, style: 'width: 16px; height: 16px;') %>
-            Attach images
-            <input type="file" accept="image/*" multiple class="hidden"
-                   data-simple-editor-target="imageInput"
-                   data-action="change->simple-editor#handleImageChange">
-          </label>
-
-          <label class="options-menu-item">
-            <%= heroicon(:paper_clip, style: 'width: 16px; height: 16px;') %>
-            Attach files
-            <input type="file" multiple class="hidden"
-                   data-simple-editor-target="fileInput"
-                   data-action="change->simple-editor#handleFileChange">
-          </label>
-
           <button type="button" class="options-menu-item"
                   data-action="click->audio-recorder#toggleRecording"
                   data-audio-recorder-target="recordBtn">
