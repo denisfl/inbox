@@ -48,9 +48,9 @@
       <button class="save-btn" type="submit" form="document-body-form">Save</button>
 
       <div class="options-dropdown"
-           data-controller="audio-recorder"
+           data-controller="audio-recorder status-dropdown"
            data-audio-recorder-document-id-value="<%= @document.id %>">
-        <button class="options-btn" type="button" aria-label="Options" data-options-toggle>
+        <button class="options-btn" type="button" aria-label="Options" data-action="click->status-dropdown#toggle">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="5" cy="12" r="2"/>
             <circle cx="12" cy="12" r="2"/>
@@ -174,28 +174,3 @@
           backlinks: @document.linking_documents %>
   </main>
 </div>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const toggle = document.querySelector("[data-options-toggle]");
-    const dropdown = toggle && toggle.closest(".options-dropdown");
-    if (!toggle || !dropdown) return;
-
-    toggle.addEventListener("click", function (e) {
-      e.stopPropagation();
-      dropdown.classList.toggle("open");
-    });
-
-    document.addEventListener("click", function (e) {
-      if (!dropdown.contains(e.target)) {
-        dropdown.classList.remove("open");
-      }
-    });
-
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") {
-        dropdown.classList.remove("open");
-      }
-    });
-  });
-</script>

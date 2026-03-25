@@ -6,8 +6,9 @@ module StorageAdapter
     FOLDER_MIME = "application/vnd.google-apps.folder".freeze
 
     def initialize(config: {})
-      @access_token = config["access_token"] || config[:access_token]
-      @folder_ids = config["folder_ids"] || config[:folder_ids] || {}
+      config = config.with_indifferent_access
+      @access_token = config[:access_token]
+      @folder_ids = (config[:folder_ids] || {}).stringify_keys
     end
 
     def upload(file_path, key, namespace: :files)
@@ -44,8 +45,7 @@ module StorageAdapter
       file = find_file(key, folder_id)
       return unless file
 
-      HTTP.timeout(30)
-        .auth("Bearer #{@access_token}")
+      auth_client
         .delete("#{API_URL}/files/#{file["id"]}")
     end
 
@@ -72,6 +72,12 @@ module StorageAdapter
       results
     end
 
+    def exist?(key, namespace: :files)
+      folder_id = namespace_folder_id(namespace)
+      return false unless folder_id
+      !!find_file(key, folder_id)
+    end
+
     def url(key, namespace: :files, expires_in: 1.hour)
       folder_id = namespace_folder_id(namespace)
       file = find_file(key, folder_id)
@@ -95,8 +101,7 @@ module StorageAdapter
       raise ApiError, "Test file content mismatch" unless response.body.to_s == "ok"
 
       # Delete it
-      HTTP.timeout(30)
-        .auth("Bearer #{@access_token}")
+      auth_client
         .delete("#{API_URL}/files/#{file["id"]}")
 
       { ok: true }
@@ -108,8 +113,6 @@ module StorageAdapter
     def folder_ids
       @folder_ids.dup
     end
-
-    class ApiError < StandardError; end
 
     private
 
@@ -130,15 +133,15 @@ module StorageAdapter
 
     def ensure_folder!(name, parent_id)
       # Search for existing folder
-      query = "name = '#{name}' and '#{parent_id}' in parents and mimeType = '#{FOLDER_MIME}' and trashed = false"
+      escaped_name = name.gsub("'", "\\\\'")
+      query = "name = '#{escaped_name}' and '#{parent_id}' in parents and mimeType = '#{FOLDER_MIME}' and trashed = false"
       body = api_json("/files", params: { q: query, fields: "files(id,name)", pageSize: 1 })
       files = body["files"] || []
       return files.first["id"] if files.any?
 
       # Create folder
       metadata = { name: name, mimeType: FOLDER_MIME, parents: [ parent_id ] }
-      response = HTTP.timeout(30)
-        .auth("Bearer #{@access_token}")
+      response = auth_client
         .headers("Content-Type" => "application/json")
         .post("#{API_URL}/files", body: metadata.to_json)
 
@@ -149,7 +152,8 @@ module StorageAdapter
     def find_file(name, folder_id)
       return nil unless folder_id
 
-      query = "name = '#{name}' and '#{folder_id}' in parents and trashed = false"
+      escaped_name = name.gsub("'", "\\\\'")
+      query = "name = '#{escaped_name}' and '#{folder_id}' in parents and trashed = false"
       body = api_json("/files", params: { q: query, fields: "files(id,name)", pageSize: 1 })
       (body["files"] || []).first
     end
@@ -161,8 +165,7 @@ module StorageAdapter
       boundary = "StorageAdapter#{SecureRandom.hex(8)}"
       multipart = build_multipart(boundary, metadata, body)
 
-      response = HTTP.timeout(60)
-        .auth("Bearer #{@access_token}")
+      response = auth_client(timeout: 60)
         .headers("Content-Type" => "multipart/related; boundary=#{boundary}")
         .post("#{UPLOAD_URL}/files?uploadType=multipart", body: multipart)
 
@@ -172,8 +175,7 @@ module StorageAdapter
     def update_file(file_id, file_path)
       body = File.binread(file_path)
 
-      response = HTTP.timeout(60)
-        .auth("Bearer #{@access_token}")
+      response = auth_client(timeout: 60)
         .headers("Content-Type" => "application/octet-stream")
         .patch("#{UPLOAD_URL}/files/#{file_id}?uploadType=media", body: body)
 
@@ -197,16 +199,14 @@ module StorageAdapter
       url = "#{API_URL}#{path}"
       url += "?#{query_string}" unless query_string.empty?
 
-      response = HTTP.timeout(30)
-        .auth("Bearer #{@access_token}")
+      response = auth_client
         .get(url)
 
       parse_response!(response)
     end
 
     def api_get(path)
-      response = HTTP.timeout(30)
-        .auth("Bearer #{@access_token}")
+      response = auth_client
         .get("#{API_URL}#{path}")
 
       if response.status >= 400

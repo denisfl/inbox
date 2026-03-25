@@ -1,11 +1,12 @@
 module StorageAdapter
   class S3 < Base
     def initialize(config: {})
-      @bucket = config["bucket"] || config[:bucket]
-      @region = config["region"] || config[:region] || "us-east-1"
-      @access_key_id = config["access_key_id"] || config[:access_key_id]
-      @secret_access_key = config["secret_access_key"] || config[:secret_access_key]
-      @endpoint = config["endpoint"] || config[:endpoint]
+      config = config.with_indifferent_access
+      @bucket = config[:bucket]
+      @region = config[:region] || "us-east-1"
+      @access_key_id = config[:access_key_id]
+      @secret_access_key = config[:secret_access_key]
+      @endpoint = config[:endpoint]
     end
 
     def self.from_legacy_env
@@ -19,40 +20,39 @@ module StorageAdapter
     end
 
     def upload(file_path, key, namespace: :files)
-      prefix = namespace.to_s
-      object = s3_resource.bucket(@bucket).object("#{prefix}/#{key}")
-      object.upload_file(file_path)
-      "s3://#{@bucket}/#{prefix}/#{key}"
+      s3_object(key, namespace).upload_file(file_path)
+      "s3://#{@bucket}/#{namespace}/#{key}"
     end
 
     def download(key, namespace: :files)
-      prefix = namespace.to_s
       tempfile = Tempfile.new([ "s3_download", File.extname(key) ])
-      s3_resource.bucket(@bucket).object("#{prefix}/#{key}").get(response_target: tempfile.path)
+      s3_object(key, namespace).get(response_target: tempfile.path)
       tempfile.rewind
       tempfile
     end
 
     def delete(key, namespace: :files)
-      prefix = namespace.to_s
-      s3_resource.bucket(@bucket).object("#{prefix}/#{key}").delete
+      s3_object(key, namespace).delete
     end
 
     def list(namespace: :files)
       prefix = namespace.to_s
-      s3_resource.bucket(@bucket).objects(prefix: "#{prefix}/").map do |obj|
+      bucket.objects(prefix: "#{prefix}/").map do |obj|
         obj.key.sub("#{prefix}/", "")
       end
     end
 
+    def exist?(key, namespace: :files)
+      s3_object(key, namespace).exists?
+    end
+
     def url(key, namespace: :files, expires_in: 1.hour)
-      prefix = namespace.to_s
-      s3_resource.bucket(@bucket).object("#{prefix}/#{key}").presigned_url(:get, expires_in: expires_in.to_i)
+      s3_object(key, namespace).presigned_url(:get, expires_in: expires_in.to_i)
     end
 
     def test_connection
-      test_key = "files/.storage_test_#{SecureRandom.hex(4)}"
-      obj = s3_resource.bucket(@bucket).object(test_key)
+      test_key = ".storage_test_#{SecureRandom.hex(4)}"
+      obj = s3_object(test_key, :files)
       obj.put(body: "ok")
       obj.get
       obj.delete
@@ -60,6 +60,14 @@ module StorageAdapter
     end
 
     private
+
+    def bucket
+      s3_resource.bucket(@bucket)
+    end
+
+    def s3_object(key, namespace)
+      bucket.object("#{namespace}/#{key}")
+    end
 
     def s3_resource
       require "aws-sdk-s3"

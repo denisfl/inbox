@@ -80,7 +80,7 @@ RSpec.describe StorageAdapter::GoogleDrive do
                    headers: { "Content-Type" => "application/json" })
 
       expect { adapter.download("missing.txt", namespace: :files) }
-        .to raise_error(StorageAdapter::GoogleDrive::ApiError, /File not found/)
+        .to raise_error(StorageAdapter::ApiError, /File not found/)
     end
   end
 

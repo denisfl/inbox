@@ -37,6 +37,10 @@ module StorageAdapter
         .sort
     end
 
+    def exist?(key, namespace: :files)
+      namespace_path(namespace).join(key).exist?
+    end
+
     def url(key, namespace: :files, expires_in: 1.hour)
       namespace_path(namespace).join(key).to_s
     end
