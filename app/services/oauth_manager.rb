@@ -34,7 +34,7 @@ class OAuthManager
     config = provider_config!(provider)
 
     params = {
-      client_id: client_id(config),
+      client_id: env_credential(config[:client_id_env]),
       redirect_uri: redirect_uri,
       response_type: "code"
     }
@@ -66,8 +66,8 @@ class OAuthManager
         grant_type: "authorization_code",
         code: code,
         redirect_uri: redirect_uri,
-        client_id: client_id(config),
-        client_secret: client_secret(config)
+        client_id: env_credential(config[:client_id_env]),
+        client_secret: env_credential(config[:client_secret_env])
       }
     )
 
@@ -89,8 +89,8 @@ class OAuthManager
       form: {
         grant_type: "refresh_token",
         refresh_token: refresh_token,
-        client_id: client_id(config),
-        client_secret: client_secret(config)
+        client_id: env_credential(config[:client_id_env]),
+        client_secret: env_credential(config[:client_secret_env])
       }
     )
 
@@ -152,16 +152,10 @@ class OAuthManager
     PROVIDERS[key]
   end
 
-  def client_id(config)
-    ENV.fetch(config[:client_id_env])
+  def env_credential(env_key)
+    ENV.fetch(env_key)
   rescue KeyError
-    raise ConfigurationError, "Missing ENV variable #{config[:client_id_env]}. Set it in your .env file or Docker environment."
-  end
-
-  def client_secret(config)
-    ENV.fetch(config[:client_secret_env])
-  rescue KeyError
-    raise ConfigurationError, "Missing ENV variable #{config[:client_secret_env]}. Set it in your .env file or Docker environment."
+    raise ConfigurationError, "Missing ENV variable #{env_key}. Set it in your .env file or Docker environment."
   end
 
   def http_client

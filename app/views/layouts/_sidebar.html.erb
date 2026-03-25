@@ -19,6 +19,12 @@
     <% end %>
   </div>
 
+  <div class="sidebar-new-note-container">
+    <%= link_to new_note_path, class: "sidebar-new-note", data: { turbo: false } do %>
+        New Document
+    <% end %>
+  </div>
+
   <%# ── Navigation ── %>
   <div class="nav-group-label">Navigation</div>
 
@@ -71,10 +77,7 @@
       Settings
     <% end %>
 
-    <%= link_to new_note_path, class: "sidebar-new-note", data: { turbo: false } do %>
-      <%= heroicon(:plus, style: 'width: 12px; height: 12px;') %>
-      New Note
-    <% end %>
+
   </div>
 </aside>
 
@@ -223,9 +226,13 @@
 /* Bottom section */
 .sidebar-bottom {
   margin-top: auto;
-  padding: 14px;
   border-top: 1px solid var(--color-border-soft);
 }
+
+.sidebar-new-note-container {
+padding: 10px 12px;
+}
+
 .sidebar-new-note {
   display: flex;
   align-items: center;

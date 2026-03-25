@@ -1,7 +1,7 @@
 <% connected = (links + backlinks).uniq %>
 <% if connected.any? %>
 <aside class="connected-notes" data-controller="connected-notes">
-  <h3 class="connected-notes-title">Connected Notes</h3>
+  <h3 class="connected-notes-title">Connected Documents</h3>
   <div class="connected-notes-grid">
     <% connected.each do |doc| %>
     <div class="connected-note-card"
@@ -36,7 +36,7 @@
     <div class="connected-note-popup-footer">
       <a class="connected-note-popup-open-btn"
          data-connected-notes-target="popupLink"
-         href="#">Open note</a>
+         href="#">Open Document</a>
     </div>
   </div>
 </aside>

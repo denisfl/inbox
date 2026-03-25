@@ -8,14 +8,14 @@ module ActiveStorage
       end
 
       def upload(key, io, checksum: nil, **)
-        if cloud_mode?
+        if (adapter = cloud_adapter_if_active)
           instrument :upload, key: key, checksum: checksum do
             temp = Tempfile.new([ "as_upload", File.extname(key) ])
             temp.binmode
             IO.copy_stream(io, temp)
             temp.close
 
-            cloud_adapter.upload(temp.path, key, namespace: @namespace)
+            adapter.upload(temp.path, key, namespace: @namespace)
           ensure
             temp&.close!
           end
@@ -25,9 +25,9 @@ module ActiveStorage
       end
 
       def download(key, &block)
-        if cloud_mode?
+        if (adapter = cloud_adapter_if_active)
           begin
-            download_from_cloud(key, &block)
+            download_from_cloud(adapter, key, &block)
           rescue => e
             # Fallback to disk for files not yet migrated
             raise unless disk_service.exist?(key)
@@ -39,10 +39,10 @@ module ActiveStorage
       end
 
       def download_chunk(key, range)
-        if cloud_mode?
+        if (adapter = cloud_adapter_if_active)
           begin
             instrument :download_chunk, key: key, range: range do
-              tempfile = cloud_adapter.download(key, namespace: @namespace)
+              tempfile = adapter.download(key, namespace: @namespace)
               begin
                 tempfile.seek(range.begin)
                 tempfile.read(range.size)
@@ -60,9 +60,9 @@ module ActiveStorage
       end
 
       def delete(key)
-        if cloud_mode?
+        if (adapter = cloud_adapter_if_active)
           instrument :delete, key: key do
-            cloud_adapter.delete(key, namespace: @namespace)
+            adapter.delete(key, namespace: @namespace)
           end
           # Also remove from disk if it exists (cleanup after migration)
           disk_service.delete(key) if disk_service.exist?(key)
@@ -72,10 +72,10 @@ module ActiveStorage
       end
 
       def delete_prefixed(prefix)
-        if cloud_mode?
+        if (adapter = cloud_adapter_if_active)
           instrument :delete_prefixed, prefix: prefix do
-            cloud_adapter.list(namespace: @namespace).each do |file_key|
-              cloud_adapter.delete(file_key, namespace: @namespace) if file_key.start_with?(prefix)
+            adapter.list(namespace: @namespace).each do |file_key|
+              adapter.delete(file_key, namespace: @namespace) if file_key.start_with?(prefix)
             end
           end
         else
@@ -84,9 +84,9 @@ module ActiveStorage
       end
 
       def exist?(key)
-        if cloud_mode?
+        if (adapter = cloud_adapter_if_active)
           instrument :exist, key: key do |payload|
-            answer = cloud_adapter.list(namespace: @namespace).include?(key) || disk_service.exist?(key)
+            answer = adapter.exist?(key, namespace: @namespace) || disk_service.exist?(key)
             payload[:exist] = answer
             answer
           end
@@ -96,9 +96,9 @@ module ActiveStorage
       end
 
       def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:, custom_metadata: {})
-        if cloud_mode?
+        if (adapter = cloud_adapter_if_active)
           instrument :url, key: key do |payload|
-            url = cloud_adapter.url(key, namespace: @namespace, expires_in: expires_in)
+            url = adapter.url(key, namespace: @namespace, expires_in: expires_in)
             payload[:url] = url
             url
           end
@@ -142,10 +142,10 @@ module ActiveStorage
         url_helpers.rails_disk_service_url(verified_key_with_expiration, filename: filename, **url_options)
       end
 
-      def download_from_cloud(key, &block)
+      def download_from_cloud(adapter, key, &block)
         if block_given?
           instrument :streaming_download, key: key do
-            tempfile = cloud_adapter.download(key, namespace: @namespace)
+            tempfile = adapter.download(key, namespace: @namespace)
             begin
               while (chunk = tempfile.read(5.megabytes))
                 yield chunk
@@ -156,7 +156,7 @@ module ActiveStorage
           end
         else
           instrument :download, key: key do
-            tempfile = cloud_adapter.download(key, namespace: @namespace)
+            tempfile = adapter.download(key, namespace: @namespace)
             begin
               tempfile.read
             ensure
@@ -166,15 +166,17 @@ module ActiveStorage
         end
       end
 
-      def cloud_mode?
+      # Returns cloud adapter if a cloud provider is configured, nil otherwise.
+      # Single DB query per call (replaces separate cloud_mode? + cloud_adapter).
+      def cloud_adapter_if_active
         setting = StorageSetting.active_setting
-        setting && setting.provider != "local"
-      rescue
-        false
-      end
+        return nil if setting.nil? || setting.provider == "local"
 
-      def cloud_adapter
-        StorageAdapter.resolve
+        oauth = OAuthManager.new
+        setting = oauth.ensure_fresh_token!(setting) if oauth.oauth_provider?(setting.provider)
+        StorageAdapter.build(setting.provider, setting.config_data)
+      rescue ActiveRecord::ActiveRecordError
+        nil
       end
 
       def disk_service

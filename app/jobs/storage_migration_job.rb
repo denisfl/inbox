@@ -28,11 +28,7 @@ class StorageMigrationJob < ApplicationJob
     end
 
     migration.reload
-    if migration.cancelled?
-      # Already marked cancelled
-    elsif migration.failed_items.positive?
-      migration.update!(status: "completed", completed_at: Time.current)
-    else
+    unless migration.cancelled?
       migration.update!(status: "completed", completed_at: Time.current)
     end
   rescue => e
@@ -82,8 +78,7 @@ class StorageMigrationJob < ApplicationJob
   end
 
   def build_adapter(provider)
-    case provider
-    when "local"
+    if provider == "local"
       StorageAdapter::Local.new
     else
       setting = StorageSetting.active_setting
@@ -92,18 +87,7 @@ class StorageMigrationJob < ApplicationJob
       oauth = OAuthManager.new
       setting = oauth.ensure_fresh_token!(setting) if oauth.oauth_provider?(setting.provider)
 
-      case provider
-      when "s3"
-        StorageAdapter::S3.new(config: setting.config_data)
-      when "dropbox"
-        StorageAdapter::Dropbox.new(config: setting.config_data)
-      when "google_drive"
-        StorageAdapter::GoogleDrive.new(config: setting.config_data)
-      when "onedrive"
-        StorageAdapter::OneDrive.new(config: setting.config_data)
-      else
-        StorageAdapter::Local.new
-      end
+      StorageAdapter.build(provider, setting.config_data)
     end
   end
 

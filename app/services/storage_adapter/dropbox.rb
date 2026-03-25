@@ -5,7 +5,8 @@ module StorageAdapter
     ROOT_FOLDER = "/Apps/Inbox".freeze
 
     def initialize(config: {})
-      @access_token = config["access_token"] || config[:access_token]
+      config = config.with_indifferent_access
+      @access_token = config[:access_token]
     end
 
     def upload(file_path, key, namespace: :files)
@@ -59,6 +60,15 @@ module StorageAdapter
       raise
     end
 
+    def exist?(key, namespace: :files)
+      path = dropbox_path(key, namespace)
+      api_request("/files/get_metadata", path: path)
+      true
+    rescue ApiError => e
+      return false if e.message.include?("path/not_found")
+      raise
+    end
+
     def url(key, namespace: :files, expires_in: 1.hour)
       path = dropbox_path(key, namespace)
       body = api_request("/files/get_temporary_link", path: path)
@@ -85,8 +95,6 @@ module StorageAdapter
       { ok: false, error: e.message }
     end
 
-    class ApiError < StandardError; end
-
     private
 
     def dropbox_path(key, namespace)
@@ -94,15 +102,18 @@ module StorageAdapter
     end
 
     def ensure_folder_exists!(namespace)
+      return if @created_folders&.include?(namespace)
+
       path = "#{ROOT_FOLDER}/#{namespace}"
       api_request("/files/create_folder_v2", path: path, autorename: false)
     rescue ApiError => e
       raise unless e.message.include?("path/conflict")
+    ensure
+      (@created_folders ||= Set.new) << namespace
     end
 
     def api_request(endpoint, **params)
-      response = HTTP.timeout(30)
-        .auth("Bearer #{@access_token}")
+      response = auth_client
         .headers("Content-Type" => "application/json")
         .post("#{BASE_URL}#{endpoint}", body: params.to_json)
 
@@ -117,8 +128,7 @@ module StorageAdapter
     end
 
     def content_request(endpoint, body:, api_arg:)
-      response = HTTP.timeout(60)
-        .auth("Bearer #{@access_token}")
+      response = auth_client(timeout: 60)
         .headers(
           "Content-Type" => "application/octet-stream",
           "Dropbox-API-Arg" => api_arg.to_json
@@ -135,8 +145,7 @@ module StorageAdapter
     end
 
     def content_download(endpoint, api_arg:)
-      response = HTTP.timeout(60)
-        .auth("Bearer #{@access_token}")
+      response = auth_client(timeout: 60)
         .headers("Dropbox-API-Arg" => api_arg.to_json)
         .post("#{CONTENT_URL}#{endpoint}")
 

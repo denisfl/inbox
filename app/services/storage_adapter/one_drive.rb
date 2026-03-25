@@ -4,15 +4,15 @@ module StorageAdapter
     ROOT_FOLDER = "Apps/Inbox".freeze
 
     def initialize(config: {})
-      @access_token = config["access_token"] || config[:access_token]
+      config = config.with_indifferent_access
+      @access_token = config[:access_token]
     end
 
     def upload(file_path, key, namespace: :files)
       path = onedrive_path(key, namespace)
       body = File.binread(file_path)
 
-      response = HTTP.timeout(60)
-        .auth("Bearer #{@access_token}")
+      response = auth_client(timeout: 60)
         .headers("Content-Type" => "application/octet-stream")
         .put("#{GRAPH_URL}/me/drive/root:/#{path}:/content", body: body)
 
@@ -24,8 +24,7 @@ module StorageAdapter
       path = onedrive_path(key, namespace)
 
       # Get download URL (302 redirect) — use manual redirect handling
-      response = HTTP.timeout(30)
-        .auth("Bearer #{@access_token}")
+      response = auth_client
         .get("#{GRAPH_URL}/me/drive/root:/#{path}:/content")
 
       if response.status == 302
@@ -33,11 +32,7 @@ module StorageAdapter
         response = HTTP.timeout(60).get(download_url)
       end
 
-      if response.status >= 400
-        body = JSON.parse(response.body.to_s) rescue {}
-        error_msg = body.dig("error", "message") || "HTTP #{response.status}"
-        raise ApiError, error_msg
-      end
+      parse_response!(response) if response.status >= 400
 
       tempfile = Tempfile.new([ "onedrive_download", File.extname(key) ])
       tempfile.binmode
@@ -49,8 +44,7 @@ module StorageAdapter
     def delete(key, namespace: :files)
       path = onedrive_path(key, namespace)
 
-      response = HTTP.timeout(30)
-        .auth("Bearer #{@access_token}")
+      response = auth_client
         .delete("#{GRAPH_URL}/me/drive/root:/#{path}:")
 
       # 204 No Content = success, 404 = already gone
@@ -65,8 +59,7 @@ module StorageAdapter
       url = "#{GRAPH_URL}/me/drive/root:/#{path}:/children?$select=name,file"
 
       loop do
-        response = HTTP.timeout(30)
-          .auth("Bearer #{@access_token}")
+        response = auth_client
           .get(url)
 
         body = parse_response!(response)
@@ -86,11 +79,17 @@ module StorageAdapter
       raise
     end
 
+    def exist?(key, namespace: :files)
+      path = onedrive_path(key, namespace)
+      response = auth_client(timeout: 10)
+        .get("#{GRAPH_URL}/me/drive/root:/#{path}")
+      response.status < 400
+    end
+
     def url(key, namespace: :files, expires_in: 1.hour)
       path = onedrive_path(key, namespace)
 
-      response = HTTP.timeout(30)
-        .auth("Bearer #{@access_token}")
+      response = auth_client
         .post("#{GRAPH_URL}/me/drive/root:/#{path}:/createLink",
               json: { type: "view", scope: "anonymous" })
 
@@ -103,16 +102,14 @@ module StorageAdapter
       path = onedrive_path(test_key, :files)
 
       # Upload test file
-      response = HTTP.timeout(30)
-        .auth("Bearer #{@access_token}")
+      response = auth_client
         .headers("Content-Type" => "application/octet-stream")
         .put("#{GRAPH_URL}/me/drive/root:/#{path}:/content", body: "ok")
 
       parse_response!(response)
 
       # Download it
-      response = HTTP.timeout(30)
-        .auth("Bearer #{@access_token}")
+      response = auth_client
         .get("#{GRAPH_URL}/me/drive/root:/#{path}:/content")
 
       if response.status == 302
@@ -121,16 +118,13 @@ module StorageAdapter
       end
 
       # Delete it
-      HTTP.timeout(30)
-        .auth("Bearer #{@access_token}")
+      auth_client
         .delete("#{GRAPH_URL}/me/drive/root:/#{path}:")
 
       { ok: true }
     rescue => e
       { ok: false, error: e.message }
     end
-
-    class ApiError < StandardError; end
 
     private
 
