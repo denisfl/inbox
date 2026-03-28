@@ -36,7 +36,7 @@ gem "telegram-bot-ruby"
 gem "google-apis-calendar_v3", "~> 0.53"
 
 # iCalendar import/export
-gem "icalendar", "~> 2.10"
+gem "icalendar", "~> 2.12"
 
 # HTTP client for API calls
 gem "http", "~> 6.0"
