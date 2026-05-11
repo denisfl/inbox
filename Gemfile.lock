@@ -229,7 +229,7 @@ GEM
       domain_name (~> 0.5)
     i18n (1.14.8)
       concurrent-ruby (~> 1.0)
-    icalendar (2.12.1)
+    icalendar (2.12.2)
       base64
       ice_cube (~> 0.16)
       logger
@@ -604,7 +604,7 @@ DEPENDENCIES
   faker (~> 3.6)
   google-apis-calendar_v3 (~> 0.53)
   http (~> 6.0)
-  icalendar (~> 2.10)
+  icalendar (~> 2.12)
   image_processing (~> 1.2)
   jbuilder
   jsbundling-rails
