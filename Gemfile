@@ -42,7 +42,7 @@ gem "icalendar", "~> 2.12"
 gem "http", "~> 6.0"
 
 # Pagination
-gem "pagy", "~> 43.4"
+gem "pagy", "~> 43.5"
 
 # S3-compatible backup storage (lazy-loaded, only used when BACKUP_STORAGE_TYPE=s3)
 gem "aws-sdk-s3", require: false
