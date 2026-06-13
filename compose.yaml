@@ -1,0 +1,42 @@
+# Local development stack. Production deploy uses Dokku via ./Dockerfile.
+#
+#   docker compose up            # web on http://localhost:3000
+#   docker compose run --rm web bin/rails console
+#   docker compose run --rm web bundle exec rspec
+#
+# The source tree is bind-mounted, so host edits are live. Gems live in a
+# named volume so they survive `compose down` and aren't reinstalled on every
+# boot. App data (SQLite db + uploaded files) lives under storage/ — also a
+# named volume so it persists across rebuilds.
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    # db:prepare is idempotent — creates/migrates the SQLite db on first boot.
+    command: bash -c "bin/rails db:prepare && bin/rails server -b 0.0.0.0"
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/rails
+      - bundle:/usr/local/bundle
+      - storage:/rails/storage
+    environment:
+      RAILS_ENV: development
+      # ActiveRecord encryption keys — StorageSetting#config_encrypted is encrypted.
+      # Override with real values (bin/rails db:encryption:init) for persistent data.
+      ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY: ${ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY:-devkeydevkeydevkeydevkeydevkey01}
+      ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY: ${ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY:-devkeydevkeydevkeydevkeydevkey02}
+      ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT: ${ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT:-devkeydevkeydevkeydevkeydevkey03}
+      # Cloud storage OAuth (optional — configure via Settings > Storage).
+      DROPBOX_CLIENT_ID: ${DROPBOX_CLIENT_ID:-}
+      DROPBOX_CLIENT_SECRET: ${DROPBOX_CLIENT_SECRET:-}
+      GOOGLE_DRIVE_CLIENT_ID: ${GOOGLE_DRIVE_CLIENT_ID:-}
+      GOOGLE_DRIVE_CLIENT_SECRET: ${GOOGLE_DRIVE_CLIENT_SECRET:-}
+      ONEDRIVE_CLIENT_ID: ${ONEDRIVE_CLIENT_ID:-}
+      ONEDRIVE_CLIENT_SECRET: ${ONEDRIVE_CLIENT_SECRET:-}
+
+volumes:
+  bundle:
+  storage:

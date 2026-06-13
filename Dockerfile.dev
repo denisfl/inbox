@@ -1,0 +1,51 @@
+# Development-only image.
+# Production deploy uses ./Dockerfile (consumed by Dokku).
+#
+# Run via:  docker compose up
+# See:      compose.yaml
+#
+# syntax = docker/dockerfile:1
+
+ARG RUBY_VERSION=3.4.5
+FROM docker.io/library/ruby:${RUBY_VERSION}-slim
+
+WORKDIR /rails
+
+# System packages needed to build native gems + dev convenience tools.
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+      build-essential \
+      git \
+      curl \
+      pkg-config \
+      libpq-dev \
+      libyaml-dev \
+      libjemalloc2 \
+      libvips \
+      imagemagick \
+      libmagickwand-dev \
+      sqlite3 \
+      libsqlite3-dev \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+# Match Bundler version from Gemfile.lock so resolution is stable.
+RUN gem install bundler
+
+# Pre-install gems for faster cold starts. The source tree is bind-mounted
+# at runtime (see compose.yaml), and /usr/local/bundle is a named volume,
+# so gems persist across rebuilds and survive bare `compose down`.
+COPY Gemfile Gemfile.lock ./
+RUN bundle config set --local without "" && \
+    bundle install
+
+# Source code lives on the host and is bind-mounted into /rails at runtime,
+# so no COPY here. Anything you do on the host (edit a file) is immediately
+# visible inside the container.
+
+ENV RAILS_ENV=development \
+    BINDING=0.0.0.0
+
+EXPOSE 3000
+
+# Default command — overridden by compose.yaml's `command:` to chain db:prepare.
+CMD ["bin/rails", "server", "-b", "0.0.0.0"]
