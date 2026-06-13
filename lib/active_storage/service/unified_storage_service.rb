@@ -1,4 +1,5 @@
 require "active_storage/service"
+require "active_storage/service/disk_service"
 
 module ActiveStorage
   class Service
@@ -112,14 +113,28 @@ module ActiveStorage
         { "Content-Type" => content_type, "Content-MD5" => checksum }
       end
 
+      # Resolve the on-disk path for a key. Called by ActiveStorage::DiskController
+      # when serving disk-backed blobs (local provider) via rails_disk_service_url.
+      def path_for(key)
+        disk_service.path_for(key)
+      end
+
       private
 
       def private_url(key, expires_in:, filename:, content_type:, disposition:, **)
-        generate_url(key, expires_in: expires_in, filename: filename, content_type: content_type, disposition: disposition)
+        if (adapter = cloud_adapter_if_active)
+          adapter.url(key, namespace: @namespace, expires_in: expires_in || 5.minutes)
+        else
+          generate_url(key, expires_in: expires_in, filename: filename, content_type: content_type, disposition: disposition)
+        end
       end
 
       def public_url(key, filename:, content_type: nil, disposition: :attachment, **)
-        generate_url(key, expires_in: nil, filename: filename, content_type: content_type, disposition: disposition)
+        if (adapter = cloud_adapter_if_active)
+          adapter.url(key, namespace: @namespace)
+        else
+          generate_url(key, expires_in: nil, filename: filename, content_type: content_type, disposition: disposition)
+        end
       end
 
       def generate_url(key, expires_in:, filename:, content_type:, disposition:)

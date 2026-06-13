@@ -1,0 +1,7 @@
+# pnpm reads settings from here (the package.json "pnpm" field is no longer read in pnpm 11).
+# esbuild needs its postinstall to fetch the platform binary; allow it to run.
+# `allowBuilds` is the pnpm 11 setting; `onlyBuiltDependencies` keeps pnpm 9/10 working.
+allowBuilds:
+  esbuild: true
+onlyBuiltDependencies:
+  - esbuild
