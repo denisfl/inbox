@@ -152,7 +152,7 @@ GEM
       concurrent-ruby (~> 1.0)
       dry-core (~> 1.1)
       zeitwerk (~> 2.6)
-    dry-struct (1.8.0)
+    dry-struct (1.8.1)
       dry-core (~> 1.1)
       dry-types (~> 1.8, >= 1.8.2)
       ice_nine (~> 0.11)
@@ -343,7 +343,7 @@ GEM
       racc (~> 1.4)
     os (1.1.4)
     ostruct (0.6.3)
-    pagy (43.4.2)
+    pagy (43.5.6)
       json
       uri
       yaml
@@ -536,17 +536,17 @@ GEM
     stimulus-rails (1.3.4)
       railties (>= 6.0.0)
     stringio (3.2.0)
-    telegram-bot-ruby (2.5.0)
+    telegram-bot-ruby (2.7.0)
       dry-struct (~> 1.6)
       faraday (~> 2.0)
       faraday-multipart (~> 1.0)
       zeitwerk (~> 2.6)
     thor (1.5.0)
-    thruster (0.1.19)
-    thruster (0.1.19-aarch64-linux)
-    thruster (0.1.19-arm64-darwin)
-    thruster (0.1.19-x86_64-darwin)
-    thruster (0.1.19-x86_64-linux)
+    thruster (0.1.21)
+    thruster (0.1.21-aarch64-linux)
+    thruster (0.1.21-arm64-darwin)
+    thruster (0.1.21-x86_64-darwin)
+    thruster (0.1.21-x86_64-linux)
     timeout (0.6.1)
     trailblazer-option (0.1.2)
     tsort (0.2.0)
@@ -604,17 +604,17 @@ DEPENDENCIES
   faker (~> 3.6)
   google-apis-calendar_v3 (~> 0.53)
   http (~> 6.0)
-  icalendar (~> 2.10)
+  icalendar (~> 2.12)
   image_processing (~> 1.2)
   jbuilder
   jsbundling-rails
   kamal
   kaminari (~> 1.2)
   lexxy
-  pagy (~> 43.4)
+  pagy (~> 43.5)
   propshaft
   puma (>= 5.0)
-  rails (~> 8.1.2)
+  rails (~> 8.1.3)
   redcarpet (~> 3.6)
   redis (~> 5.0)
   rspec-rails (~> 8.0)
