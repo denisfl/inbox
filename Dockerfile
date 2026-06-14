@@ -38,8 +38,7 @@ RUN apk add --no-cache \
     nodejs \
     npm
 
-# Install pnpm
-RUN npm install -g pnpm@latest --no-audit
+RUN npm install -g pnpm@10.28.2 --no-audit
 
 # Install bundler
 RUN gem install bundler
