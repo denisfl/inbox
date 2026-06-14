@@ -1,8 +1,8 @@
 # Development-only image.
 # Production deploy uses ./Dockerfile (consumed by Dokku).
 #
-# Run via:  docker compose up
-# See:      compose.yaml
+# Run via:  docker compose -f compose.dev.yaml up
+# See:      compose.dev.yaml
 #
 # syntax = docker/dockerfile:1
 
@@ -32,7 +32,7 @@ RUN apt-get update -qq && \
 RUN gem install bundler
 
 # Pre-install gems for faster cold starts. The source tree is bind-mounted
-# at runtime (see compose.yaml), and /usr/local/bundle is a named volume,
+# at runtime (see compose.dev.yaml), and /usr/local/bundle is a named volume,
 # so gems persist across rebuilds and survive bare `compose down`.
 COPY Gemfile Gemfile.lock ./
 RUN bundle config set --local without "" && \
@@ -47,5 +47,5 @@ ENV RAILS_ENV=development \
 
 EXPOSE 3000
 
-# Default command — overridden by compose.yaml's `command:` to chain db:prepare.
+# Default command — overridden by compose.dev.yaml's `command:` to chain db:prepare.
 CMD ["bin/rails", "server", "-b", "0.0.0.0"]

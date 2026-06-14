@@ -77,14 +77,18 @@ Raspberry Pi — no external services required.
 Native `bundle` on this machine is currently broken (Gemfile.lock pins gems that aren't
 installed for the active Ruby). **Use Docker for anything that boots Rails:**
 
+The dev stack lives in `compose.dev.yaml`. It is **not** a default Compose filename
+(that's deliberate — `docker-compose.yml` is the production stack and must stay the
+default), so always pass it with `-f`:
+
 ```bash
-docker compose up                              # web → http://localhost:3000
-docker compose run --rm web bundle exec rspec  # full test suite
-docker compose run --rm web bin/rubocop        # style
-docker compose run --rm web bin/rails console
+docker compose -f compose.dev.yaml up                              # web → http://localhost:3000
+docker compose -f compose.dev.yaml run --rm web bundle exec rspec  # full test suite
+docker compose -f compose.dev.yaml run --rm web bin/rubocop        # style
+docker compose -f compose.dev.yaml run --rm web bin/rails console
 ```
 
-`compose.yaml` bind-mounts the source (edits are live) and keeps gems + `storage/`
+`compose.dev.yaml` bind-mounts the source (edits are live) and keeps gems + `storage/`
 (SQLite db + uploads) in named volumes. See `Dockerfile.dev`.
 
 If the native toolchain is fixed, the same commands work without the `docker compose run`
