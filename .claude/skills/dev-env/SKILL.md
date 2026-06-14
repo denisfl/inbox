@@ -7,23 +7,24 @@ description: Boot, test, or run Rails commands for inbox-web through Docker. Use
 
 The native `bundle` install on this machine does not match `Gemfile.lock`, so `bin/rails`
 and `bundle exec` fail directly on the host. Run everything through the dev container
-defined by `Dockerfile.dev` + `compose.yaml`.
+defined by `Dockerfile.dev` + `compose.dev.yaml`. That file is intentionally NOT a default
+Compose name (production's `docker-compose.yml` keeps that slot), so always pass `-f compose.dev.yaml`.
 
 ## First time / after Gemfile changes
 
 ```bash
-docker compose build web      # or: docker build -f Dockerfile.dev -t inbox-web-dev .
+docker compose -f compose.dev.yaml build web   # or: docker build -f Dockerfile.dev -t inbox-web-dev .
 ```
 
 ## Common commands
 
 ```bash
-docker compose up                                   # web server → http://localhost:3000
-docker compose run --rm web bundle exec rspec       # full suite
-docker compose run --rm web bundle exec rspec spec/lib/unified_storage_service_spec.rb
-docker compose run --rm web bin/rubocop
-docker compose run --rm web bin/rails console
-docker compose run --rm web bin/rails db:prepare
+docker compose -f compose.dev.yaml up                                   # web server → http://localhost:3000
+docker compose -f compose.dev.yaml run --rm web bundle exec rspec       # full suite
+docker compose -f compose.dev.yaml run --rm web bundle exec rspec spec/lib/unified_storage_service_spec.rb
+docker compose -f compose.dev.yaml run --rm web bin/rubocop
+docker compose -f compose.dev.yaml run --rm web bin/rails console
+docker compose -f compose.dev.yaml run --rm web bin/rails db:prepare
 ```
 
 ## One-off scripts / reproductions
@@ -44,6 +45,6 @@ docker run --rm -v "$PWD":/rails -v /tmp/script.rb:/tmp/script.rb \
 - The dev SQLite db lives at `storage/development.sqlite3` (a Docker volume, not the host
   tree) — an empty host `storage/` is normal, not a sign of lost data.
 - `StorageSetting` uses an encrypted column, so `ACTIVE_RECORD_ENCRYPTION_*` keys must be
-  set in the environment (compose.yaml provides dev defaults).
+  set in the environment (compose.dev.yaml provides dev defaults).
 - Test env uses the `:test` Disk ActiveStorage service; dev/prod use `:unified`. See
   `CLAUDE.md` → "File storage" before changing storage code.
